@@ -14,16 +14,260 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_suggestions: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          suggestion_type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          suggestion_type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          suggestion_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_groups: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          invite_code: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          invite_code: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          invite_code?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_members: {
+        Row: {
+          family_id: string
+          id: string
+          joined_at: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          family_id: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          family_id?: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moods: {
+        Row: {
+          created_at: string | null
+          id: string
+          intensity: number | null
+          mood: Database["public"]["Enums"]["mood_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          intensity?: number | null
+          mood: Database["public"]["Enums"]["mood_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          intensity?: number | null
+          mood?: Database["public"]["Enums"]["mood_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moods_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      motivational_content: {
+        Row: {
+          age_group: Database["public"]["Enums"]["age_group"] | null
+          audio_url: string | null
+          content: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string | null
+          id: string
+          tags: string[] | null
+          target_mood: Database["public"]["Enums"]["mood_type"] | null
+          title: string
+        }
+        Insert: {
+          age_group?: Database["public"]["Enums"]["age_group"] | null
+          audio_url?: string | null
+          content: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          id?: string
+          tags?: string[] | null
+          target_mood?: Database["public"]["Enums"]["mood_type"] | null
+          title: string
+        }
+        Update: {
+          age_group?: Database["public"]["Enums"]["age_group"] | null
+          audio_url?: string | null
+          content?: string
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          id?: string
+          tags?: string[] | null
+          target_mood?: Database["public"]["Enums"]["mood_type"] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          age_group: Database["public"]["Enums"]["age_group"]
+          avatar_url: string | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          age_group?: Database["public"]["Enums"]["age_group"]
+          avatar_url?: string | null
+          created_at?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          age_group?: Database["public"]["Enums"]["age_group"]
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      reflections: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_private: boolean | null
+          mood_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_private?: boolean | null
+          mood_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_private?: boolean | null
+          mood_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reflections_mood_id_fkey"
+            columns: ["mood_id"]
+            isOneToOne: false
+            referencedRelation: "moods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invite_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      age_group: "child" | "teen" | "adult"
+      content_type: "audio" | "text" | "video"
+      mood_type:
+        | "happy"
+        | "calm"
+        | "anxious"
+        | "sad"
+        | "angry"
+        | "excited"
+        | "tired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +394,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      age_group: ["child", "teen", "adult"],
+      content_type: ["audio", "text", "video"],
+      mood_type: [
+        "happy",
+        "calm",
+        "anxious",
+        "sad",
+        "angry",
+        "excited",
+        "tired",
+      ],
+    },
   },
 } as const
