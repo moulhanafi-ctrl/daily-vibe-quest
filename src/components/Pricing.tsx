@@ -50,11 +50,12 @@ export const Pricing = () => {
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`gradient-card p-8 rounded-3xl transition-smooth ${
+              className={`gradient-card p-8 rounded-3xl transition-smooth hover:-translate-y-2 animate-fade-in ${
                 plan.highlighted
-                  ? "shadow-soft ring-2 ring-primary scale-105"
+                  ? "shadow-soft ring-2 ring-primary md:scale-105"
                   : "shadow-card hover:shadow-soft"
               }`}
+              style={{ animationDelay: `${index * 0.2}s` }}
             >
               {plan.highlighted && (
                 <div className="inline-block px-4 py-1 bg-primary text-primary-foreground rounded-full text-sm font-medium mb-4">

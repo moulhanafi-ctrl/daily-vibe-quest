@@ -46,12 +46,13 @@ export const Features = () => {
             return (
               <div
                 key={index}
-                className="gradient-card p-6 rounded-3xl shadow-card hover:shadow-soft transition-smooth group"
+                className="gradient-card p-6 rounded-3xl shadow-card hover:shadow-soft transition-smooth group hover:-translate-y-2 animate-fade-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div className={`inline-flex p-3 rounded-2xl bg-${feature.color}/10 mb-4 group-hover:scale-110 transition-smooth`}>
+                <div className={`inline-flex p-3 rounded-2xl bg-${feature.color}/10 mb-4 group-hover:scale-110 group-hover:rotate-3 transition-smooth`}>
                   <Icon className={`w-6 h-6 text-${feature.color}`} />
                 </div>
-                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-smooth">{feature.title}</h3>
                 <p className="text-muted-foreground">{feature.description}</p>
               </div>
             );
