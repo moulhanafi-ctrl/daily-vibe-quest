@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import heroBackground from "@/assets/hero-background.jpg";
 
@@ -12,6 +13,7 @@ const moods = [
 ];
 
 export const Hero = () => {
+  const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
 
   return (
@@ -70,7 +72,7 @@ export const Hero = () => {
                 <p className="text-muted-foreground">
                   Thanks for sharing! Let's make today better together.
                 </p>
-                <Button variant="hero" size="lg" className="w-full">
+                <Button variant="hero" size="lg" className="w-full" onClick={() => navigate("/auth")}>
                   Start Your Journey
                 </Button>
               </div>
@@ -78,10 +80,10 @@ export const Hero = () => {
           </div>
 
           <div className="flex flex-wrap gap-4 justify-center pt-4">
-            <Button variant="hero" size="lg">
+            <Button variant="hero" size="lg" onClick={() => navigate("/auth")}>
               Get Started Free
             </Button>
-            <Button variant="outline" size="lg">
+            <Button variant="outline" size="lg" onClick={() => window.scrollTo({ top: document.getElementById('features')?.offsetTop || 0, behavior: 'smooth' })}>
               Learn More
             </Button>
           </div>
