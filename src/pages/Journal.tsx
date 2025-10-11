@@ -1,16 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JournalComposer } from "@/components/journal/JournalComposer";
 import { JournalList } from "@/components/journal/JournalList";
 import { JournalPrompts } from "@/components/journal/JournalPrompts";
 import { JournalProgress } from "@/components/journal/JournalProgress";
+import { StreakBadge } from "@/components/journal/StreakBadge";
 import { Plus, BookOpen, Lightbulb, TrendingUp } from "lucide-react";
 
 export default function Journal() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showComposer, setShowComposer] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [promptText, setPromptText] = useState("");
+
+  useEffect(() => {
+    // Auto-open composer for first entry
+    if (searchParams.get("first_entry") === "true") {
+      setShowComposer(true);
+      // Clear the param
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleSelectEntry = (entry: any) => {
     setSelectedEntry(entry);
@@ -32,7 +44,10 @@ export default function Journal() {
   return (
     <div className="container mx-auto p-4 max-w-6xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Journal</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">Journal</h1>
+          <StreakBadge />
+        </div>
         {!showComposer && (
           <Button onClick={() => setShowComposer(true)}>
             <Plus className="w-4 h-4 mr-2" />

@@ -32,6 +32,15 @@ const Dashboard = () => {
       navigate("/dashboard", { replace: true });
     }
 
+    // Check for first check-in completion - redirect to journal
+    if (searchParams.get("first_checkin") === "true") {
+      toast({
+        title: "Great start! 🎉",
+        description: "Now let's capture your thoughts. Pick a prompt or start writing.",
+      });
+      navigate("/journal?first_entry=true", { replace: true });
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/auth");

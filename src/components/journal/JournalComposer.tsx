@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Save, Trash2, Mic, X, Share2 } from "lucide-react";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { trackEvent } from "@/lib/analytics";
+import { celebrateFirstEntry } from "@/lib/confetti";
 
 interface JournalComposerProps {
   moodId?: string;
@@ -82,33 +83,44 @@ export const JournalComposer = ({ moodId, mood, onSave, onCancel, editEntry }: J
           .eq("id", editEntry.id);
         
         if (error) throw error;
-        toast({ title: "Entry updated" });
+        toast.success("Entry updated");
       } else {
         const { error } = await supabase
           .from("journal_entries")
           .insert(entryData);
         
         if (error) throw error;
-        toast({ title: "Entry saved" });
-        
+
         // Track journal save event
         trackEvent({ 
           eventType: "journal_saved", 
           metadata: { 
-            has_audio: !!audioUrl, 
-            tag_count: tags.length,
-            shared_with_parent: sharedWithParent 
+            hasTitle: !!title,
+            hasBody: !!body,
+            hasAudio: !!audioUrl,
+            hasTranscript: !!transcript,
+            tagCount: tags.length,
+            sharedWithParent
           } 
         });
+
+        // Check if this is the first journal entry
+        const { count } = await supabase
+          .from("journal_entries")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        
+        if (count === 1) {
+          celebrateFirstEntry();
+          toast.success("First entry complete! 🎉 Streak Day 1 started!");
+        } else {
+          toast.success("Entry saved");
+        }
       }
 
       onSave?.();
     } catch (error: any) {
-      toast({
-        title: "Error saving entry",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Error saving entry: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -124,14 +136,10 @@ export const JournalComposer = ({ moodId, mood, onSave, onCancel, editEntry }: J
         .eq("id", editEntry.id);
       
       if (error) throw error;
-      toast({ title: "Entry deleted" });
+      toast.success("Entry deleted");
       onSave?.();
     } catch (error: any) {
-      toast({
-        title: "Error deleting entry",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Error deleting entry: ${error.message}`);
     }
   };
 
@@ -165,7 +173,7 @@ export const JournalComposer = ({ moodId, mood, onSave, onCancel, editEntry }: J
                 setAudioUrl(url);
                 setTranscript(text);
                 setShowVoiceRecorder(false);
-                toast({ title: "Voice note added" });
+                toast.success("Voice note added");
               }}
               onCancel={() => setShowVoiceRecorder(false)}
             />

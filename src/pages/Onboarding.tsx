@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { OnboardingOverview } from "@/components/onboarding/OnboardingOverview";
 import { WelcomeScreen } from "@/components/onboarding/WelcomeScreen";
 import { BasicInfoStep } from "@/components/onboarding/BasicInfoStep";
 import { FocusAreaStep } from "@/components/onboarding/FocusAreaStep";
 import { DeepDiveStep } from "@/components/onboarding/DeepDiveStep";
 import { ConfirmationScreen } from "@/components/onboarding/ConfirmationScreen";
+import { trackEvent } from "@/lib/analytics";
 
-type OnboardingStep = "welcome" | "basic-info" | "focus-area" | "deep-dive" | "confirmation";
+type OnboardingStep = "overview" | "welcome" | "basic-info" | "focus-area" | "deep-dive" | "confirmation";
 
 interface OnboardingData {
   firstName?: string;
@@ -21,7 +23,7 @@ interface OnboardingData {
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>("welcome");
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>("overview");
   const [data, setData] = useState<OnboardingData>({});
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -66,6 +68,14 @@ const Onboarding = () => {
 
   const handleComplete = async () => {
     setLoading(true);
+    trackEvent({ 
+      eventType: "onboarding_completed",
+      metadata: {
+        firstName: data.firstName,
+        ageGroup: data.age && data.age >= 50 ? "senior" : data.age && data.age >= 18 ? "adult" : data.age && data.age >= 13 ? "teen" : "kid",
+        focusAreasCount: data.focusAreas?.length || 0
+      }
+    });
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -100,11 +110,11 @@ const Onboarding = () => {
       if (error) throw error;
 
       toast({
-        title: "Welcome to Vibe Check! 🎉",
-        description: "Your profile has been set up successfully.",
+        title: "Profile created! 🎉",
+        description: "Welcome to your mental health journey.",
       });
-
-      navigate("/dashboard");
+      
+      navigate("/dashboard?first_checkin=true");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -119,12 +129,15 @@ const Onboarding = () => {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>{loading ? "Setting up your profile..." : "Loading..."}</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   switch (currentStep) {
+    case "overview":
+      return <OnboardingOverview onStart={() => setCurrentStep("welcome")} />;
+    
     case "welcome":
       return <WelcomeScreen onNext={() => setCurrentStep("basic-info")} />;
     
