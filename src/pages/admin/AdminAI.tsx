@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { VibeOpsChat } from "@/components/admin/VibeOpsChat";
 import { ActionPanel } from "@/components/admin/ActionPanel";
+import { AdminGuide } from "@/components/admin/AdminGuide";
 
 export default function AdminAI() {
   const navigate = useNavigate();
@@ -112,39 +113,43 @@ export default function AdminAI() {
 
         {/* Quick Actions Bar */}
         <div className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  className="px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-md text-sm transition-colors"
-                  onClick={() => {
-                    // TODO: Set a pre-filled prompt
-                  }}
-                >
-                  🚨 Triage Overnight Incidents
-                </button>
-                <button
-                  className="px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-md text-sm transition-colors"
-                  onClick={() => {
-                    // TODO: Set a pre-filled prompt
-                  }}
-                >
-                  📊 Summarize Top 5 Rooms
-                </button>
-                <button
-                  className="px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-md text-sm transition-colors"
-                  onClick={() => {
-                    // TODO: Set a pre-filled prompt
-                  }}
-                >
-                  📝 Draft Community Update
-                </button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className="px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-md text-sm transition-colors"
+                    onClick={() => {
+                      // TODO: Set a pre-filled prompt
+                    }}
+                  >
+                    🚨 Triage Overnight Incidents
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-md text-sm transition-colors"
+                    onClick={() => {
+                      // TODO: Set a pre-filled prompt
+                    }}
+                  >
+                    📊 Summarize Top 5 Rooms
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-md text-sm transition-colors"
+                    onClick={() => {
+                      // TODO: Set a pre-filled prompt
+                    }}
+                  >
+                    📝 Draft Community Update
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <AdminGuide />
+          </div>
         </div>
       </div>
     </div>
