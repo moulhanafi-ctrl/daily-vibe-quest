@@ -205,7 +205,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
           </div>
         </ScrollArea>
 
-        <div className="space-y-4 pt-4 border-t">
+        <div className="space-y-6 pt-4 border-t">
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <Checkbox
@@ -254,21 +254,22 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
             )}
           </div>
 
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-              disabled={submitting}
-            >
-              {t("consent.actions.cancel")}
-            </Button>
+          <div className="flex flex-col gap-3 pt-2">
             <Button
               onClick={handleAgree}
               disabled={!allRequiredChecked || submitting}
-              className="flex-1"
+              size="lg"
+              className="w-full"
             >
               {submitting ? t("consent.actions.processing") : t("consent.actions.agree")}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              disabled={submitting}
+              className="w-full"
+            >
+              {t("consent.actions.cancel")}
             </Button>
           </div>
         </div>
