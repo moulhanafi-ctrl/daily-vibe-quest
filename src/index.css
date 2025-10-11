@@ -18,10 +18,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 280 15% 15%;
 
-    /* Vibrant teal-purple gradient */
-    --primary: 280 65% 65%;
+    /* Warm coral-orange */
+    --primary: 15 85% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 280 75% 75%;
+    --primary-glow: 15 90% 70%;
 
     /* Soft lavender accent */
     --secondary: 270 60% 92%;
@@ -44,11 +44,12 @@ All colors MUST be HSL.
     --radius: 1rem;
 
     /* Custom Gen Z gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(280, 65%, 65%), hsl(180, 70%, 70%));
+    --gradient-primary: linear-gradient(135deg, hsl(15, 85%, 60%), hsl(25, 90%, 65%));
     --gradient-background: linear-gradient(180deg, hsl(30, 40%, 95%), hsl(20, 35%, 93%));
-    --gradient-hero: linear-gradient(135deg, hsl(280 65% 75% / 0.2), hsl(180 70% 75% / 0.2));
+    --gradient-hero: linear-gradient(135deg, hsl(15 85% 75% / 0.2), hsl(25 90% 75% / 0.2));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(30 30% 96%));
-    --shadow-glow: 0 8px 32px hsl(280, 65%, 65%, 0.2);
+    --gradient-onboarding: linear-gradient(135deg, hsl(28 85% 96%), hsl(20 80% 94%));
+    --shadow-glow: 0 8px 32px hsl(15, 85%, 60%, 0.2);
     
     /* Vibe Check Custom Colors */
     --mint: 180 70% 70%;
