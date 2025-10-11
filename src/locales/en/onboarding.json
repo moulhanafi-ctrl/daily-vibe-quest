@@ -1,0 +1,30 @@
+{
+  "welcome": {
+    "title": "Welcome to Vibe Check",
+    "subtitle": "A safe, supportive space to check in with yourself",
+    "getStarted": "Get Started"
+  },
+  "overview": {
+    "title": "Here's how it works",
+    "checkIn": {
+      "title": "Check In Daily",
+      "description": "Quick mood tracking takes 30 seconds. We'll learn your patterns."
+    },
+    "journal": {
+      "title": "Journal (Optional)",
+      "description": "Two lines is plenty. Future-you will thank you."
+    },
+    "arthur": {
+      "title": "Meet Arthur",
+      "description": "Gentle nudges and helpful insights, tailored just for you."
+    },
+    "community": {
+      "title": "Safe Community",
+      "description": "Connect with others in moderated, age-appropriate chat rooms."
+    }
+  },
+  "language": {
+    "title": "Choose Your Language",
+    "subtitle": "Select your preferred language. You can change this anytime in Settings."
+  }
+}

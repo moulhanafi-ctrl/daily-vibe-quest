@@ -114,6 +114,7 @@ export type Database = {
           event_metadata: Json | null
           event_type: string
           id: string
+          language: string | null
           page_url: string | null
           session_id: string | null
           user_id: string | null
@@ -123,6 +124,7 @@ export type Database = {
           event_metadata?: Json | null
           event_type: string
           id?: string
+          language?: string | null
           page_url?: string | null
           session_id?: string | null
           user_id?: string | null
@@ -132,6 +134,7 @@ export type Database = {
           event_metadata?: Json | null
           event_type?: string
           id?: string
+          language?: string | null
           page_url?: string | null
           session_id?: string | null
           user_id?: string | null
@@ -1153,6 +1156,7 @@ export type Database = {
           inclusion_acknowledged_version: string | null
           insurance: Json | null
           is_parent: boolean | null
+          language: string | null
           location: Json | null
           optional_reflection: string | null
           parent_id: string | null
@@ -1176,6 +1180,7 @@ export type Database = {
           inclusion_acknowledged_version?: string | null
           insurance?: Json | null
           is_parent?: boolean | null
+          language?: string | null
           location?: Json | null
           optional_reflection?: string | null
           parent_id?: string | null
@@ -1199,6 +1204,7 @@ export type Database = {
           inclusion_acknowledged_version?: string | null
           insurance?: Json | null
           is_parent?: boolean | null
+          language?: string | null
           location?: Json | null
           optional_reflection?: string | null
           parent_id?: string | null

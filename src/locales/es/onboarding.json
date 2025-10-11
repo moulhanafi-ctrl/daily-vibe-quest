@@ -1,0 +1,30 @@
+{
+  "welcome": {
+    "title": "Bienvenido a Vibe Check",
+    "subtitle": "Un espacio seguro y de apoyo para reflexionar contigo mismo",
+    "getStarted": "Comenzar"
+  },
+  "overview": {
+    "title": "Así es como funciona",
+    "checkIn": {
+      "title": "Registro Diario",
+      "description": "El seguimiento rápido del estado de ánimo toma 30 segundos. Aprenderemos tus patrones."
+    },
+    "journal": {
+      "title": "Diario (Opcional)",
+      "description": "Dos líneas son suficientes. Tu yo futuro te lo agradecerá."
+    },
+    "arthur": {
+      "title": "Conoce a Arturo",
+      "description": "Recordatorios suaves e ideas útiles, adaptadas solo para ti."
+    },
+    "community": {
+      "title": "Comunidad Segura",
+      "description": "Conéctate con otros en salas de chat moderadas y apropiadas para la edad."
+    }
+  },
+  "language": {
+    "title": "Elige Tu Idioma",
+    "subtitle": "Selecciona tu idioma preferido. Puedes cambiarlo en cualquier momento en Configuración."
+  }
+}

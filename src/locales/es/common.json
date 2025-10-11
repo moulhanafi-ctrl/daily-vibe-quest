@@ -1,0 +1,59 @@
+{
+  "app": {
+    "name": "Vibe Check"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "journal": "Diario",
+    "library": "Biblioteca",
+    "store": "Tienda",
+    "chatRooms": "Salas de Chat",
+    "localHelp": "Ayuda Local",
+    "signOut": "Cerrar Sesión",
+    "settings": "Configuración"
+  },
+  "actions": {
+    "continue": "Continuar",
+    "back": "Volver",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "submit": "Enviar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "loading": "Cargando...",
+    "seeMore": "Ver Más",
+    "manage": "Gestionar"
+  },
+  "inclusion": {
+    "banner": "Todas las personas son bienvenidas. Vibe Check acoge todas las identidades y experiencias — incluyendo la comunidad LGBTQ+.",
+    "shortBanner": "Todas las personas son bienvenidas."
+  },
+  "crisis": {
+    "banner": "¿Emergencia? Si estás en peligro inmediato, llama al 911 o a servicios de emergencia locales. Vibe Check no es terapia y no puede proporcionar atención de emergencia.",
+    "title": "Recursos de Crisis",
+    "subtitle": "No tienes que enfrentarlo solo. La ayuda está disponible 24/7.",
+    "findLocal": "Encuentra Recursos de Crisis Locales"
+  },
+  "auth": {
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu Contraseña?",
+    "noAccount": "¿No tienes una cuenta?",
+    "haveAccount": "¿Ya tienes una cuenta?"
+  },
+  "settings": {
+    "language": "Idioma",
+    "changeLanguage": "Cambiar Idioma",
+    "selectLanguage": "Selecciona tu idioma preferido"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "ar": "العربية"
+  }
+}

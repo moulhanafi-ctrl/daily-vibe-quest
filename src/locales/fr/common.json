@@ -1,0 +1,59 @@
+{
+  "app": {
+    "name": "Vibe Check"
+  },
+  "nav": {
+    "dashboard": "Tableau de Bord",
+    "journal": "Journal",
+    "library": "Bibliothèque",
+    "store": "Boutique",
+    "chatRooms": "Salles de Discussion",
+    "localHelp": "Aide Locale",
+    "signOut": "Se Déconnecter",
+    "settings": "Paramètres"
+  },
+  "actions": {
+    "continue": "Continuer",
+    "back": "Retour",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "submit": "Soumettre",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "loading": "Chargement...",
+    "seeMore": "Voir Plus",
+    "manage": "Gérer"
+  },
+  "inclusion": {
+    "banner": "Tout le monde est bienvenu. Vibe Check accueille toutes les identités et expériences — y compris la communauté LGBTQ+.",
+    "shortBanner": "Tout le monde est bienvenu."
+  },
+  "crisis": {
+    "banner": "Urgence ? Si vous êtes en danger immédiat, appelez le 911 ou les services d'urgence locaux. Vibe Check n'est pas une thérapie et ne peut pas fournir de soins d'urgence.",
+    "title": "Ressources de Crise",
+    "subtitle": "Vous n'êtes pas seul. L'aide est disponible 24h/24 et 7j/7.",
+    "findLocal": "Trouver des Ressources de Crise Locales"
+  },
+  "auth": {
+    "signIn": "Se Connecter",
+    "signUp": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de Passe",
+    "forgotPassword": "Mot de Passe Oublié ?",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "haveAccount": "Vous avez déjà un compte ?"
+  },
+  "settings": {
+    "language": "Langue",
+    "changeLanguage": "Changer de Langue",
+    "selectLanguage": "Sélectionnez votre langue préférée"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "ar": "العربية"
+  }
+}

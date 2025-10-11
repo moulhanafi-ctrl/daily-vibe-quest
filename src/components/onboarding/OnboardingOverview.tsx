@@ -3,12 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { InclusionBanner } from "@/components/InclusionBanner";
 import { Heart, BookOpen, Users, TrendingUp } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { useTranslation } from "react-i18next";
 
 interface OnboardingOverviewProps {
   onStart: () => void;
 }
 
 export const OnboardingOverview = ({ onStart }: OnboardingOverviewProps) => {
+  const { t } = useTranslation('onboarding');
+  
   const handleStart = () => {
     trackEvent({ eventType: "onboarding_viewed", metadata: { step: "overview" } });
     onStart();
@@ -17,23 +20,23 @@ export const OnboardingOverview = ({ onStart }: OnboardingOverviewProps) => {
   const steps = [
     {
       icon: Heart,
-      title: "Check In",
-      description: "Log your vibe daily. Quick, private, just for you.",
+      title: t('overview.checkIn.title'),
+      description: t('overview.checkIn.description'),
     },
     {
       icon: BookOpen,
-      title: "Reflect",
-      description: "Write or voice journal. Two lines is plenty. Future-you will thank you.",
+      title: t('overview.journal.title'),
+      description: t('overview.journal.description'),
     },
     {
       icon: Users,
-      title: "Connect",
-      description: "Join safe, moderated rooms with peers who get it.",
+      title: t('overview.community.title'),
+      description: t('overview.community.description'),
     },
     {
       icon: TrendingUp,
-      title: "Grow",
-      description: "See progress, get daily nudges from Arthur, stay consistent.",
+      title: t('overview.arthur.title'),
+      description: t('overview.arthur.description'),
     },
   ];
 
@@ -46,10 +49,10 @@ export const OnboardingOverview = ({ onStart }: OnboardingOverviewProps) => {
           <CardContent className="pt-8 pb-6 space-y-8">
             <div className="text-center space-y-3">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Welcome to Vibe Check 👋
+                {t('overview.title')}
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Your mental health journey starts here. Four simple steps to build your daily practice.
+                {t('welcome.subtitle')}
               </p>
             </div>
 

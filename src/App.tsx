@@ -30,17 +30,26 @@ import ArthurAdmin from "./pages/admin/ArthurAdmin";
 import Analytics from "./pages/admin/Analytics";
 import HelpAdmin from "./pages/admin/HelpAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
+import LanguagePicker from "./pages/welcome/LanguagePicker";
+import { useRTL } from "./hooks/useRTL";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  useRTL(); // Initialize RTL support
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <AppContent />
       <Toaster />
       <Sonner />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/welcome/language" element={<LanguagePicker />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Dashboard />} />

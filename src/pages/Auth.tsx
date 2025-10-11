@@ -20,15 +20,30 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkAuthAndLanguage = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (session) {
-        navigate("/dashboard");
+        // Check if user has language preference
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('language')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!profile?.language) {
+          navigate('/welcome/language');
+        } else {
+          navigate('/dashboard');
+        }
       }
-    });
+    };
+
+    checkAuthAndLanguage();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        navigate("/dashboard");
+        checkAuthAndLanguage();
       }
     });
 

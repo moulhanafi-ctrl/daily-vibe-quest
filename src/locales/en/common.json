@@ -1,0 +1,59 @@
+{
+  "app": {
+    "name": "Vibe Check"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "journal": "Journal",
+    "library": "Library",
+    "store": "Store",
+    "chatRooms": "Chat Rooms",
+    "localHelp": "Local Help",
+    "signOut": "Sign Out",
+    "settings": "Settings"
+  },
+  "actions": {
+    "continue": "Continue",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "submit": "Submit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "seeMore": "See More",
+    "manage": "Manage"
+  },
+  "inclusion": {
+    "banner": "Everyone belongs here. Vibe Check welcomes people of all backgrounds, identities, and experiences — including the LGBTQ+ community.",
+    "shortBanner": "Everyone belongs here."
+  },
+  "crisis": {
+    "banner": "Emergency? If you're in immediate danger, call 911 or your local emergency services. Vibe Check isn't therapy and can't provide emergency care.",
+    "title": "Crisis Resources",
+    "subtitle": "You don't have to face this alone. Help is available 24/7.",
+    "findLocal": "Find Local Crisis Resources"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?"
+  },
+  "settings": {
+    "language": "Language",
+    "changeLanguage": "Change Language",
+    "selectLanguage": "Select your preferred language"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "ar": "العربية"
+  }
+}

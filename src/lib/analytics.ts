@@ -23,18 +23,21 @@ export type EventType =
   | "help_call_clicked"
   | "help_website_clicked"
   | "help_directions_clicked"
-  | "help_report_submitted";
+  | "help_report_submitted"
+  | "i18n_missing_key";
 
 interface TrackEventParams {
   eventType: EventType;
   metadata?: Record<string, any>;
   userId?: string;
+  language?: string;
 }
 
 export const trackEvent = async ({
   eventType,
   metadata = {},
   userId,
+  language,
 }: TrackEventParams) => {
   try {
     // Get current user if not provided
@@ -44,10 +47,17 @@ export const trackEvent = async ({
       currentUserId = user?.id;
     }
 
+    // Get language from localStorage if not provided
+    let currentLanguage = language;
+    if (!currentLanguage) {
+      currentLanguage = localStorage.getItem('i18nextLng') || 'en';
+    }
+
     // Log to console in development
     if (import.meta.env.DEV) {
       console.log(`[Analytics Event] ${eventType}`, {
         userId: currentUserId,
+        language: currentLanguage,
         metadata,
         timestamp: new Date().toISOString(),
       });
@@ -59,6 +69,7 @@ export const trackEvent = async ({
       event_type: eventType,
       event_metadata: metadata,
       page_url: window.location.pathname,
+      language: currentLanguage,
     });
 
     if (error) {
