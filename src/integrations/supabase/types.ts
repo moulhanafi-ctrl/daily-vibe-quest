@@ -190,28 +190,46 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           age_group: Database["public"]["Enums"]["age_group"]
           avatar_url: string | null
           created_at: string | null
+          first_name: string | null
           id: string
+          optional_reflection: string | null
+          selected_focus_areas: string[] | null
+          sex: string | null
           updated_at: string | null
           username: string | null
+          zipcode: string | null
         }
         Insert: {
+          age?: number | null
           age_group?: Database["public"]["Enums"]["age_group"]
           avatar_url?: string | null
           created_at?: string | null
+          first_name?: string | null
           id: string
+          optional_reflection?: string | null
+          selected_focus_areas?: string[] | null
+          sex?: string | null
           updated_at?: string | null
           username?: string | null
+          zipcode?: string | null
         }
         Update: {
+          age?: number | null
           age_group?: Database["public"]["Enums"]["age_group"]
           avatar_url?: string | null
           created_at?: string | null
+          first_name?: string | null
           id?: string
+          optional_reflection?: string | null
+          selected_focus_areas?: string[] | null
+          sex?: string | null
           updated_at?: string | null
           username?: string | null
+          zipcode?: string | null
         }
         Relationships: []
       }
@@ -252,13 +270,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_age_group: {
+        Args: { user_age: number }
+        Returns: Database["public"]["Enums"]["age_group"]
+      }
       generate_invite_code: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
     }
     Enums: {
-      age_group: "child" | "teen" | "adult"
+      age_group: "child" | "teen" | "adult" | "elder"
       content_type: "audio" | "text" | "video"
       mood_type:
         | "happy"
@@ -395,7 +417,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      age_group: ["child", "teen", "adult"],
+      age_group: ["child", "teen", "adult", "elder"],
       content_type: ["audio", "text", "video"],
       mood_type: [
         "happy",

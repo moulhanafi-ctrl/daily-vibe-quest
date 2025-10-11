@@ -50,7 +50,7 @@ const Auth = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/onboarding`,
             data: {
               username,
               age_group: ageGroup,
@@ -58,7 +58,8 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast({ title: "Account created! Welcome to MindfulU." });
+        toast({ title: "Account created! Let's personalize your experience." });
+        navigate("/onboarding");
       }
     } catch (error: any) {
       toast({
