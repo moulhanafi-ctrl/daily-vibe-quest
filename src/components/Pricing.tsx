@@ -1,5 +1,9 @@
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { STRIPE_PLANS } from "@/lib/stripe";
+import { useState } from "react";
 
 const plans = [
   {
@@ -36,6 +40,43 @@ const plans = [
 ];
 
 export const Pricing = () => {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handleCheckout = async (planType: "individual" | "family") => {
+    setLoading(planType);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to subscribe",
+          variant: "destructive",
+        });
+        window.location.href = "/auth";
+        return;
+      }
+
+      const priceId = STRIPE_PLANS[planType].price_id;
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { priceId },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start checkout",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(null);
+    }
+  };
+
   return (
     <section className="py-24 px-4 md:px-6">
       <div className="container mx-auto">
@@ -77,8 +118,10 @@ export const Pricing = () => {
                 variant={plan.highlighted ? "hero" : "outline"}
                 size="lg"
                 className="w-full mb-8"
+                onClick={() => handleCheckout(index === 0 ? "individual" : "family")}
+                disabled={loading !== null}
               >
-                Get Started
+                {loading === (index === 0 ? "individual" : "family") ? "Loading..." : "Get Started"}
               </Button>
 
               <div className="space-y-4">

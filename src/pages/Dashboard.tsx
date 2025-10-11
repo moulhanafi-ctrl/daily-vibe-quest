@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { MoodCheckIn } from "@/components/dashboard/MoodCheckIn";
@@ -8,22 +8,35 @@ import { FamilyDashboard } from "@/components/dashboard/FamilyDashboard";
 import { AISuggestions } from "@/components/dashboard/AISuggestions";
 import { MotivationalContent } from "@/components/dashboard/MotivationalContent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare } from "lucide-react";
+import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [checkingSubscription, setCheckingSubscription] = useState(false);
 
   useEffect(() => {
+    // Check for checkout success
+    if (searchParams.get("checkout") === "success") {
+      toast({
+        title: "Subscription activated! 🎉",
+        description: "Welcome to your 7-day free trial. Enjoy all premium features!",
+      });
+      // Clear the query param
+      navigate("/dashboard", { replace: true });
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/auth");
       } else {
         setUser(session.user);
         loadProfile(session.user.id);
+        checkSubscription();
       }
     });
 
@@ -33,11 +46,23 @@ const Dashboard = () => {
       } else {
         setUser(session.user);
         loadProfile(session.user.id);
+        checkSubscription();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, searchParams]);
+
+  const checkSubscription = async () => {
+    setCheckingSubscription(true);
+    try {
+      await supabase.functions.invoke("check-subscription");
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+    } finally {
+      setCheckingSubscription(false);
+    }
+  };
 
   const loadProfile = async (userId: string) => {
     try {
@@ -62,6 +87,22 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to open subscription portal",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -81,6 +122,17 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex gap-2">
+            {profile?.subscription_status && profile.subscription_status !== "free" && (
+              <>
+                <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full flex items-center gap-1">
+                  {profile.subscription_status === "trialing" ? "Free Trial" : "Subscribed"}
+                </span>
+                <Button onClick={handleManageSubscription} variant="outline" size="sm">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Manage
+                </Button>
+              </>
+            )}
             <Button onClick={() => navigate("/chat-rooms")} variant="outline" size="sm">
               <MessageSquare className="mr-2 h-4 w-4" />
               Chat Rooms

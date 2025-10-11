@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Users, ArrowLeft } from "lucide-react";
+import { MessageSquare, Users, ArrowLeft, Crown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { STRIPE_PLANS } from "@/lib/stripe";
 
 interface ChatRoom {
   id: string;
@@ -25,6 +26,7 @@ const ChatRooms = () => {
   const [userFocusAreas, setUserFocusAreas] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -76,6 +78,30 @@ const ChatRooms = () => {
     loadData();
   }, [navigate]);
 
+  const handleUpgrade = async (planType: "individual" | "family") => {
+    setCheckoutLoading(true);
+    try {
+      const priceId = STRIPE_PLANS[planType].price_id;
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { priceId },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start checkout",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -105,33 +131,71 @@ const ChatRooms = () => {
           </div>
 
           {!hasActiveSubscription ? (
-            <Card className="border-2 border-primary/20">
-              <CardHeader>
-                <CardTitle className="text-2xl">Premium Feature</CardTitle>
-                <CardDescription>
-                  Access to community chat rooms is available with a premium subscription
+            <Card className="max-w-3xl mx-auto">
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <Crown className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-3xl">Upgrade to Access Chat Rooms</CardTitle>
+                <CardDescription className="text-base">
+                  Connect with others in our supportive community. Start your 7-day free trial today.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Join our supportive community and connect with others who share your focus areas. 
-                    Get instant access to:
-                  </p>
-                  <ul className="list-disc list-inside space-y-1 text-sm">
-                    <li>24/7 peer support chat rooms</li>
-                    <li>Age-appropriate safe spaces</li>
-                    <li>Moderated discussions</li>
-                    <li>Connect with people who understand</li>
-                  </ul>
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card className="border-2">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Individual Plan</CardTitle>
+                      <div className="text-3xl font-bold">$5.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
+                      <CardDescription className="text-xs">Perfect for personal wellness</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button 
+                        className="w-full" 
+                        onClick={() => handleUpgrade("individual")}
+                        disabled={checkoutLoading}
+                      >
+                        {checkoutLoading ? "Loading..." : "Start Free Trial"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border-2 border-primary">
+                    <CardHeader>
+                      <div className="inline-block px-3 py-1 bg-primary text-primary-foreground rounded-full text-xs font-medium mb-2">
+                        Most Popular
+                      </div>
+                      <CardTitle className="text-lg">Family Plan</CardTitle>
+                      <div className="text-3xl font-bold">$9.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
+                      <CardDescription className="text-xs">For families supporting each other</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button 
+                        variant="hero"
+                        className="w-full" 
+                        onClick={() => handleUpgrade("family")}
+                        disabled={checkoutLoading}
+                      >
+                        {checkoutLoading ? "Loading..." : "Start Free Trial"}
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
-                <Button 
-                  className="w-full" 
-                  size="lg"
-                  onClick={() => navigate("/")}
-                >
-                  View Pricing Plans
-                </Button>
+                
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    ✓ 7-day free trial &nbsp;•&nbsp; ✓ No credit card required &nbsp;•&nbsp; ✓ Cancel anytime
+                  </p>
+                  <div className="pt-4">
+                    <p className="text-sm font-medium mb-2">What you'll get:</p>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• 24/7 peer support chat rooms</li>
+                      <li>• Age-appropriate safe spaces</li>
+                      <li>• AI-powered wellness suggestions</li>
+                      <li>• Community with people who understand</li>
+                    </ul>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ) : rooms.length === 0 ? (
