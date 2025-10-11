@@ -137,6 +137,9 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
+  .bg-onboarding {
+    background: var(--gradient-onboarding);
+  }
   .gradient-hero {
     background: var(--gradient-hero);
   }

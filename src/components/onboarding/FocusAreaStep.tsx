@@ -41,7 +41,7 @@ export const FocusAreaStep = ({ onNext, onBack }: FocusAreaStepProps) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-onboarding p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle>Select Your Focus Areas</CardTitle>

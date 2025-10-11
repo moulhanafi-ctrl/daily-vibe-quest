@@ -7,7 +7,7 @@ interface WelcomeScreenProps {
 
 export const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-onboarding p-4">
       <Card className="w-full max-w-2xl">
         <CardContent className="pt-8 pb-6 space-y-6">
           <div className="text-center space-y-4">
