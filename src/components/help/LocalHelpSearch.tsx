@@ -17,8 +17,15 @@ interface HelpLocation {
   phone?: string;
   website_url?: string;
   address: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
   lat?: number;
   lon?: number;
+  latitude?: number;
+  longitude?: number;
   open_now?: boolean;
   open_hours?: any;
   ratings?: {
@@ -217,8 +224,10 @@ export const LocalHelpSearch = () => {
       // Calculate distances and scores
       const locationsWithDistance: HelpLocation[] = locations
         .map(loc => {
-          if (!loc.lat || !loc.lon) return null;
-          const distance = calculateDistance(location.lat, location.lon, loc.lat, loc.lon);
+          const locLat = loc.lat || loc.latitude;
+          const locLon = loc.lon || loc.longitude;
+          if (!locLat || !locLon) return null;
+          const distance = calculateDistance(location.lat, location.lon, locLat, locLon);
           if (distance > radius) return null;
           
           const ratings = typeof loc.ratings === 'object' && loc.ratings !== null && !Array.isArray(loc.ratings)
@@ -228,15 +237,27 @@ export const LocalHelpSearch = () => {
           // Derive verified from last_verified_at
           const verified = !!loc.last_verified_at;
           
+          // Build address from components
+          const address = [loc.address_line1, loc.city, loc.state, loc.postal_code]
+            .filter(Boolean)
+            .join(", ");
+          
           const helpLocation: HelpLocation = {
             id: loc.id,
             name: loc.name,
             type: loc.type,
             phone: loc.phone,
             website_url: loc.website_url,
-            address: loc.address,
-            lat: loc.lat,
-            lon: loc.lon,
+            address,
+            address_line1: loc.address_line1,
+            address_line2: loc.address_line2,
+            city: loc.city,
+            state: loc.state,
+            postal_code: loc.postal_code,
+            lat: locLat,
+            lon: locLon,
+            latitude: locLat,
+            longitude: locLon,
             open_now: loc.open_now,
             tags: loc.tags,
             last_verified_at: loc.last_verified_at,
@@ -248,8 +269,11 @@ export const LocalHelpSearch = () => {
             insurers: loc.insurers,
             ratings,
             distance,
-            score: calculateScore({ ...loc, ratings, verified } as HelpLocation, distance, radius)
+            score: 0 // Calculate below
           };
+          
+          // Calculate score after object is complete
+          helpLocation.score = calculateScore(helpLocation, distance, radius);
           
           return helpLocation;
         })

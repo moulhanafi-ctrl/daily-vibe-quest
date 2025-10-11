@@ -170,9 +170,9 @@ const Dashboard = () => {
               <ShoppingBag className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Store</span>
             </Button>
-            <Button onClick={() => navigate("/help/nearby")} variant="outline" size="sm" aria-label="Local help resources">
+            <Button onClick={() => navigate("/help")} variant="outline" size="sm" aria-label="Help & Resources">
               <MapPin className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Local Help</span>
+              <span className="hidden sm:inline">Help</span>
             </Button>
             <Button onClick={() => navigate("/chat-rooms")} variant="outline" size="sm" aria-label="Go to chat rooms">
               <MessageSquare className="h-4 w-4 sm:mr-2" />

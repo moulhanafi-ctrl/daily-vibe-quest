@@ -774,6 +774,66 @@ export type Database = {
         }
         Relationships: []
       }
+      geocode_cache: {
+        Row: {
+          address_hash: string
+          address_input: string
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+        }
+        Insert: {
+          address_hash: string
+          address_input: string
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+        }
+        Update: {
+          address_hash?: string
+          address_input?: string
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+        }
+        Relationships: []
+      }
+      geocode_jobs: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          input_address: string
+          result_lat: number | null
+          result_lon: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          input_address: string
+          result_lat?: number | null
+          result_lon?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          input_address?: string
+          result_lat?: number | null
+          result_lon?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       guardian_links: {
         Row: {
           attempts: number
@@ -822,22 +882,29 @@ export type Database = {
       help_locations: {
         Row: {
           accepts_insurance: boolean | null
-          address: string
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
           created_at: string | null
           id: string
           insurers: string[] | null
+          is_active: boolean | null
           is_national: boolean | null
           last_verified_at: string | null
           lat: number | null
+          latitude: number | null
           lon: number | null
+          longitude: number | null
           name: string
           open_hours: Json | null
           open_now: boolean | null
           phone: string | null
+          postal_code: string | null
           priority: number | null
           ratings: Json | null
           sliding_scale: boolean | null
           source: string | null
+          state: string | null
           tags: string[] | null
           telehealth: boolean | null
           type: Database["public"]["Enums"]["help_location_type"]
@@ -847,22 +914,29 @@ export type Database = {
         }
         Insert: {
           accepts_insurance?: boolean | null
-          address: string
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
           created_at?: string | null
           id?: string
           insurers?: string[] | null
+          is_active?: boolean | null
           is_national?: boolean | null
           last_verified_at?: string | null
           lat?: number | null
+          latitude?: number | null
           lon?: number | null
+          longitude?: number | null
           name: string
           open_hours?: Json | null
           open_now?: boolean | null
           phone?: string | null
+          postal_code?: string | null
           priority?: number | null
           ratings?: Json | null
           sliding_scale?: boolean | null
           source?: string | null
+          state?: string | null
           tags?: string[] | null
           telehealth?: boolean | null
           type: Database["public"]["Enums"]["help_location_type"]
@@ -872,22 +946,29 @@ export type Database = {
         }
         Update: {
           accepts_insurance?: boolean | null
-          address?: string
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
           created_at?: string | null
           id?: string
           insurers?: string[] | null
+          is_active?: boolean | null
           is_national?: boolean | null
           last_verified_at?: string | null
           lat?: number | null
+          latitude?: number | null
           lon?: number | null
+          longitude?: number | null
           name?: string
           open_hours?: Json | null
           open_now?: boolean | null
           phone?: string | null
+          postal_code?: string | null
           priority?: number | null
           ratings?: Json | null
           sliding_scale?: boolean | null
           source?: string | null
+          state?: string | null
           tags?: string[] | null
           telehealth?: boolean | null
           type?: Database["public"]["Enums"]["help_location_type"]
