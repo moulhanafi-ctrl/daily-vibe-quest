@@ -1618,6 +1618,48 @@ export type Database = {
           },
         ]
       }
+      trivia_generation_log: {
+        Row: {
+          age_group: Database["public"]["Enums"]["age_group"]
+          candidates: Json | null
+          created_at: string | null
+          dropped_reasons: Json | null
+          error: string | null
+          id: string
+          kept_ids: string[] | null
+          locale: string
+          status: string
+          updated_at: string | null
+          week: string
+        }
+        Insert: {
+          age_group: Database["public"]["Enums"]["age_group"]
+          candidates?: Json | null
+          created_at?: string | null
+          dropped_reasons?: Json | null
+          error?: string | null
+          id?: string
+          kept_ids?: string[] | null
+          locale: string
+          status?: string
+          updated_at?: string | null
+          week: string
+        }
+        Update: {
+          age_group?: Database["public"]["Enums"]["age_group"]
+          candidates?: Json | null
+          created_at?: string | null
+          dropped_reasons?: Json | null
+          error?: string | null
+          id?: string
+          kept_ids?: string[] | null
+          locale?: string
+          status?: string
+          updated_at?: string | null
+          week?: string
+        }
+        Relationships: []
+      }
       trivia_preferences: {
         Row: {
           created_at: string | null
@@ -1752,6 +1794,8 @@ export type Database = {
           created_at: string | null
           date: string
           id: string
+          locale: string
+          published: boolean | null
           question_ids: string[]
         }
         Insert: {
@@ -1759,6 +1803,8 @@ export type Database = {
           created_at?: string | null
           date: string
           id?: string
+          locale?: string
+          published?: boolean | null
           question_ids: string[]
         }
         Update: {
@@ -1766,6 +1812,8 @@ export type Database = {
           created_at?: string | null
           date?: string
           id?: string
+          locale?: string
+          published?: boolean | null
           question_ids?: string[]
         }
         Relationships: []

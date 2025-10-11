@@ -56,3 +56,9 @@ verify_jwt = false
 
 [functions.trivia-notify-sunday]
 verify_jwt = false
+
+[functions.trivia-generate-weekly-rounds]
+verify_jwt = false
+
+[functions.trivia-publish-rounds]
+verify_jwt = false
