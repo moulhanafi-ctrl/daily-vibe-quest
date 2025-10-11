@@ -48,6 +48,8 @@ export default function TriviaAdmin() {
   const [showQuestionDialog, setShowQuestionDialog] = useState(false);
   const [showRoundDialog, setShowRoundDialog] = useState(false);
   const [stats, setStats] = useState<any>(null);
+  const [generationLogs, setGenerationLogs] = useState<any[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -79,6 +81,7 @@ export default function TriviaAdmin() {
       loadQuestions();
       loadRounds();
       loadStats();
+      loadGenerationLogs();
     }
   }, [hasAccess]);
 
@@ -172,6 +175,75 @@ export default function TriviaAdmin() {
       }
     } catch (error) {
       console.error("Failed to load stats:", error);
+    }
+  };
+
+  const loadGenerationLogs = async () => {
+    try {
+      const { data } = await supabase
+        .from('trivia_generation_log')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (data) setGenerationLogs(data);
+    } catch (error) {
+      console.error('Failed to load generation logs:', error);
+    }
+  };
+
+  const handleGenerateRounds = async () => {
+    if (!confirm('Generate trivia rounds for this week? This will create ~288 questions across all ages and languages.')) return;
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('trivia-generate-weekly-rounds');
+
+      if (error) throw error;
+
+      toast({ 
+        title: 'Generation started',
+        description: 'Check generation logs below for progress.' 
+      });
+
+      // Reload after a delay
+      setTimeout(() => {
+        loadGenerationLogs();
+        loadRounds();
+        loadQuestions();
+        setIsGenerating(false);
+      }, 5000);
+    } catch (error: any) {
+      toast({
+        title: 'Generation failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setIsGenerating(false);
+    }
+  };
+
+  const handlePublishRounds = async () => {
+    if (!confirm('Publish all pending rounds for this Saturday?')) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('trivia-publish-rounds');
+
+      if (error) throw error;
+
+      toast({ 
+        title: 'Rounds published',
+        description: `Published ${data?.published || 0} rounds.` 
+      });
+
+      loadRounds();
+      loadGenerationLogs();
+    } catch (error: any) {
+      toast({
+        title: 'Publishing failed',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -390,7 +462,104 @@ export default function TriviaAdmin() {
           <TabsList>
             <TabsTrigger value="questions">Questions ({questions.length})</TabsTrigger>
             <TabsTrigger value="rounds">Rounds ({rounds.length})</TabsTrigger>
+            <TabsTrigger value="autogen">Auto-Gen</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="autogen">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Auto-Generation</CardTitle>
+                    <CardDescription>AI-powered weekly trivia generation</CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleGenerateRounds}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+                      Generate This Week
+                    </Button>
+                    <Button 
+                      onClick={handlePublishRounds}
+                      variant="outline"
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Publish Pending
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <h3 className="font-semibold">How It Works</h3>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• <strong>Friday 6pm:</strong> Auto-generates 5-7 questions per age/locale (EN/ES/FR/AR)</li>
+                    <li>• <strong>Saturday 9:55am:</strong> Auto-publishes approved rounds</li>
+                    <li>• <strong>Saturday 10am:</strong> Sends notifications to users</li>
+                  </ul>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Using <strong>Lovable AI (google/gemini-2.5-flash)</strong> - FREE during promo period
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-4">Generation Logs (Last 20)</h3>
+                  {generationLogs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No generation logs yet. Click "Generate This Week" to start.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Week</TableHead>
+                          <TableHead>Age Group</TableHead>
+                          <TableHead>Locale</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Questions</TableHead>
+                          <TableHead>Dropped</TableHead>
+                          <TableHead>Created</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {generationLogs.map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell>{log.week}</TableCell>
+                            <TableCell className="capitalize">{log.age_group}</TableCell>
+                            <TableCell className="uppercase">{log.locale}</TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant={
+                                  log.status === 'success' ? 'default' : 
+                                  log.status === 'failed' ? 'destructive' : 
+                                  'secondary'
+                                }
+                              >
+                                {log.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{log.kept_ids?.length || 0}</TableCell>
+                            <TableCell>{log.dropped_reasons?.length || 0}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {new Date(log.created_at).toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+
+                <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-sm mb-2">⚠️ Setup Required</h4>
+                  <p className="text-sm">
+                    To enable automated weekly generation, set up pg_cron jobs in Supabase. 
+                    See <code className="bg-black/10 px-1 rounded">src/docs/TRIVIA_AUTO_GEN_SETUP.md</code> for instructions.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="questions">
             <Card>
