@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { Resend } from 'npm:resend@2.0.0';
+import { Resend } from 'https://esm.sh/resend@2.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
         }
 
         // Check quiet hours
-        const quietHours = user.parent_notification_preferences;
+        const quietHours = user.parent_notification_preferences?.[0];
         if (quietHours) {
           const currentHour = now.getHours();
           const quietStart = parseInt(quietHours.quiet_hours_start?.split(':')[0] || '21');

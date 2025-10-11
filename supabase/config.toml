@@ -47,3 +47,12 @@ verify_jwt = true
 
 [functions.data-delete-cancel]
 verify_jwt = true
+
+[functions.trivia-submit]
+verify_jwt = true
+
+[functions.trivia-notify-saturday]
+verify_jwt = false
+
+[functions.trivia-notify-sunday]
+verify_jwt = false
