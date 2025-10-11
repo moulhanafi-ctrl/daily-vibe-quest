@@ -5,6 +5,8 @@ import { QAChecklist } from "@/components/admin/QAChecklist";
 import { MonitoringDashboard } from "@/components/admin/MonitoringDashboard";
 import { LiveModeStatus } from "@/components/admin/LiveModeStatus";
 import { FeatureFlagKillSwitches } from "@/components/admin/FeatureFlagKillSwitches";
+import { StripeLiveSetupGuide } from "@/components/admin/StripeLiveSetupGuide";
+import { StripeModeToggle } from "@/components/admin/StripeModeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const PublishReadiness = () => {
@@ -42,7 +44,9 @@ const PublishReadiness = () => {
           </TabsContent>
 
           <TabsContent value="live" className="space-y-6">
+            <StripeLiveSetupGuide />
             <LiveModeStatus />
+            <StripeModeToggle />
             
             <div className="prose dark:prose-invert max-w-none">
               <h2>Go-Live Checklist</h2>
