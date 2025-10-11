@@ -117,6 +117,23 @@ All colors MUST be HSL.
     letter-spacing: -0.02em;
   }
   
+  /* Accessibility: Enhanced focus states */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+  
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2;
+  }
+  
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2;
+  }
+  
   /* Gen Z emoji animations */
   .emoji-float {
     animation: emoji-float 3s ease-in-out infinite;

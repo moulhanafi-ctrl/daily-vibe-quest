@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Users, ArrowLeft, Crown } from "lucide-react";
+import { MessageSquare, Users, ArrowLeft, Crown, MessageSquareOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { STRIPE_PLANS } from "@/lib/stripe";
+import { ChatRoomSkeleton } from "@/components/ChatRoomSkeleton";
 
 interface ChatRoom {
   id: string;
@@ -104,8 +105,27 @@ const ChatRooms = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading chat rooms...</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background p-4">
+        <div className="container max-w-4xl mx-auto py-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/dashboard")}
+            className="mb-6"
+            aria-label="Back to dashboard"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Support Chat Rooms</h1>
+              <p className="text-muted-foreground">
+                Connect with others who share your focus areas
+              </p>
+            </div>
+            <ChatRoomSkeleton />
+          </div>
+        </div>
       </div>
     );
   }
@@ -200,10 +220,18 @@ const ChatRooms = () => {
             </Card>
           ) : rooms.length === 0 ? (
             <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">
-                  No chat rooms available for your focus areas yet.
-                </p>
+              <CardContent className="pt-6 pb-8">
+                <div className="flex flex-col items-center justify-center text-center py-8">
+                  <MessageSquareOff className="w-16 h-16 text-muted-foreground mb-4 opacity-50" />
+                  <h3 className="text-xl font-semibold mb-2">No Chat Rooms Yet</h3>
+                  <p className="text-muted-foreground max-w-md mb-4">
+                    There are no chat rooms available for your selected focus areas at the moment. 
+                    We're constantly adding new rooms!
+                  </p>
+                  <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                    Return to Dashboard
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -211,23 +239,32 @@ const ChatRooms = () => {
               {rooms.map((room) => (
                 <Card
                   key={room.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  className="cursor-pointer hover:shadow-lg transition-smooth focus-within:ring-2 focus-within:ring-primary"
                   onClick={() => navigate(`/chat/${room.id}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate(`/chat/${room.id}`);
+                    }
+                  }}
+                  aria-label={`Join ${room.name} chat room`}
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <MessageSquare className="w-8 h-8 text-primary" />
+                        <MessageSquare className="w-8 h-8 text-primary flex-shrink-0" aria-hidden="true" />
                         <div>
-                          <CardTitle>{room.name}</CardTitle>
-                          <CardDescription>{room.description}</CardDescription>
+                          <CardTitle className="text-base sm:text-lg">{room.name}</CardTitle>
+                          <CardDescription className="text-sm">{room.description}</CardDescription>
                         </div>
                       </div>
-                      <Users className="w-5 h-5 text-muted-foreground" />
+                      <Users className="w-5 h-5 text-muted-foreground flex-shrink-0" aria-hidden="true" />
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Button className="w-full">Join Chat</Button>
+                    <Button className="w-full" aria-label={`Join ${room.name}`}>Join Chat</Button>
                   </CardContent>
                 </Card>
               ))}

@@ -114,32 +114,38 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold gradient-primary">MindfulU</h1>
-            <p className="text-sm text-muted-foreground">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center gap-4">
+          <div className="flex-1 min-w-0">
+            <button 
+              onClick={() => navigate("/dashboard")} 
+              className="text-2xl font-bold gradient-primary hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary rounded"
+              aria-label="Go to dashboard home"
+            >
+              MindfulU
+            </button>
+            <p className="text-sm text-muted-foreground truncate">
               Welcome back, {profile?.username}! ({profile?.age_group})
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             {profile?.subscription_status && profile.subscription_status !== "free" && (
               <>
-                <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full flex items-center gap-1">
+                <span className="hidden sm:flex text-xs bg-primary/10 text-primary px-3 py-1 rounded-full items-center gap-1">
                   {profile.subscription_status === "trialing" ? "Free Trial" : "Subscribed"}
                 </span>
-                <Button onClick={handleManageSubscription} variant="outline" size="sm">
+                <Button onClick={handleManageSubscription} variant="outline" size="sm" className="hidden md:flex" aria-label="Manage subscription">
                   <Settings className="mr-2 h-4 w-4" />
                   Manage
                 </Button>
               </>
             )}
-            <Button onClick={() => navigate("/chat-rooms")} variant="outline" size="sm">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Chat Rooms
+            <Button onClick={() => navigate("/chat-rooms")} variant="outline" size="sm" aria-label="Go to chat rooms">
+              <MessageSquare className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Chat Rooms</span>
             </Button>
-            <Button onClick={handleSignOut} variant="ghost" size="sm">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
+            <Button onClick={handleSignOut} variant="ghost" size="sm" aria-label="Sign out">
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
@@ -148,25 +154,25 @@ const Dashboard = () => {
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="checkin" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 lg:w-auto">
-            <TabsTrigger value="checkin" className="gap-2">
+            <TabsTrigger value="checkin" className="gap-1 sm:gap-2" aria-label="Mood check-in">
               <Heart className="h-4 w-4" />
-              <span className="hidden sm:inline">Check-in</span>
+              <span className="text-xs sm:text-sm">Check-in</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="gap-2">
+            <TabsTrigger value="history" className="gap-1 sm:gap-2" aria-label="Mood history">
               <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">History</span>
+              <span className="text-xs sm:text-sm">History</span>
             </TabsTrigger>
-            <TabsTrigger value="family" className="gap-2">
+            <TabsTrigger value="family" className="gap-1 sm:gap-2" aria-label="Family dashboard">
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Family</span>
+              <span className="text-xs sm:text-sm">Family</span>
             </TabsTrigger>
-            <TabsTrigger value="ai" className="gap-2">
+            <TabsTrigger value="ai" className="gap-1 sm:gap-2" aria-label="AI suggestions">
               <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">AI</span>
+              <span className="text-xs sm:text-sm">AI</span>
             </TabsTrigger>
-            <TabsTrigger value="content" className="gap-2">
+            <TabsTrigger value="content" className="gap-1 sm:gap-2" aria-label="Motivational content">
               <Heart className="h-4 w-4" />
-              <span className="hidden sm:inline">Content</span>
+              <span className="text-xs sm:text-sm">Content</span>
             </TabsTrigger>
           </TabsList>
 
