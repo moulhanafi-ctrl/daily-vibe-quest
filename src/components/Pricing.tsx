@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 const plans = [
   {
     name: "Individual",
-    price: "4.99",
+    price: "5.99",
     description: "Perfect for personal mental wellness",
     features: [
       "Daily mood check-ins",
@@ -18,11 +18,11 @@ const plans = [
   },
   {
     name: "Family",
-    price: "11.99",
+    price: "9.99",
     description: "For families supporting each other",
     features: [
       "Everything in Individual",
-      "Up to 4 family members",
+      "Up to 6 family members",
       "Shared family dashboard",
       "Age-appropriate content",
       "Weekly family reflections",
