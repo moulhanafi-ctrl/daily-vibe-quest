@@ -1831,6 +1831,86 @@ export type Database = {
           },
         ]
       }
+      system_health_results: {
+        Row: {
+          category: string
+          created_at: string
+          duration_ms: number
+          error_text: string | null
+          id: string
+          run_id: string
+          status: string
+          test_key: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          duration_ms: number
+          error_text?: string | null
+          id?: string
+          run_id: string
+          status: string
+          test_key: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          duration_ms?: number
+          error_text?: string | null
+          id?: string
+          run_id?: string
+          status?: string
+          test_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_health_results_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "system_health_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_health_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          failed: number
+          finished_at: string | null
+          id: string
+          passed: number
+          started_at: string
+          status: string
+          total: number
+          triggered_by: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          passed?: number
+          started_at?: string
+          status: string
+          total?: number
+          triggered_by: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          passed?: number
+          started_at?: string
+          status?: string
+          total?: number
+          triggered_by?: string
+        }
+        Relationships: []
+      }
       system_users: {
         Row: {
           avatar_url: string | null

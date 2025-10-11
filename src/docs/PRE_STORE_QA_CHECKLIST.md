@@ -110,6 +110,70 @@
 - [ ] After seed: ≥30,000 ZIPs in `zip_centroids`
 - [ ] Cache hit rate >95% after warm-up
 
+## ✅ System Health Dashboard
+
+### Access
+- [ ] Navigate to `/admin/health` (admin-only)
+- [ ] Dashboard loads without errors
+- [ ] Real-time updates work (run a manual check)
+
+### Manual Health Check
+- [ ] Click "Run All Now" button
+- [ ] Tests complete within 10 seconds
+- [ ] Status tiles update with results
+- [ ] All tiles show green (pass) or identify specific failures
+
+### Status Tiles
+- [ ] **Status**: Shows overall health (pass/fail/partial)
+- [ ] **Tests Passed**: Shows X/Y format
+- [ ] **Tests Failed**: Shows count of failures
+- [ ] **Duration**: Shows execution time in seconds
+
+### Test Categories
+Verify all test categories are present and passing:
+
+#### Core Platform
+- [ ] API uptime test (<500ms response)
+- [ ] Auth session validation
+- [ ] RLS protection verification
+
+#### Storage
+- [ ] Bucket access test (family-stories)
+- [ ] Signed URL generation
+
+#### Messaging
+- [ ] Test Contact functionality
+- [ ] Message pipeline validation
+
+#### Family Stories
+- [ ] Upload flow validation
+- [ ] Duration guard (45s limit)
+- [ ] Storage integration
+
+#### Help System
+- [ ] ZIP resolver test (90210, 02115, 48917)
+- [ ] Help search functionality
+- [ ] Admin tools access
+
+### Run History
+- [ ] Table shows last 50 runs
+- [ ] Columns: Started, Status, Passed, Failed, Duration, Triggered By
+- [ ] Status badges display correctly (pass/fail/partial)
+- [ ] Timestamps show relative time ("2 minutes ago")
+
+### Failed Test Details
+If any tests fail:
+- [ ] Error text displays in test result
+- [ ] Can identify specific issue
+- [ ] Duration shows for failed tests
+- [ ] Category grouping helps locate problem area
+
+### Automated Monitoring (Post-Setup)
+- [ ] Cron job scheduled (see `HEALTH_CHECK_CRON_SETUP.sql`)
+- [ ] Tests run every 15 minutes
+- [ ] Results logged to `system_health_runs` table
+- [ ] Failures trigger alerts (if configured)
+
 ## ✅ Navigation & Routes
 
 ### Dashboard Header
@@ -123,8 +187,9 @@
 - [ ] All tabs load without errors
 
 ### Admin
-- [ ] `/admin/ops` shows links to Help Locations and ZIP Tools
-- [ ] Links to new docs: FAMILY_STORIES_SETUP.md
+- [ ] `/admin/ops` shows links to Health Dashboard, Help Locations, and ZIP Tools
+- [ ] `/admin/health` accessible and functional
+- [ ] Links to new docs: FAMILY_STORIES_SETUP.md, HEALTH_CHECK_SYSTEM.md
 
 ## ✅ Database Integrity
 
@@ -135,6 +200,8 @@
 - [ ] `story_views` (story_id, viewer_id)
 - [ ] `story_reactions` (story_id, user_id, reaction)
 - [ ] `test_messages` (user_id, message, device_info)
+- [ ] `system_health_runs` (health check execution tracking)
+- [ ] `system_health_results` (individual test results)
 
 ### RLS Policies
 - [ ] Anyone can view `zip_centroids`
@@ -151,6 +218,7 @@
 
 - [ ] `geocode-zip`: Normalizes ZIP, checks cache, fetches from API, caches result
 - [ ] `cleanup-expired-stories`: Deletes expired stories + files (setup cron)
+- [ ] `run-health-checks`: Automated system health monitoring
 
 ### Edge Function Logs
 - [ ] Check logs for `geocode-zip`: Cache HIT/MISS messages
@@ -210,11 +278,12 @@
    - [ ] Import via `/admin/zip-tools`
    - [ ] Verify cache hit rate >95%
 
-2. **Setup Cron Job**:
+2. **Setup Cron Jobs**:
    - [ ] Enable `pg_cron` and `pg_net` in Supabase
    - [ ] Run SQL from `src/docs/STORIES_CRON_SETUP.sql`
-   - [ ] Replace `YOUR_SERVICE_ROLE_KEY` with actual key
-   - [ ] Test manual run
+   - [ ] Run SQL from `src/docs/HEALTH_CHECK_CRON_SETUP.sql`
+   - [ ] Replace `YOUR_SERVICE_ROLE_KEY` with actual key in both
+   - [ ] Test manual runs of both functions
 
 3. **Populate Help Locations**:
    - [ ] Add real therapy/crisis centers to `help_locations`
@@ -230,6 +299,8 @@
 
 5. **Final Testing**:
    - [ ] Run through all QA steps above
+   - [ ] **Run system health check from `/admin/health`**
+   - [ ] **Verify all health tests pass**
    - [ ] Test with multiple user accounts
    - [ ] Test family story sharing between accounts
    - [ ] Verify all edge functions work in production
@@ -246,6 +317,8 @@
 ✅ Help search returns local results or graceful fallback with national resources
 ✅ Test Contact sends message and displays device info
 ✅ Family Stories structure ready for video upload (45s limit enforced)
+✅ **System health dashboard shows all tests passing**
+✅ **Automated health checks run every 15 minutes**
 ✅ All navigation works from Dashboard
 ✅ Admin tools functional for managing locations and ZIP cache
 ✅ Zero TypeScript or build errors

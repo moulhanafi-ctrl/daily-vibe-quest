@@ -122,6 +122,8 @@ ZIP_PROVIDER=zippopotamus
 - `zip_centroids` — ZIP code cache (zip, latitude, longitude, city, state)
 - `geocode_cache` — Address geocoding cache
 - `geocode_jobs` — Bulk geocoding queue
+- `system_health_runs` — Health check execution tracking
+- `system_health_results` — Individual test results
 
 ---
 
@@ -135,6 +137,7 @@ ZIP_PROVIDER=zippopotamus
 
 - `cleanup-expired-stories` — Daily job to purge expired stories + media
 - `geocode-zip` — Hybrid ZIP resolver (cache → API → cache)
+- `run-health-checks` — Automated system health monitoring
 
 ---
 
@@ -142,6 +145,7 @@ ZIP_PROVIDER=zippopotamus
 
 - `/admin/help-locations` — Manage therapist/crisis center locations
 - `/admin/zip-tools` — ZIP cache management (import/export/clear)
+- `/admin/health` — System health dashboard with automated tests
 
 ---
 
@@ -156,8 +160,35 @@ ZIP_PROVIDER=zippopotamus
 ## Next Steps (Post-Ship)
 
 1. Enable cron job for story cleanup (see `STORIES_CRON_SETUP.sql`)
-2. Seed ZIP cache with full US dataset (~33k rows) for optimal performance
-3. Add real therapist/crisis center locations via `/admin/help-locations`
-4. Enable leaked password protection in Supabase Auth settings
-5. Test with multiple user accounts and family groups
-6. Verify all RLS policies secure data properly
+2. **Enable cron job for health checks** (see `HEALTH_CHECK_CRON_SETUP.sql`)
+3. Seed ZIP cache with full US dataset (~33k rows) for optimal performance
+4. Add real therapist/crisis center locations via `/admin/help-locations`
+5. Enable leaked password protection in Supabase Auth settings
+6. Test with multiple user accounts and family groups
+7. Verify all RLS policies secure data properly
+8. **Monitor health dashboard** at `/admin/health` for ongoing system status
+
+---
+
+## Health Check System (NEW)
+
+### Overview
+Automated health monitoring that runs every 15 minutes and provides live status dashboard.
+
+### Features
+- **Dashboard**: `/admin/health` - Live status tiles, history, manual trigger
+- **Tests**: API uptime, Auth/RLS, Storage, Stories, Messaging, ZIP resolver, Help search
+- **Alerts**: Automatic notifications on failures (configurable)
+- **History**: Last 50 runs with detailed results
+
+### Quick Test
+1. Go to `/admin/health`
+2. Click "Run All Now"
+3. Verify all tiles show green (pass)
+4. Review any failures in detail
+
+### Setup
+See `src/docs/HEALTH_CHECK_CRON_SETUP.sql` for automated 15-minute cron setup.
+
+### Documentation
+Full details in `src/docs/HEALTH_CHECK_SYSTEM.md`

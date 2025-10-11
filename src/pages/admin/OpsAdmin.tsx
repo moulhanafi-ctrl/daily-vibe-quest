@@ -32,6 +32,11 @@ const OpsAdmin = () => {
           <h2>Quick Links</h2>
           <ul>
             <li>
+              <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/admin/health")}>
+                System Health Dashboard
+              </Button>
+            </li>
+            <li>
               <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/admin/help-locations")}>
                 Help Locations Management
               </Button>
