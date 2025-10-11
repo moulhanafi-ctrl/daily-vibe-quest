@@ -588,6 +588,84 @@ export type Database = {
           },
         ]
       }
+      help_locations: {
+        Row: {
+          accepts_insurance: boolean | null
+          address: string
+          created_at: string | null
+          id: string
+          insurers: string[] | null
+          is_national: boolean | null
+          last_verified_at: string | null
+          lat: number | null
+          lon: number | null
+          name: string
+          open_hours: Json | null
+          open_now: boolean | null
+          phone: string | null
+          priority: number | null
+          ratings: Json | null
+          sliding_scale: boolean | null
+          source: string | null
+          tags: string[] | null
+          telehealth: boolean | null
+          type: Database["public"]["Enums"]["help_location_type"]
+          updated_at: string | null
+          website_url: string | null
+          zip_coverage: string[] | null
+        }
+        Insert: {
+          accepts_insurance?: boolean | null
+          address: string
+          created_at?: string | null
+          id?: string
+          insurers?: string[] | null
+          is_national?: boolean | null
+          last_verified_at?: string | null
+          lat?: number | null
+          lon?: number | null
+          name: string
+          open_hours?: Json | null
+          open_now?: boolean | null
+          phone?: string | null
+          priority?: number | null
+          ratings?: Json | null
+          sliding_scale?: boolean | null
+          source?: string | null
+          tags?: string[] | null
+          telehealth?: boolean | null
+          type: Database["public"]["Enums"]["help_location_type"]
+          updated_at?: string | null
+          website_url?: string | null
+          zip_coverage?: string[] | null
+        }
+        Update: {
+          accepts_insurance?: boolean | null
+          address?: string
+          created_at?: string | null
+          id?: string
+          insurers?: string[] | null
+          is_national?: boolean | null
+          last_verified_at?: string | null
+          lat?: number | null
+          lon?: number | null
+          name?: string
+          open_hours?: Json | null
+          open_now?: boolean | null
+          phone?: string | null
+          priority?: number | null
+          ratings?: Json | null
+          sliding_scale?: boolean | null
+          source?: string | null
+          tags?: string[] | null
+          telehealth?: boolean | null
+          type?: Database["public"]["Enums"]["help_location_type"]
+          updated_at?: string | null
+          website_url?: string | null
+          zip_coverage?: string[] | null
+        }
+        Relationships: []
+      }
       incidents: {
         Row: {
           category: string
@@ -1073,7 +1151,9 @@ export type Database = {
           first_name: string | null
           id: string
           inclusion_acknowledged_version: string | null
+          insurance: Json | null
           is_parent: boolean | null
+          location: Json | null
           optional_reflection: string | null
           parent_id: string | null
           pronouns: string | null
@@ -1094,7 +1174,9 @@ export type Database = {
           first_name?: string | null
           id: string
           inclusion_acknowledged_version?: string | null
+          insurance?: Json | null
           is_parent?: boolean | null
+          location?: Json | null
           optional_reflection?: string | null
           parent_id?: string | null
           pronouns?: string | null
@@ -1115,7 +1197,9 @@ export type Database = {
           first_name?: string | null
           id?: string
           inclusion_acknowledged_version?: string | null
+          insurance?: Json | null
           is_parent?: boolean | null
+          location?: Json | null
           optional_reflection?: string | null
           parent_id?: string | null
           pronouns?: string | null
@@ -1319,6 +1403,7 @@ export type Database = {
       age_group: "child" | "teen" | "adult" | "elder"
       app_role: "admin" | "user"
       content_type: "audio" | "text" | "video"
+      help_location_type: "crisis" | "therapy"
       mood_type:
         | "happy"
         | "calm"
@@ -1460,6 +1545,7 @@ export const Constants = {
       age_group: ["child", "teen", "adult", "elder"],
       app_role: ["admin", "user"],
       content_type: ["audio", "text", "video"],
+      help_location_type: ["crisis", "therapy"],
       mood_type: [
         "happy",
         "calm",

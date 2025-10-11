@@ -17,7 +17,13 @@ export type EventType =
   | "purchase_succeeded"
   | "entitlement_granted"
   | "parent_alert_sent"
-  | "parent_alert_opened";
+  | "parent_alert_opened"
+  | "help_viewed"
+  | "help_filter_changed"
+  | "help_call_clicked"
+  | "help_website_clicked"
+  | "help_directions_clicked"
+  | "help_report_submitted";
 
 interface TrackEventParams {
   eventType: EventType;

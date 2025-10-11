@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Phone, MessageSquare, Globe } from "lucide-react";
+import { ArrowLeft, Phone, MessageSquare, Globe, MapPin } from "lucide-react";
 
 const Crisis = () => {
   const navigate = useNavigate();
@@ -35,6 +35,14 @@ const Crisis = () => {
             <p className="text-lg font-semibold">
               You don't have to face this alone. Help is available 24/7.
             </p>
+            <Button 
+              onClick={() => navigate("/help/nearby")} 
+              size="lg" 
+              className="mt-4"
+            >
+              <MapPin className="h-5 w-5 mr-2" />
+              Find Local Crisis Resources
+            </Button>
           </div>
         </Card>
 

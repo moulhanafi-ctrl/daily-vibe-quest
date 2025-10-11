@@ -34,6 +34,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/inclusion" className="hover:text-primary">Inclusion & Respect</Link></li>
               <li><Link to="/crisis" className="hover:text-primary">Crisis Resources</Link></li>
+              <li><Link to="/help/nearby" className="hover:text-primary">Local Help</Link></li>
             </ul>
             <div className="mt-4 space-y-2 text-sm text-muted-foreground">
               <p>🔒 Secure Checkout</p>
