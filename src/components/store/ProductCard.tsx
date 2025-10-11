@@ -65,7 +65,7 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = `/store/product/${product.id}`}>
       <div className="aspect-square bg-secondary/20 flex items-center justify-center">
         {product.image_url ? (
           <img

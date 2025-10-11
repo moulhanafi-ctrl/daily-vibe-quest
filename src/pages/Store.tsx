@@ -51,15 +51,25 @@ const Store = () => {
             Back
           </Button>
           <h1 className="text-2xl font-bold gradient-primary">Vibe Shop 🛍️</h1>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/cart")}
-            aria-label="View cart"
-          >
-            <ShoppingBag className="h-4 w-4 mr-2" />
-            Cart
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/orders")}
+              aria-label="View orders"
+            >
+              Orders
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/cart")}
+              aria-label="View cart"
+            >
+              <ShoppingBag className="h-4 w-4 mr-2" />
+              Cart
+            </Button>
+          </div>
         </div>
       </header>
 

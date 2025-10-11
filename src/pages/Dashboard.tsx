@@ -139,6 +139,9 @@ const Dashboard = () => {
                 </Button>
               </>
             )}
+            <Button onClick={() => navigate("/library")} variant="outline" size="sm" aria-label="Go to library">
+              📚 <span className="hidden sm:inline ml-2">Library</span>
+            </Button>
             <Button onClick={() => navigate("/store")} variant="outline" size="sm" aria-label="Go to store">
               <ShoppingBag className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Store</span>

@@ -143,6 +143,48 @@ export type Database = {
         }
         Relationships: []
       }
+      entitlements: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string | null
+          product_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          product_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          product_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entitlements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entitlements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_groups: {
         Row: {
           created_at: string | null
@@ -402,11 +444,15 @@ export type Database = {
           created_at: string | null
           description: string
           download_link: string | null
+          file_urls: string[] | null
           id: string
           image_url: string | null
+          images: string[] | null
           name: string
+          preview_url: string | null
           price: number
           product_type: Database["public"]["Enums"]["product_type"]
+          tags: string[] | null
           updated_at: string | null
         }
         Insert: {
@@ -415,11 +461,15 @@ export type Database = {
           created_at?: string | null
           description: string
           download_link?: string | null
+          file_urls?: string[] | null
           id?: string
           image_url?: string | null
+          images?: string[] | null
           name: string
+          preview_url?: string | null
           price: number
           product_type?: Database["public"]["Enums"]["product_type"]
+          tags?: string[] | null
           updated_at?: string | null
         }
         Update: {
@@ -428,11 +478,15 @@ export type Database = {
           created_at?: string | null
           description?: string
           download_link?: string | null
+          file_urls?: string[] | null
           id?: string
           image_url?: string | null
+          images?: string[] | null
           name?: string
+          preview_url?: string | null
           price?: number
           product_type?: Database["public"]["Enums"]["product_type"]
+          tags?: string[] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -502,6 +556,44 @@ export type Database = {
           },
         ]
       }
+      purchase_requests: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          id: string
+          parent_id: string
+          product_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          id?: string
+          parent_id: string
+          product_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          id?: string
+          parent_id?: string
+          product_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reflections: {
         Row: {
           content: string
@@ -530,6 +622,44 @@ export type Database = {
             columns: ["mood_id"]
             isOneToOne: false
             referencedRelation: "moods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          rating: number
+          text: string | null
+          user_id: string
+          user_public_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          rating: number
+          text?: string | null
+          user_id: string
+          user_public_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          rating?: number
+          text?: string | null
+          user_id?: string
+          user_public_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
