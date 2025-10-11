@@ -8,7 +8,7 @@ import { FamilyDashboard } from "@/components/dashboard/FamilyDashboard";
 import { AISuggestions } from "@/components/dashboard/AISuggestions";
 import { MotivationalContent } from "@/components/dashboard/MotivationalContent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Heart, Users, Sparkles, BookOpen } from "lucide-react";
+import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
@@ -80,10 +80,16 @@ const Dashboard = () => {
               Welcome back, {profile?.username}! ({profile?.age_group})
             </p>
           </div>
-          <Button onClick={handleSignOut} variant="ghost" size="sm">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate("/chat-rooms")} variant="outline" size="sm">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Chat Rooms
+            </Button>
+            <Button onClick={handleSignOut} variant="ghost" size="sm">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 
