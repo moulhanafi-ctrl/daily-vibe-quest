@@ -79,6 +79,9 @@ const Onboarding = () => {
 
       if (ageGroupError) throw ageGroupError;
 
+      // Create a unique username by combining first name with random string
+      const uniqueUsername = `${data.firstName}${Math.random().toString(36).substring(2, 6)}`;
+      
       // Update the user's profile with onboarding data
       const { error } = await supabase
         .from("profiles")
@@ -90,7 +93,7 @@ const Onboarding = () => {
           zipcode: data.zipcode,
           selected_focus_areas: data.focusAreas,
           optional_reflection: data.reflection,
-          username: data.firstName,
+          username: uniqueUsername,
         })
         .eq("id", user.id);
 
