@@ -15,8 +15,10 @@ export default function HelpNearby() {
   const [zipModalOpen, setZipModalOpen] = useState(false);
   const [userZip, setUserZip] = useState<string | null>(null);
   const [ageGroup, setAgeGroup] = useState<string>("");
-  const [locations, setLocations] = useState<any[]>([]);
-  const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
+  const [localLocations, setLocalLocations] = useState<any[]>([]);
+  const [nationalLocations, setNationalLocations] = useState<any[]>([]);
+  const [filteredLocalLocations, setFilteredLocalLocations] = useState<any[]>([]);
+  const [filteredNationalLocations, setFilteredNationalLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "crisis" | "therapy">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,7 +44,7 @@ export default function HelpNearby() {
 
   useEffect(() => {
     applyFilters();
-  }, [locations, activeTab, searchQuery, filters]);
+  }, [localLocations, nationalLocations, activeTab, searchQuery, filters]);
 
   const loadUserData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -68,13 +70,22 @@ export default function HelpNearby() {
   const loadLocations = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase
+      // Fetch local resources
+      const { data: localData } = await supabase
         .from("help_locations")
         .select("*")
-        .or(`is_national.eq.true,zip_coverage.cs.{${userZip}}`)
+        .contains("zip_coverage", [userZip])
         .order("priority", { ascending: false });
 
-      setLocations(data || []);
+      // Fetch national resources
+      const { data: nationalData } = await supabase
+        .from("help_locations")
+        .select("*")
+        .eq("is_national", true)
+        .order("priority", { ascending: false });
+
+      setLocalLocations(localData || []);
+      setNationalLocations(nationalData || []);
     } catch (error) {
       console.error("Error loading locations:", error);
     } finally {
@@ -83,38 +94,43 @@ export default function HelpNearby() {
   };
 
   const applyFilters = () => {
-    let filtered = locations;
+    const filterList = (list: any[]) => {
+      let filtered = list;
 
-    // Filter by tab
-    if (activeTab !== "all") {
-      filtered = filtered.filter((loc) => loc.type === activeTab);
-    }
+      // Filter by tab
+      if (activeTab !== "all") {
+        filtered = filtered.filter((loc) => loc.type === activeTab);
+      }
 
-    // Filter by search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (loc) =>
-          loc.name.toLowerCase().includes(query) ||
-          loc.address.toLowerCase().includes(query)
-      );
-    }
+      // Filter by search
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(
+          (loc) =>
+            loc.name.toLowerCase().includes(query) ||
+            loc.address.toLowerCase().includes(query)
+        );
+      }
 
-    // Filter by options
-    if (filters.telehealth) {
-      filtered = filtered.filter((loc) => loc.telehealth);
-    }
-    if (filters.sliding_scale) {
-      filtered = filtered.filter((loc) => loc.sliding_scale);
-    }
-    if (filters.lgbtq_affirming) {
-      filtered = filtered.filter((loc) => loc.tags?.includes("lgbtq_affirming"));
-    }
-    if (filters.youth_friendly) {
-      filtered = filtered.filter((loc) => loc.tags?.includes("youth_friendly"));
-    }
+      // Filter by options
+      if (filters.telehealth) {
+        filtered = filtered.filter((loc) => loc.telehealth);
+      }
+      if (filters.sliding_scale) {
+        filtered = filtered.filter((loc) => loc.sliding_scale);
+      }
+      if (filters.lgbtq_affirming) {
+        filtered = filtered.filter((loc) => loc.tags?.includes("lgbtq_affirming"));
+      }
+      if (filters.youth_friendly) {
+        filtered = filtered.filter((loc) => loc.tags?.includes("youth_friendly"));
+      }
 
-    setFilteredLocations(filtered);
+      return filtered;
+    };
+
+    setFilteredLocalLocations(filterList(localLocations));
+    setFilteredNationalLocations(filterList(nationalLocations));
 
     trackEvent({
       eventType: "help_filter_changed",
@@ -195,28 +211,50 @@ export default function HelpNearby() {
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
           <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="all">All ({locations.length})</TabsTrigger>
+            <TabsTrigger value="all">All ({localLocations.length + nationalLocations.length})</TabsTrigger>
             <TabsTrigger value="crisis">
-              Crisis ({locations.filter((l) => l.type === "crisis").length})
+              Crisis ({localLocations.filter((l) => l.type === "crisis").length + nationalLocations.filter((l) => l.type === "crisis").length})
             </TabsTrigger>
             <TabsTrigger value="therapy">
-              Therapy ({locations.filter((l) => l.type === "therapy").length})
+              Therapy ({localLocations.filter((l) => l.type === "therapy").length + nationalLocations.filter((l) => l.type === "therapy").length})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="mt-6">
+          <TabsContent value={activeTab} className="mt-6 space-y-8">
             {loading ? (
               <p className="text-muted-foreground text-center py-8">Loading...</p>
-            ) : filteredLocations.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                No locations found matching your filters.
-              </p>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredLocations.map((location) => (
-                  <HelpLocationCard key={location.id} location={location} ageGroup={ageGroup} />
-                ))}
-              </div>
+              <>
+                {filteredLocalLocations.length > 0 && (
+                  <div>
+                    <h2 className="text-xl font-semibold mb-4">Local Resources Near {userZip}</h2>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {filteredLocalLocations.map((location) => (
+                        <HelpLocationCard key={location.id} location={location} ageGroup={ageGroup} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {filteredNationalLocations.length > 0 && (
+                  <div>
+                    <h2 className="text-xl font-semibold mb-4">
+                      {filteredLocalLocations.length > 0 ? "National Hotlines" : "National Resources"}
+                    </h2>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {filteredNationalLocations.map((location) => (
+                        <HelpLocationCard key={location.id} location={location} ageGroup={ageGroup} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {filteredLocalLocations.length === 0 && filteredNationalLocations.length === 0 && (
+                  <p className="text-muted-foreground text-center py-8">
+                    No locations found matching your filters.
+                  </p>
+                )}
+              </>
             )}
           </TabsContent>
         </Tabs>
