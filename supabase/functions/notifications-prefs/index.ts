@@ -30,7 +30,8 @@ serve(async (req) => {
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } }
   );
 
   const requestId = crypto.randomUUID();
@@ -69,9 +70,10 @@ serve(async (req) => {
       }
 
       if (!data) {
-        return new Response(JSON.stringify({ error: "not_found", request_id: requestId }), {
+        const defaults = { user_id: user.id, ...DEFAULTS, updated_at: new Date().toISOString() };
+        return new Response(JSON.stringify({ ...defaults, request_id: requestId }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 404,
+          status: 200,
         });
       }
 
