@@ -37,6 +37,9 @@ export type EventType =
   | "help_website_clicked"
   | "help_directions_clicked"
   | "help_report_submitted"
+  | "help_local_ranked"
+  | "help_radius_changed"
+  | "help_national_viewed"
   | "i18n_missing_key";
 
 interface TrackEventParams {

@@ -37,6 +37,7 @@ import HelpAdmin from "./pages/admin/HelpAdmin";
 import FeatureFlags from "./pages/admin/FeatureFlags";
 import StripeAdmin from "./pages/admin/StripeAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
+import NationalHotlines from "./pages/help/NationalHotlines";
 import LanguagePicker from "./pages/welcome/LanguagePicker";
 import OpsAdmin from "./pages/admin/OpsAdmin";
 import PublishReadiness from "./pages/admin/PublishReadiness";
@@ -90,6 +91,7 @@ const App = () => (
           <Route path="/admin/publish" element={<PublishReadiness />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
+          <Route path="/help/national" element={<NationalHotlines />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
