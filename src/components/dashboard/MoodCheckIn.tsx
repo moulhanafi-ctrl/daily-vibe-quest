@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { JournalPrompts } from "@/components/journal/JournalPrompts";
 import { Book, Mic, Lightbulb } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const MOODS = [
   { emoji: "🤩", value: "excited", label: "Great" },
@@ -56,6 +57,12 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
         .single();
 
       if (moodError) throw moodError;
+
+      // Track event
+      trackEvent({ 
+        eventType: "checkin_submitted", 
+        metadata: { mood: selectedMood, intensity: intensity[0] } 
+      });
 
       // Send notification to parent if child/teen has linked parent
       const { data: { user } } = await supabase.auth.getUser();

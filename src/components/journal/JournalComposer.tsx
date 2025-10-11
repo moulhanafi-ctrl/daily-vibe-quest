@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Save, Trash2, Mic, X, Share2 } from "lucide-react";
 import { VoiceRecorder } from "./VoiceRecorder";
+import { trackEvent } from "@/lib/analytics";
 
 interface JournalComposerProps {
   moodId?: string;
@@ -89,6 +90,16 @@ export const JournalComposer = ({ moodId, mood, onSave, onCancel, editEntry }: J
         
         if (error) throw error;
         toast({ title: "Entry saved" });
+        
+        // Track journal save event
+        trackEvent({ 
+          eventType: "journal_saved", 
+          metadata: { 
+            has_audio: !!audioUrl, 
+            tag_count: tags.length,
+            shared_with_parent: sharedWithParent 
+          } 
+        });
       }
 
       onSave?.();

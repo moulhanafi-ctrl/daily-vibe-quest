@@ -4,11 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Loader2, MessageSquareOff } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageSquareOff, MoreVertical, Flag, VolumeX, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessageSkeleton } from "@/components/ChatMessageSkeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { trackEvent } from "@/lib/analytics";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Message {
   id: string;
@@ -34,6 +38,8 @@ const ChatRoom = () => {
   const [username, setUsername] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [mutedUsers, setMutedUsers] = useState<Set<string>>(new Set());
+  const [reportingMessage, setReportingMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const MAX_MESSAGE_LENGTH = 500;
 
@@ -170,7 +176,36 @@ const ChatRoom = () => {
     return grouped;
   };
 
-  const groupedMessages = groupMessages(messages);
+  const handleMuteUser = (userId: string) => {
+    setMutedUsers(prev => new Set(prev).add(userId));
+    trackEvent({ eventType: "room_mute", metadata: { room_id: roomId, muted_user_id: userId } });
+    toast({ title: "User muted", description: "You won't see messages from this user anymore." });
+  };
+
+  const handleReportMessage = async (messageId: string) => {
+    setReportingMessage(null);
+    try {
+      const { error } = await supabase.from("incidents").insert({
+        room_id: roomId,
+        message_id: messageId,
+        user_id: currentUserId,
+        category: "inappropriate_content",
+        severity: "medium",
+        status: "open",
+        description: "Reported via chat room"
+      });
+
+      if (error) throw error;
+
+      trackEvent({ eventType: "room_report", metadata: { room_id: roomId, message_id: messageId } });
+      toast({ title: "Report submitted", description: "Thank you. Our moderation team will review this." });
+    } catch (error) {
+      console.error("Error reporting message:", error);
+      toast({ title: "Error", description: "Failed to submit report", variant: "destructive" });
+    }
+  };
+
+  const groupedMessages = groupMessages(messages.filter(msg => !mutedUsers.has(msg.user_id)));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background p-2 sm:p-4">
@@ -187,13 +222,26 @@ const ChatRoom = () => {
         </Button>
 
         <Card className="flex-1 flex flex-col min-h-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg sm:text-xl">{room?.name || "Chat Room"}</CardTitle>
-            {room?.description && (
-              <p className="text-xs sm:text-sm text-muted-foreground">{room.description}</p>
-            )}
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-lg sm:text-xl">{room?.name || "Chat Room"}</CardTitle>
+                {room?.description && (
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">{room.description}</p>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/legal/community-guidelines")}
+              className="w-fit text-xs mt-2"
+            >
+              <Shield className="w-3 h-3 mr-1" />
+              Be kind • No bullying • No explicit content
+            </Button>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col min-h-0 p-3 sm:p-6">
+          <CardContent className="flex-1 flex flex-col min-h-0 p-3 sm:p-6 pt-0">
             {loading ? (
               <ChatMessageSkeleton />
             ) : (
@@ -226,23 +274,44 @@ const ChatRoom = () => {
                           {msg.user_id !== currentUserId && !msg.showUsername && (
                             <div className="w-8" />
                           )}
-                          <div
-                            className={`max-w-[85%] sm:max-w-[70%] rounded-lg p-2 sm:p-3 ${
-                              msg.user_id === currentUserId
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            }`}
-                          >
-                            {msg.user_id !== currentUserId && msg.showUsername && (
-                              <p className="text-xs font-semibold mb-1">{msg.username}</p>
+                          <div className="flex gap-1 items-start max-w-[85%] sm:max-w-[70%]">
+                            <div
+                              className={`rounded-lg p-2 sm:p-3 flex-1 ${
+                                msg.user_id === currentUserId
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted"
+                              }`}
+                            >
+                              {msg.user_id !== currentUserId && msg.showUsername && (
+                                <p className="text-xs font-semibold mb-1">{msg.username}</p>
+                              )}
+                              <p className="text-sm break-words">{msg.message}</p>
+                              <p className="text-xs opacity-70 mt-1">
+                                {new Date(msg.created_at).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            </div>
+                            {msg.user_id !== currentUserId && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => setReportingMessage(msg.id)}>
+                                    <Flag className="mr-2 h-4 w-4" />
+                                    Report
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleMuteUser(msg.user_id)}>
+                                    <VolumeX className="mr-2 h-4 w-4" />
+                                    Mute User
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             )}
-                            <p className="text-sm break-words">{msg.message}</p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {new Date(msg.created_at).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
                           </div>
                         </div>
                       ))}
@@ -294,6 +363,23 @@ const ChatRoom = () => {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={!!reportingMessage} onOpenChange={() => setReportingMessage(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Report this message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Our moderation team will review this report. False reports may result in action on your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => reportingMessage && handleReportMessage(reportingMessage)}>
+              Submit Report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

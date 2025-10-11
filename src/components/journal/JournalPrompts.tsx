@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb, RefreshCw } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 interface JournalPromptsProps {
   onSelectPrompt: (prompt: string) => void;
@@ -81,7 +82,13 @@ export const JournalPrompts = ({ onSelectPrompt, limit }: JournalPromptsProps) =
             <Card
               key={prompt.id}
               className="cursor-pointer hover:bg-accent/50 transition-colors"
-              onClick={() => onSelectPrompt(prompt.prompt)}
+              onClick={() => {
+                trackEvent({ 
+                  eventType: "prompt_used", 
+                  metadata: { category: prompt.category, prompt_id: prompt.id } 
+                });
+                onSelectPrompt(prompt.prompt);
+              }}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">

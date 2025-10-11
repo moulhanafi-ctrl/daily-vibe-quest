@@ -27,6 +27,7 @@ import Inclusion from "./pages/legal/Inclusion";
 import NotFound from "./pages/NotFound";
 import AdminAI from "./pages/admin/AdminAI";
 import ArthurAdmin from "./pages/admin/ArthurAdmin";
+import Analytics from "./pages/admin/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
           <Route path="/inclusion" element={<Inclusion />} />
           <Route path="/admin/ai" element={<AdminAI />} />
           <Route path="/admin/arthur" element={<ArthurAdmin />} />
+          <Route path="/admin/analytics" element={<Analytics />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

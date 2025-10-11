@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { VibeOpsChat } from "@/components/admin/VibeOpsChat";
 import { ActionPanel } from "@/components/admin/ActionPanel";
@@ -70,10 +71,17 @@ export default function AdminAI() {
       <div className="container mx-auto p-6">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">VibeOps Admin Assistant</h1>
-          <p className="text-muted-foreground">
-            AI-powered moderation and community operations
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">VibeOps Admin Assistant</h1>
+              <p className="text-muted-foreground">
+                AI-powered moderation and community operations
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => navigate("/admin/analytics")}>
+              View Analytics
+            </Button>
+          </div>
         </div>
 
         {/* Main Layout: Chat (left) + Action Panel (right) */}
