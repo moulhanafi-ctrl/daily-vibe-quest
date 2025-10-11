@@ -54,10 +54,13 @@ export const ArthurSettings = () => {
 
     const { error } = await supabase
       .from('arthur_preferences')
-      .upsert({
-        user_id: user.id,
-        ...newPreferences
-      });
+      .upsert(
+        {
+          user_id: user.id,
+          ...newPreferences,
+        },
+        { onConflict: 'user_id' }
+      );
 
     if (error) {
       console.error('Error updating preferences:', error);
