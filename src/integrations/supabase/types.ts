@@ -2215,12 +2215,54 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      guardian_verification_status_view: {
+        Row: {
+          child_id: string | null
+          created_at: string | null
+          guardian_email_masked: string | null
+          id: string | null
+          method: string | null
+          status:
+            | Database["public"]["Enums"]["guardian_verification_status"]
+            | null
+          updated_at: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          child_id?: string | null
+          created_at?: string | null
+          guardian_email_masked?: never
+          id?: string | null
+          method?: string | null
+          status?:
+            | Database["public"]["Enums"]["guardian_verification_status"]
+            | null
+          updated_at?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          child_id?: string | null
+          created_at?: string | null
+          guardian_email_masked?: never
+          id?: string | null
+          method?: string | null
+          status?:
+            | Database["public"]["Enums"]["guardian_verification_status"]
+            | null
+          updated_at?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       assign_age_group: {
         Args: { user_age: number }
         Returns: Database["public"]["Enums"]["age_group"]
+      }
+      can_view_profile: {
+        Args: { _profile_id: string; _viewer_id: string }
+        Returns: boolean
       }
       generate_family_invite_code: {
         Args: Record<PropertyKey, never>
