@@ -1,5 +1,6 @@
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const familyMembers = [
   { name: "Mom", vibe: "Great", color: "bg-mint" },
@@ -9,6 +10,12 @@ const familyMembers = [
 ];
 
 export const FamilyMode = () => {
+  const navigate = useNavigate();
+
+  const handleTryFamilyMode = () => {
+    navigate("/dashboard");
+  };
+
   return (
     <section className="py-24 px-4 md:px-6 gradient-hero">
       <div className="container mx-auto">
@@ -49,7 +56,7 @@ export const FamilyMode = () => {
               </li>
             </ul>
 
-            <Button variant="hero" size="lg">
+            <Button variant="hero" size="lg" onClick={handleTryFamilyMode}>
               Try Family Mode
             </Button>
           </div>
