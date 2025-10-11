@@ -3,16 +3,22 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-interface GeocodeRequest {
-  zipCode: string;
+interface ZipCodeRequest {
+  zip_code?: string;
+  zipCode?: string;
 }
 
-interface GeocodeResponse {
-  lat: number;
-  lon: number;
-  zipCode: string;
+interface ZippopotamResponse {
+  places: Array<{
+    'place name': string;
+    'state': string;
+    'state abbreviation': string;
+    'latitude': string;
+    'longitude': string;
+  }>;
 }
 
 // Haversine distance calculation
@@ -28,67 +34,13 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-async function geocodeWithMapbox(zipCode: string, apiKey: string): Promise<GeocodeResponse> {
-  const response = await fetch(
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(zipCode)}.json?access_token=${apiKey}&country=US&types=postcode`
-  );
-  
-  if (!response.ok) {
-    throw new Error(`Mapbox geocoding failed: ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  
-  if (!data.features || data.features.length === 0) {
-    throw new Error('ZIP code not found');
-  }
-  
-  const [lon, lat] = data.features[0].center;
-  return { lat, lon, zipCode };
-}
-
-async function geocodeWithGoogle(zipCode: string, apiKey: string): Promise<GeocodeResponse> {
-  const response = await fetch(
-    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(zipCode)}&components=country:US&key=${apiKey}`
-  );
-  
-  if (!response.ok) {
-    throw new Error(`Google geocoding failed: ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  
-  if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-    throw new Error('ZIP code not found');
-  }
-  
-  const { lat, lng } = data.results[0].geometry.location;
-  return { lat, lon: lng, zipCode };
-}
-
-async function geocodeWithOpenCage(zipCode: string, apiKey: string): Promise<GeocodeResponse> {
-  const response = await fetch(
-    `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(zipCode)}&countrycode=us&key=${apiKey}`
-  );
-  
-  if (!response.ok) {
-    throw new Error(`OpenCage geocoding failed: ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  
-  if (!data.results || data.results.length === 0) {
-    throw new Error('ZIP code not found');
-  }
-  
-  const { lat, lng } = data.results[0].geometry;
-  return { lat, lon: lng, zipCode };
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const requestId = crypto.randomUUID();
+  console.log(`[GEOCODE-ZIP][${requestId}] Request started`);
 
   try {
     const supabaseClient = createClient(
@@ -100,74 +52,130 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
     if (userError || !user) {
+      console.error(`[GEOCODE-ZIP][${requestId}] Auth failed:`, userError);
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ ok: false, error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { zipCode }: GeocodeRequest = await req.json();
+    const body: ZipCodeRequest = await req.json();
+    const zipCode = (body.zip_code || body.zipCode)?.trim();
 
     if (!zipCode || !/^\d{5}$/.test(zipCode)) {
+      console.warn(`[GEOCODE-ZIP][${requestId}] Invalid ZIP: ${zipCode}`);
       return new Response(
-        JSON.stringify({ error: 'Invalid ZIP code. Must be 5 digits.' }),
+        JSON.stringify({ ok: false, error: 'Invalid ZIP code. Must be 5 digits.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Geocoding ZIP: ${zipCode} for user: ${user.id}`);
+    console.log(`[GEOCODE-ZIP][${requestId}] Validating ZIP: ${zipCode} for user: ${user.id}`);
 
-    const apiKey = Deno.env.get('GEOCODER_API_KEY');
-    const provider = Deno.env.get('GEOCODER_PROVIDER') || 'mapbox';
-
-    if (!apiKey) {
+    // Use free Zippopotam.us API to validate ZIP and get city/state/coordinates
+    const zipResponse = await fetch(`https://api.zippopotam.us/us/${zipCode}`);
+    
+    if (!zipResponse.ok) {
+      console.warn(`[GEOCODE-ZIP][${requestId}] Invalid ZIP from Zippopotam: ${zipCode}`);
       return new Response(
-        JSON.stringify({ error: 'Geocoding service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'Invalid ZIP code' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    let location: GeocodeResponse;
+    const zipData: ZippopotamResponse = await zipResponse.json();
+    const place = zipData.places?.[0];
     
-    switch (provider.toLowerCase()) {
-      case 'google':
-        location = await geocodeWithGoogle(zipCode, apiKey);
-        break;
-      case 'opencage':
-        location = await geocodeWithOpenCage(zipCode, apiKey);
-        break;
-      case 'mapbox':
-      default:
-        location = await geocodeWithMapbox(zipCode, apiKey);
-        break;
+    if (!place) {
+      console.warn(`[GEOCODE-ZIP][${requestId}] No place data for ZIP: ${zipCode}`);
+      return new Response(
+        JSON.stringify({ ok: false, error: 'ZIP code not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log(`Geocoded ${zipCode} to: ${location.lat}, ${location.lon}`);
+    const city = place['place name'];
+    const state = place['state abbreviation'];
+    const lat = parseFloat(place['latitude']);
+    const lon = parseFloat(place['longitude']);
 
-    // Update user profile with new location and zipcode
+    console.log(`[GEOCODE-ZIP][${requestId}] Resolved to: ${city}, ${state} (${lat}, ${lon})`);
+
+    // Update user profile with full location data
     const { error: updateError } = await supabaseClient
       .from('profiles')
       .update({ 
-        location: { lat: location.lat, lon: location.lon },
+        location: { zip: zipCode, lat, lon, city, state, consented: true },
         zipcode: zipCode
       })
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('Error updating profile:', updateError);
+      console.error(`[GEOCODE-ZIP][${requestId}] Error updating profile:`, updateError);
       throw updateError;
     }
 
+    console.log(`[GEOCODE-ZIP][${requestId}] Profile updated successfully`);
+
+    // Query nearby local (non-national) help locations
+    const { data: allLocations, error: locError } = await supabaseClient
+      .from('help_locations')
+      .select('*')
+      .or('is_national.is.null,is_national.eq.false');
+
+    if (locError) {
+      console.error(`[GEOCODE-ZIP][${requestId}] Error fetching locations:`, locError);
+    }
+
+    // Calculate distances and filter by 50 miles radius
+    const nearbyLocations = (allLocations || [])
+      .map(loc => {
+        if (!loc.lat || !loc.lon) return null;
+        const distance = calculateDistance(lat, lon, loc.lat, loc.lon);
+        if (distance > 50) return null;
+        return { ...loc, distance };
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => a.distance - b.distance);
+
+    // Separate by type
+    const therapists = nearbyLocations.filter((l: any) => l.type === 'therapy').slice(0, 3);
+    const crisisCenters = nearbyLocations.filter((l: any) => l.type === 'crisis').slice(0, 3);
+
+    console.log(`[GEOCODE-ZIP][${requestId}] Found ${therapists.length} therapists, ${crisisCenters.length} crisis centers`);
+
+    // National fallback resources
+    const national = {
+      hotlines: [
+        { name: '988 Suicide & Crisis Lifeline', phone: '988' },
+        { name: 'SAMHSA Helpline', phone: '1-800-662-4357' },
+        { name: 'NAMI HelpLine', phone: '1-800-950-6264' }
+      ]
+    };
+
     return new Response(
-      JSON.stringify({ success: true, location }),
+      JSON.stringify({ 
+        ok: true, 
+        zip: zipCode,
+        city,
+        state,
+        lat,
+        lon,
+        location: { lat, lon },
+        resources: {
+          therapists,
+          crisis_centers: crisisCenters,
+          national
+        }
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Geocoding error:', error);
+    console.error(`[GEOCODE-ZIP][${requestId}] Unexpected error:`, error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ ok: false, error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

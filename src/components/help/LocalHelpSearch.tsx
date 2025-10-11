@@ -153,28 +153,43 @@ export const LocalHelpSearch = () => {
 
     setIsSearching(true);
     try {
-      // Geocode the ZIP
+      // Call edge function with new format
       const { data, error } = await supabase.functions.invoke('geocode-zip', {
-        body: { zipCode }
+        body: { zip_code: zipCode }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(error.message || "Failed to validate ZIP code");
+      }
 
-      const newLocation = data.location;
-      setUserLocation({ lat: newLocation.lat, lon: newLocation.lon });
+      if (!data || !data.ok) {
+        throw new Error(data?.error || "Failed to validate ZIP code");
+      }
+
+      const { city, state, lat, lon } = data;
+      const newLocation = { lat, lon };
+      
+      setUserLocation(newLocation);
       setCurrentRadius(25);
 
+      // Perform local search
       await performSearch(newLocation, zipCode, 25);
 
       toast({
-        title: "ZIP code updated",
-        description: `Searching for resources near ${zipCode}`,
+        title: "Location updated",
+        description: `✅ Now showing resources near ${city}, ${state}`,
+      });
+
+      await trackEvent({
+        eventType: "help_local_ranked",
+        metadata: { zip: zipCode, city, state }
       });
     } catch (error: any) {
-      console.error("Geocoding error:", error);
+      console.error("ZIP update error:", error);
       toast({
         title: "Failed to update ZIP",
-        description: error.message || "Could not geocode ZIP code",
+        description: error.message || "Could not validate ZIP code. Please try again.",
         variant: "destructive",
       });
     } finally {
