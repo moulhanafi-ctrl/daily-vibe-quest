@@ -9,7 +9,7 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Gen Z Neon Pastel Palette */
-    --background: 270 50% 98%;
+    --background: 220 20% 96%;
     --foreground: 280 15% 15%;
 
     --card: 0 0% 100%;
@@ -45,9 +45,9 @@ All colors MUST be HSL.
 
     /* Custom Gen Z gradients */
     --gradient-primary: linear-gradient(135deg, hsl(280, 65%, 65%), hsl(180, 70%, 70%));
-    --gradient-background: linear-gradient(180deg, hsl(270, 50%, 98%), hsl(180, 40%, 95%));
+    --gradient-background: linear-gradient(180deg, hsl(220, 20%, 96%), hsl(200, 25%, 97%));
     --gradient-hero: linear-gradient(135deg, hsl(280 65% 75% / 0.2), hsl(180 70% 75% / 0.2));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(270 50% 99%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 20% 98%));
     --shadow-glow: 0 8px 32px hsl(280, 65%, 65%, 0.2);
     
     /* Vibe Check Custom Colors */
