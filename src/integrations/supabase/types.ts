@@ -443,6 +443,108 @@ export type Database = {
           },
         ]
       }
+      consent_ledger: {
+        Row: {
+          accepted_at: string | null
+          accepted_ip: string | null
+          guardian_id: string | null
+          guidelines_accepted: boolean | null
+          id: string
+          not_therapy_acknowledged: boolean | null
+          privacy_accepted: boolean | null
+          terms_accepted: boolean | null
+          user_agent: string | null
+          user_id: string
+          version: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_ip?: string | null
+          guardian_id?: string | null
+          guidelines_accepted?: boolean | null
+          id?: string
+          not_therapy_acknowledged?: boolean | null
+          privacy_accepted?: boolean | null
+          terms_accepted?: boolean | null
+          user_agent?: string | null
+          user_id: string
+          version: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_ip?: string | null
+          guardian_id?: string | null
+          guidelines_accepted?: boolean | null
+          id?: string
+          not_therapy_acknowledged?: boolean | null
+          privacy_accepted?: boolean | null
+          terms_accepted?: boolean | null
+          user_agent?: string | null
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      data_deletion_requests: {
+        Row: {
+          cancellation_token: string | null
+          completed_at: string | null
+          grace_period_ends_at: string | null
+          id: string
+          requested_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          cancellation_token?: string | null
+          completed_at?: string | null
+          grace_period_ends_at?: string | null
+          id?: string
+          requested_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          cancellation_token?: string | null
+          completed_at?: string | null
+          grace_period_ends_at?: string | null
+          id?: string
+          requested_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      data_export_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          download_url: string | null
+          expires_at: string | null
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          download_url?: string | null
+          expires_at?: string | null
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          download_url?: string | null
+          expires_at?: string | null
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       entitlements: {
         Row: {
           created_at: string | null
@@ -809,6 +911,45 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_versions: {
+        Row: {
+          active: boolean | null
+          content_ar: string | null
+          content_en: string
+          content_es: string | null
+          content_fr: string | null
+          created_at: string | null
+          document_type: string
+          id: string
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          active?: boolean | null
+          content_ar?: string | null
+          content_en: string
+          content_es?: string | null
+          content_fr?: string | null
+          created_at?: string | null
+          document_type: string
+          id?: string
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          active?: boolean | null
+          content_ar?: string | null
+          content_en?: string
+          content_es?: string | null
+          content_fr?: string | null
+          created_at?: string | null
+          document_type?: string
+          id?: string
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       moderator_actions: {
         Row: {
           action: string
@@ -1157,6 +1298,10 @@ export type Database = {
           insurance: Json | null
           is_parent: boolean | null
           language: string | null
+          legal_consent_accepted_at: string | null
+          legal_consent_ip: string | null
+          legal_consent_user_agent: string | null
+          legal_consent_version: string | null
           location: Json | null
           optional_reflection: string | null
           parent_id: string | null
@@ -1181,6 +1326,10 @@ export type Database = {
           insurance?: Json | null
           is_parent?: boolean | null
           language?: string | null
+          legal_consent_accepted_at?: string | null
+          legal_consent_ip?: string | null
+          legal_consent_user_agent?: string | null
+          legal_consent_version?: string | null
           location?: Json | null
           optional_reflection?: string | null
           parent_id?: string | null
@@ -1205,6 +1354,10 @@ export type Database = {
           insurance?: Json | null
           is_parent?: boolean | null
           language?: string | null
+          legal_consent_accepted_at?: string | null
+          legal_consent_ip?: string | null
+          legal_consent_user_agent?: string | null
+          legal_consent_version?: string | null
           location?: Json | null
           optional_reflection?: string | null
           parent_id?: string | null
