@@ -36,9 +36,13 @@ const CommunityGuidelines = () => {
             <AlertTriangle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-semibold mb-2">Our Core Principle</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-3">
                 Vibe Check is a judgment-free zone built on kindness, respect, and mutual support. 
                 We all have tough days—these guidelines help us lift each other up.
+              </p>
+              <p className="text-sm font-semibold">
+                Vibe Check is an inclusive space for all walks of life. We affirm and welcome LGBTQ+ users 
+                and communities of every race, ethnicity, faith, ability, and family structure.
               </p>
             </div>
           </div>
@@ -63,6 +67,16 @@ const CommunityGuidelines = () => {
               <Badge variant="destructive">Enforced</Badge>
             </h2>
             <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2 text-red-600 dark:text-red-400">
+                  No Discrimination
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Zero tolerance for hate speech, slurs, or harassment based on sexual orientation, gender 
+                  identity/expression, race, ethnicity, religion, disability, or any personal trait. This includes 
+                  LGBTQ+ discrimination, misgendering, deadnaming, or any form of identity-based harassment.
+                </p>
+              </div>
               <div>
                 <h3 className="font-semibold mb-2 text-red-600 dark:text-red-400">
                   No Bullying, Harassment, or Hate Speech

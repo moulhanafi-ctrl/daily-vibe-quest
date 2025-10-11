@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface BasicInfoStepProps {
   onNext: (data: {
@@ -21,16 +22,23 @@ export const BasicInfoStep = ({ onNext, onBack }: BasicInfoStepProps) => {
   const [age, setAge] = useState("");
   const [sex, setSex] = useState("");
   const [zipcode, setZipcode] = useState("");
+  const [pronouns, setPronouns] = useState("");
+  const [customPronouns, setCustomPronouns] = useState("");
+  const [showPronouns, setShowPronouns] = useState(true);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (firstName && age && sex && zipcode) {
+      const finalPronouns = pronouns === "custom" ? customPronouns : pronouns;
+      
       onNext({
         firstName,
         age: parseInt(age),
         sex,
-        zipcode
-      });
+        zipcode,
+        pronouns: finalPronouns || undefined,
+        show_pronouns: showPronouns,
+      } as any);
     }
   };
 
@@ -101,6 +109,45 @@ export const BasicInfoStep = ({ onNext, onBack }: BasicInfoStepProps) => {
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pronouns">Pronouns (Optional)</Label>
+              <Select value={pronouns} onValueChange={setPronouns}>
+                <SelectTrigger id="pronouns" aria-label="Select pronouns">
+                  <SelectValue placeholder="Select your pronouns" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="she/her">she/her</SelectItem>
+                  <SelectItem value="he/him">he/him</SelectItem>
+                  <SelectItem value="they/them">they/them</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                  <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                </SelectContent>
+              </Select>
+              {pronouns === "custom" && (
+                <Input
+                  value={customPronouns}
+                  onChange={(e) => setCustomPronouns(e.target.value)}
+                  placeholder="Enter your pronouns"
+                  className="mt-2"
+                  aria-label="Custom pronouns"
+                />
+              )}
+            </div>
+
+            {pronouns && pronouns !== "prefer-not-to-say" && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="showPronouns"
+                  checked={showPronouns}
+                  onCheckedChange={(checked) => setShowPronouns(!!checked)}
+                  aria-label="Show pronouns on profile"
+                />
+                <Label htmlFor="showPronouns" className="cursor-pointer text-sm">
+                  Show my pronouns on my profile and in chat rooms
+                </Label>
+              </div>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button type="button" variant="outline" onClick={onBack} className="flex-1">

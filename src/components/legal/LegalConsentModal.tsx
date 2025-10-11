@@ -83,6 +83,13 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
           </DialogDescription>
         </DialogHeader>
 
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg mb-4">
+          <p className="text-sm">
+            <strong>Vibe Check is inclusive of LGBTQ+ users and all identities.</strong> Harassment or 
+            discrimination results in moderation actions.
+          </p>
+        </div>
+
         <ScrollArea className="h-[50vh] pr-4">
           <div className="space-y-6">
             {/* Not Therapy Disclaimer */}

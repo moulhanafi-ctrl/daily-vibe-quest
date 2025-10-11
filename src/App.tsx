@@ -17,6 +17,11 @@ import Library from "./pages/Library";
 import Orders from "./pages/Orders";
 import Shipping from "./pages/policies/Shipping";
 import Refunds from "./pages/policies/Refunds";
+import Terms from "./pages/legal/Terms";
+import Privacy from "./pages/legal/Privacy";
+import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
+import Crisis from "./pages/legal/Crisis";
+import Inclusion from "./pages/legal/Inclusion";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +47,11 @@ const App = () => (
           <Route path="/orders" element={<Orders />} />
           <Route path="/policies/shipping" element={<Shipping />} />
           <Route path="/policies/refunds" element={<Refunds />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+          <Route path="/crisis" element={<Crisis />} />
+          <Route path="/inclusion" element={<Inclusion />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

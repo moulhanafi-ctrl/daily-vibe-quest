@@ -7,6 +7,7 @@ import { MessageSquare, Users, ArrowLeft, Crown, MessageSquareOff } from "lucide
 import { toast } from "@/hooks/use-toast";
 import { STRIPE_PLANS } from "@/lib/stripe";
 import { ChatRoomSkeleton } from "@/components/ChatRoomSkeleton";
+import { InclusionBanner } from "@/components/InclusionBanner";
 
 interface ChatRoom {
   id: string;
@@ -149,6 +150,8 @@ const ChatRooms = () => {
               Connect with others who share your focus areas
             </p>
           </div>
+
+          <InclusionBanner compact={true} />
 
           {!hasActiveSubscription ? (
             <Card className="max-w-3xl mx-auto">

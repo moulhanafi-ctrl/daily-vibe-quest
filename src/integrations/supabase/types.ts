@@ -499,11 +499,14 @@ export type Database = {
           created_at: string | null
           first_name: string | null
           id: string
+          inclusion_acknowledged_version: string | null
           is_parent: boolean | null
           optional_reflection: string | null
           parent_id: string | null
+          pronouns: string | null
           selected_focus_areas: string[] | null
           sex: string | null
+          show_pronouns: boolean | null
           subscription_expires_at: string | null
           subscription_status: string | null
           updated_at: string | null
@@ -517,11 +520,14 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id: string
+          inclusion_acknowledged_version?: string | null
           is_parent?: boolean | null
           optional_reflection?: string | null
           parent_id?: string | null
+          pronouns?: string | null
           selected_focus_areas?: string[] | null
           sex?: string | null
+          show_pronouns?: boolean | null
           subscription_expires_at?: string | null
           subscription_status?: string | null
           updated_at?: string | null
@@ -535,11 +541,14 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id?: string
+          inclusion_acknowledged_version?: string | null
           is_parent?: boolean | null
           optional_reflection?: string | null
           parent_id?: string | null
+          pronouns?: string | null
           selected_focus_areas?: string[] | null
           sex?: string | null
+          show_pronouns?: boolean | null
           subscription_expires_at?: string | null
           subscription_status?: string | null
           updated_at?: string | null
