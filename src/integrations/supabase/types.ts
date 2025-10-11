@@ -615,6 +615,89 @@ export type Database = {
           },
         ]
       }
+      journal_entries: {
+        Row: {
+          audio_url: string | null
+          body: string | null
+          created_at: string | null
+          date: string
+          id: string
+          mood: number | null
+          mood_id: string | null
+          shared_with_parent: boolean | null
+          tags: string[] | null
+          title: string | null
+          transcript: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          body?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          mood?: number | null
+          mood_id?: string | null
+          shared_with_parent?: boolean | null
+          tags?: string[] | null
+          title?: string | null
+          transcript?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          body?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          mood?: number | null
+          mood_id?: string | null
+          shared_with_parent?: boolean | null
+          tags?: string[] | null
+          title?: string | null
+          transcript?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_mood_id_fkey"
+            columns: ["mood_id"]
+            isOneToOne: false
+            referencedRelation: "moods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_prompts: {
+        Row: {
+          active: boolean | null
+          age_group: Database["public"]["Enums"]["age_group"]
+          category: string
+          created_at: string | null
+          id: string
+          prompt: string
+        }
+        Insert: {
+          active?: boolean | null
+          age_group: Database["public"]["Enums"]["age_group"]
+          category: string
+          created_at?: string | null
+          id?: string
+          prompt: string
+        }
+        Update: {
+          active?: boolean | null
+          age_group?: Database["public"]["Enums"]["age_group"]
+          category?: string
+          created_at?: string | null
+          id?: string
+          prompt?: string
+        }
+        Relationships: []
+      }
       moderator_actions: {
         Row: {
           action: string

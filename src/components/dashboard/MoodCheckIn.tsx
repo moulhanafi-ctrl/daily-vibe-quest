@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
+import { JournalPrompts } from "@/components/journal/JournalPrompts";
+import { Book, Mic, Lightbulb } from "lucide-react";
 
 const MOODS = [
   { emoji: "🤩", value: "excited", label: "Great" },
@@ -24,11 +27,14 @@ interface MoodCheckInProps {
 }
 
 export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
+  const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [intensity, setIntensity] = useState([3]);
   const [reflection, setReflection] = useState("");
   const [isPrivate, setIsPrivate] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [showReflectCard, setShowReflectCard] = useState(false);
+  const [lastMoodId, setLastMoodId] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     if (!selectedMood) {
@@ -102,6 +108,10 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
 
       toast({ title: "Mood checked in successfully!" });
       
+      // Show reflect card
+      setShowReflectCard(true);
+      setLastMoodId(moodData.id);
+      
       // Reset form
       setSelectedMood(null);
       setIntensity([3]);
@@ -125,7 +135,59 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
   };
 
   return (
-    <Card className="shadow-glow">
+    <div className="space-y-4">
+      {showReflectCard && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Book className="w-5 h-5" />
+              Reflect?
+            </CardTitle>
+            <CardDescription>
+              Take a moment to journal about how you're feeling
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate("/journal")}
+              >
+                <Book className="w-4 h-4 mr-2" />
+                Write
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate("/journal")}
+              >
+                <Mic className="w-4 h-4 mr-2" />
+                Voice Note
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate("/journal")}
+              >
+                <Lightbulb className="w-4 h-4 mr-2" />
+                Use a Prompt
+              </Button>
+            </div>
+            <JournalPrompts onSelectPrompt={(prompt) => navigate("/journal", { state: { prompt } })} limit={3} />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowReflectCard(false)}
+              className="w-full"
+            >
+              Maybe later
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      
+      <Card className="shadow-glow">
       <CardHeader>
         <CardTitle className="text-2xl">{getAgeAppropriatePrompt()}</CardTitle>
         <CardDescription>
@@ -211,5 +273,6 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 };

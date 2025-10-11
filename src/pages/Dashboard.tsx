@@ -10,7 +10,7 @@ import { MotivationalContent } from "@/components/dashboard/MotivationalContent"
 import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag } from "lucide-react";
+import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag, Book } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
@@ -144,6 +144,10 @@ const Dashboard = () => {
             <Button onClick={() => navigate("/library")} variant="outline" size="sm" aria-label="Go to library">
               📚 <span className="hidden sm:inline ml-2">Library</span>
             </Button>
+            <Button onClick={() => navigate("/journal")} variant="outline" size="sm" aria-label="Go to journal">
+              <Book className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Journal</span>
+            </Button>
             <Button onClick={() => navigate("/store")} variant="outline" size="sm" aria-label="Go to store">
               <ShoppingBag className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Store</span>
@@ -162,7 +166,7 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="checkin" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto">
             <TabsTrigger value="checkin" className="gap-1 sm:gap-2" aria-label="Mood check-in">
               <Heart className="h-4 w-4" />
               <span className="text-xs sm:text-sm">Check-in</span>
