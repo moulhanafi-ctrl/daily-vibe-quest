@@ -331,6 +331,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_parent_of: {
+        Args: { _child_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       age_group: "child" | "teen" | "adult" | "elder"
