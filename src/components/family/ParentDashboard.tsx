@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Copy, UserPlus } from "lucide-react";
+import { Copy, UserPlus, Settings } from "lucide-react";
 import { format } from "date-fns";
+import { ParentNotifications } from "./ParentNotifications";
+import { ParentNotificationSettings } from "./ParentNotificationSettings";
 
 interface Child {
   id: string;
@@ -31,6 +33,7 @@ export const ParentDashboard = () => {
   const [children, setChildren] = useState<Child[]>([]);
   const [inviteCode, setInviteCode] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     loadChildren();
@@ -160,6 +163,16 @@ export const ParentDashboard = () => {
               <CardTitle className="text-2xl">👨‍👩‍👧 Family Dashboard</CardTitle>
               <CardDescription>Keep track of your family's vibes</CardDescription>
             </div>
+            <div className="flex items-center gap-2">
+              <ParentNotifications />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowSettings(!showSettings)}
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -226,6 +239,8 @@ export const ParentDashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {showSettings && <ParentNotificationSettings />}
     </div>
   );
 };

@@ -51,17 +51,53 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
 
       if (moodError) throw moodError;
 
+      // Send notification to parent if child/teen has linked parent
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && (ageGroup === "child" || ageGroup === "teen")) {
+        const moodEmoji = MOODS.find(m => m.value === selectedMood)?.emoji || "😊";
+        
+        await supabase.functions.invoke('send-parent-notification', {
+          body: {
+            childId: userId,
+            eventType: 'checkin',
+            payload: {
+              mood: selectedMood,
+              emoji: moodEmoji,
+              timestamp: new Date().toISOString()
+            }
+          }
+        });
+      }
+
       // Insert reflection if provided
       if (reflection.trim()) {
+        const sharedWithParent = !isPrivate && (ageGroup === "child" || ageGroup === "teen");
+        
         const { error: reflectionError } = await supabase
           .from("reflections")
           .insert({
             mood_id: moodData.id,
             content: reflection,
             is_private: isPrivate,
+            shared_with_parent: sharedWithParent
           });
 
         if (reflectionError) throw reflectionError;
+
+        // Send notification if shared with parent
+        if (sharedWithParent) {
+          await supabase.functions.invoke('send-parent-notification', {
+            body: {
+              childId: userId,
+              eventType: 'journal_shared',
+              payload: {
+                title: reflection.substring(0, 50),
+                preview: reflection.substring(0, 100),
+                timestamp: new Date().toISOString()
+              }
+            }
+          });
+        }
       }
 
       toast({ title: "Mood checked in successfully!" });
@@ -161,7 +197,10 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
                 onCheckedChange={(checked) => setIsPrivate(checked as boolean)}
               />
               <Label htmlFor="private" className="text-sm font-normal">
-                Keep this private (only you can see it)
+                {(ageGroup === "child" || ageGroup === "teen") 
+                  ? isPrivate ? "Private 🔒 (Only you can see)" : "Shared with Parent ✅" 
+                  : "Keep this private (only you can see it)"
+                }
               </Label>
             </div>
 
