@@ -1,0 +1,154 @@
+{
+  "index": {
+    "title": "Légal et Sécurité",
+    "subtitle": "Documents et politiques importants",
+    "version": "Version {{version}}",
+    "lastUpdated": "Dernière mise à jour : {{date}}",
+    "terms": {
+      "title": "Conditions d'Utilisation",
+      "description": "Comment fonctionne Vibe Check et vos responsabilités"
+    },
+    "privacy": {
+      "title": "Politique de Confidentialité",
+      "description": "Comment nous collectons, utilisons et protégeons vos données"
+    },
+    "guidelines": {
+      "title": "Règles de la Communauté",
+      "description": "Règles pour des interactions respectueuses et sûres"
+    },
+    "inclusion": {
+      "title": "Déclaration d'Inclusion",
+      "description": "Notre engagement envers LGBTQ+ et toutes les identités"
+    },
+    "crisis": {
+      "title": "Ressources de Crise",
+      "description": "Soutien d'urgence et lignes d'aide"
+    },
+    "refunds": {
+      "title": "Politique de Remboursement",
+      "description": "Retours et annulations d'achats"
+    }
+  },
+  "consent": {
+    "title": "Consentement Légal et de Sécurité",
+    "subtitle": "Veuillez examiner et accepter pour continuer à utiliser Vibe Check",
+    "inclusionBanner": "Vibe Check est inclusif des utilisateurs LGBTQ+ et de toutes les identités. Le harcèlement ou la discrimination entraîne des actions de modération.",
+    "notTherapy": {
+      "title": "⚠️ Important : Ce N'est Pas une Thérapie",
+      "content": "Vibe Check n'est pas une thérapie, des soins médicaux ou un service de crise. C'est un espace de soutien par les pairs et de bien-être pour la réflexion, l'éducation et la communauté. Si vous avez besoin de soins cliniques, veuillez contacter un professionnel agréé. Si vous êtes en danger immédiat, appelez votre numéro d'urgence local."
+    },
+    "guidelines": {
+      "title": "🤝 Règles de la Communauté",
+      "beKind": "Soyez gentil. Pas d'intimidation, de harcèlement, de discours haineux ou de menaces.",
+      "keepSafe": "Restez en sécurité. Pas de contenu sexuel, d'avances sexuelles ou de messages explicites.",
+      "respectPrivacy": "Respectez la vie privée. Ne partagez pas les informations personnelles d'autrui.",
+      "staySupportive": "Restez solidaire. Pas de spam, d'autopromotion excessive ou d'arnaques.",
+      "crisisContent": "Contenu de crise. Si vous ou quelqu'un exprime une intention d'automutilation, utilisez les ressources de crise fournies et alertez un modérateur.",
+      "viewFull": "Voir les Règles Complètes"
+    },
+    "terms": {
+      "title": "📜 Conditions d'Utilisation",
+      "point1": "Vibe Check fournit du contenu de bien-être et des salles entre pairs ; aucun conseil médical.",
+      "point2": "Vous devez avoir 18 ans ou plus, ou 13-17 ans avec la supervision d'un parent/tuteur, ou moins de 13 ans avec le consentement vérifié du parent.",
+      "point3": "Nous pouvons modérer ou supprimer du contenu qui viole les règles et restreindre les comptes.",
+      "point4": "Les achats sont soumis à notre Politique de Remboursement ; les articles numériques accordent un accès personnel et non transférable.",
+      "viewFull": "Voir les Conditions Complètes"
+    },
+    "privacy": {
+      "title": "🔒 Avis de Confidentialité",
+      "content": "Nous collectons uniquement les données nécessaires pour faire fonctionner l'application (compte, groupe d'âge, adhésion aux salles, check-ins). Nous ne vendons pas vos données.",
+      "viewFull": "Voir la Politique de Confidentialité"
+    },
+    "crisis": {
+      "title": "🆘 Ressources de Crise",
+      "us": "États-Unis/Canada : Appelez ou textez 988 (Ligne de Vie pour le Suicide et la Crise)",
+      "uk": "Royaume-Uni et Irlande : Samaritains 116 123",
+      "elsewhere": "Ailleurs : findahelpline.com"
+    },
+    "checkboxes": {
+      "notTherapy": "Je comprends que Vibe Check n'est pas une thérapie ni des soins médicaux.",
+      "terms": "J'accepte les Conditions d'Utilisation et la Politique de Confidentialité.",
+      "guidelines": "J'accepte de suivre les Règles de la Communauté (pas d'intimidation, de harcèlement, de contenu sexuel ou de discours haineux).",
+      "parentalConsent": "Je suis le parent/tuteur et je consens à l'utilisation de Vibe Check par mon enfant et au traitement de ses données comme décrit."
+    },
+    "actions": {
+      "cancel": "Annuler",
+      "agree": "Accepter et Continuer",
+      "processing": "Traitement..."
+    },
+    "success": {
+      "title": "Merci ! ✅",
+      "message": "Vous pouvez maintenant accéder à toutes les fonctionnalités"
+    },
+    "reconsentRequired": {
+      "title": "Conditions Mises à Jour",
+      "message": "Nos conditions légales ont été mises à jour. Veuillez examiner et accepter pour continuer."
+    }
+  },
+  "banner": {
+    "notTherapy": "Vibe Check n'est pas une thérapie ni des soins médicaux. Si vous êtes en danger, appelez les services d'urgence locaux.",
+    "988": "É.-U./Canada : Appelez ou textez 988 pour un soutien immédiat."
+  },
+  "dataRights": {
+    "title": "Données et Confidentialité",
+    "subtitle": "Gérez vos informations personnelles",
+    "export": {
+      "title": "Télécharger Mes Données",
+      "description": "Obtenez une copie de votre profil, journaux, check-ins et achats",
+      "button": "Demander l'Exportation des Données",
+      "pending": "Exportation en cours...",
+      "ready": "Téléchargement Prêt",
+      "expired": "Lien Expiré",
+      "processing": "Nous préparons vos données. Cela peut prendre quelques minutes.",
+      "success": "Votre exportation de données est prête. Vérifiez votre email pour le lien de téléchargement.",
+      "error": "Échec de la demande d'exportation des données. Veuillez réessayer."
+    },
+    "delete": {
+      "title": "Supprimer Mon Compte",
+      "description": "Supprimer définitivement toutes vos données (période de grâce de 7 jours)",
+      "button": "Demander la Suppression du Compte",
+      "confirm": "Êtes-vous sûr de vouloir supprimer votre compte ?",
+      "warning": "Cette action ne peut pas être annulée. Toutes vos données seront définitivement supprimées après 7 jours.",
+      "graceNote": "Vous avez {{days}} jours pour annuler cette demande.",
+      "cancel": "Annuler la Demande de Suppression",
+      "proceed": "Oui, Supprimer Mon Compte",
+      "success": "Demande de suppression reçue. Vous avez 7 jours pour annuler. Vérifiez votre email pour confirmation.",
+      "error": "Échec de la demande de suppression de compte. Veuillez réessayer.",
+      "cancelled": "Suppression de compte annulée avec succès."
+    }
+  },
+  "parentVerification": {
+    "title": "Vérification du Parent/Tuteur",
+    "subtitle": "Requis pour les utilisateurs de moins de 13 ans",
+    "description": "Pour nous conformer aux lois sur la confidentialité des enfants, nous devons vérifier le consentement de votre parent ou tuteur.",
+    "methods": {
+      "email": {
+        "title": "Vérification par Email",
+        "description": "Nous enverrons un code de vérification à l'email de votre parent",
+        "emailLabel": "Email du Parent/Tuteur",
+        "sendCode": "Envoyer le Code de Vérification",
+        "codeLabel": "Code de Vérification",
+        "verify": "Vérifier le Code",
+        "resend": "Renvoyer le Code"
+      },
+      "stripe": {
+        "title": "Vérification par Paiement",
+        "description": "Vérifier avec une charge de 0,01 $ (remboursée automatiquement)",
+        "button": "Vérifier avec Paiement",
+        "note": "Cette petite charge confirme la propriété du compte et est immédiatement remboursée."
+      }
+    },
+    "status": {
+      "pending": "Vérification en Attente",
+      "verified": "Vérifié ✓",
+      "failed": "Vérification Échouée"
+    },
+    "success": "Vérification parentale terminée ! Accès complet accordé.",
+    "error": "La vérification a échoué. Veuillez réessayer ou contacter le support."
+  },
+  "storeDisclaimer": {
+    "educational": "Le contenu de bien-être est éducatif et non des soins médicaux.",
+    "digitalGoods": "Les biens numériques sont personnels et non transférables.",
+    "refundPolicy": "Voir la Politique de Remboursement"
+  }
+}

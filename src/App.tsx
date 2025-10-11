@@ -24,6 +24,7 @@ import Privacy from "./pages/legal/Privacy";
 import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
 import Crisis from "./pages/legal/Crisis";
 import Inclusion from "./pages/legal/Inclusion";
+import LegalIndex from "./pages/legal/LegalIndex";
 import NotFound from "./pages/NotFound";
 import AdminAI from "./pages/admin/AdminAI";
 import ArthurAdmin from "./pages/admin/ArthurAdmin";
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/journal" element={<Journal />} />
           <Route path="/policies/shipping" element={<Shipping />} />
           <Route path="/policies/refunds" element={<Refunds />} />
+          <Route path="/legal" element={<LegalIndex />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/community-guidelines" element={<CommunityGuidelines />} />

@@ -1,0 +1,154 @@
+{
+  "index": {
+    "title": "Legal & Safety",
+    "subtitle": "Important documents and policies",
+    "version": "Version {{version}}",
+    "lastUpdated": "Last updated: {{date}}",
+    "terms": {
+      "title": "Terms of Use",
+      "description": "How Vibe Check works and your responsibilities"
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "description": "How we collect, use, and protect your data"
+    },
+    "guidelines": {
+      "title": "Community Guidelines",
+      "description": "Rules for respectful, safe interactions"
+    },
+    "inclusion": {
+      "title": "Inclusion Statement",
+      "description": "Our commitment to LGBTQ+ and all identities"
+    },
+    "crisis": {
+      "title": "Crisis Resources",
+      "description": "Emergency support and helplines"
+    },
+    "refunds": {
+      "title": "Refund Policy",
+      "description": "Purchase returns and cancellations"
+    }
+  },
+  "consent": {
+    "title": "Legal & Safety Consent",
+    "subtitle": "Please review and agree to continue using Vibe Check",
+    "inclusionBanner": "Vibe Check is inclusive of LGBTQ+ users and all identities. Harassment or discrimination results in moderation actions.",
+    "notTherapy": {
+      "title": "⚠️ Important: This is Not Therapy",
+      "content": "Vibe Check is not therapy, medical care, or a crisis service. It's a peer-support and wellness space for reflection, education, and community. If you need clinical care, please contact a licensed professional. If you're in immediate danger, call your local emergency number."
+    },
+    "guidelines": {
+      "title": "🤝 Community Guidelines",
+      "beKind": "Be kind. No bullying, harassment, hate speech, or threats.",
+      "keepSafe": "Keep it safe. No sexual content, sexual advances, or explicit messages.",
+      "respectPrivacy": "Respect privacy. Don't share others' personal information.",
+      "staySupportive": "Stay supportive. No spamming, self-promotion, or scams.",
+      "crisisContent": "Crisis content. If you or someone expresses intent to self-harm, use the crisis resources provided and alert a moderator.",
+      "viewFull": "View Full Guidelines"
+    },
+    "terms": {
+      "title": "📜 Terms of Use",
+      "point1": "Vibe Check provides wellness content and peer rooms; no medical advice.",
+      "point2": "You must be 18+, or 13–17 with parent/guardian oversight, or <13 with verified parent consent.",
+      "point3": "We may moderate or remove content that violates rules and may restrict accounts.",
+      "point4": "Purchases are subject to our Refund Policy; digital items grant personal, non-transferable access.",
+      "viewFull": "View Full Terms"
+    },
+    "privacy": {
+      "title": "🔒 Privacy Notice",
+      "content": "We collect only the data needed to run the app (account, age group, room membership, check-ins). We don't sell your data.",
+      "viewFull": "View Privacy Policy"
+    },
+    "crisis": {
+      "title": "🆘 Crisis Resources",
+      "us": "US/Canada: Call/text 988 (Suicide & Crisis Lifeline)",
+      "uk": "UK & Ireland: Samaritans 116 123",
+      "elsewhere": "Elsewhere: findahelpline.com"
+    },
+    "checkboxes": {
+      "notTherapy": "I understand Vibe Check is not therapy or medical care.",
+      "terms": "I agree to the Terms of Use and Privacy Policy.",
+      "guidelines": "I agree to follow the Community Guidelines (no bullying, harassment, sexual content, or hate speech).",
+      "parentalConsent": "I am the parent/guardian and consent to my child's use of Vibe Check and to the processing of their data as described."
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "agree": "Agree & Continue",
+      "processing": "Processing..."
+    },
+    "success": {
+      "title": "Thank you! ✅",
+      "message": "You can now access all features"
+    },
+    "reconsentRequired": {
+      "title": "Updated Terms",
+      "message": "Our legal terms have been updated. Please review and accept to continue."
+    }
+  },
+  "banner": {
+    "notTherapy": "Vibe Check isn't therapy or medical care. If you're in danger, call local emergency services.",
+    "988": "US/CA: Call or text 988 for immediate support."
+  },
+  "dataRights": {
+    "title": "Data & Privacy",
+    "subtitle": "Manage your personal information",
+    "export": {
+      "title": "Download My Data",
+      "description": "Get a copy of your profile, journals, check-ins, and purchases",
+      "button": "Request Data Export",
+      "pending": "Export in progress...",
+      "ready": "Download Ready",
+      "expired": "Link Expired",
+      "processing": "We're preparing your data. This may take a few minutes.",
+      "success": "Your data export is ready. Check your email for the download link.",
+      "error": "Failed to request data export. Please try again."
+    },
+    "delete": {
+      "title": "Delete My Account",
+      "description": "Permanently remove all your data (7-day grace period)",
+      "button": "Request Account Deletion",
+      "confirm": "Are you sure you want to delete your account?",
+      "warning": "This action cannot be undone. All your data will be permanently deleted after 7 days.",
+      "graceNote": "You have {{days}} days to cancel this request.",
+      "cancel": "Cancel Deletion Request",
+      "proceed": "Yes, Delete My Account",
+      "success": "Deletion request received. You have 7 days to cancel. Check your email for confirmation.",
+      "error": "Failed to request account deletion. Please try again.",
+      "cancelled": "Account deletion cancelled successfully."
+    }
+  },
+  "parentVerification": {
+    "title": "Parent/Guardian Verification",
+    "subtitle": "Required for users under 13",
+    "description": "To comply with children's privacy laws, we need to verify your parent or guardian's consent.",
+    "methods": {
+      "email": {
+        "title": "Email Verification",
+        "description": "We'll send a verification code to your parent's email",
+        "emailLabel": "Parent/Guardian Email",
+        "sendCode": "Send Verification Code",
+        "codeLabel": "Verification Code",
+        "verify": "Verify Code",
+        "resend": "Resend Code"
+      },
+      "stripe": {
+        "title": "Payment Verification",
+        "description": "Verify with a $0.01 charge (automatically refunded)",
+        "button": "Verify with Payment",
+        "note": "This small charge confirms account ownership and is immediately refunded."
+      }
+    },
+    "status": {
+      "pending": "Verification Pending",
+      "verified": "Verified ✓",
+      "failed": "Verification Failed"
+    },
+    "success": "Parent verification completed! Full access granted.",
+    "error": "Verification failed. Please try again or contact support."
+  },
+  "storeDisclaimer": {
+    "educational": "Wellness content is educational and not medical care.",
+    "digitalGoods": "Digital goods are personal and non-transferable.",
+    "refundPolicy": "View Refund Policy"
+  }
+}

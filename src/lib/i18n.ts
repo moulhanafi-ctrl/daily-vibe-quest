@@ -18,26 +18,35 @@ import arthurES from '@/locales/es/arthur.json';
 import arthurFR from '@/locales/fr/arthur.json';
 import arthurAR from '@/locales/ar/arthur.json';
 
+import legalEN from '@/locales/en/legal.json';
+import legalES from '@/locales/es/legal.json';
+import legalFR from '@/locales/fr/legal.json';
+import legalAR from '@/locales/ar/legal.json';
+
 const resources = {
   en: {
     common: commonEN,
     onboarding: onboardingEN,
     arthur: arthurEN,
+    legal: legalEN,
   },
   es: {
     common: commonES,
     onboarding: onboardingES,
     arthur: arthurES,
+    legal: legalES,
   },
   fr: {
     common: commonFR,
     onboarding: onboardingFR,
     arthur: arthurFR,
+    legal: legalFR,
   },
   ar: {
     common: commonAR,
     onboarding: onboardingAR,
     arthur: arthurAR,
+    legal: legalAR,
   },
 };
 
@@ -48,7 +57,7 @@ i18n
     resources,
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'onboarding', 'arthur'],
+    ns: ['common', 'onboarding', 'arthur', 'legal'],
     interpolation: {
       escapeValue: false,
     },
