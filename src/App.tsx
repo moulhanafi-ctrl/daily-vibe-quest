@@ -39,6 +39,7 @@ import StripeAdmin from "./pages/admin/StripeAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
 import LanguagePicker from "./pages/welcome/LanguagePicker";
 import OpsAdmin from "./pages/admin/OpsAdmin";
+import PublishReadiness from "./pages/admin/PublishReadiness";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,7 @@ const App = () => (
           <Route path="/admin/flags" element={<FeatureFlags />} />
           <Route path="/admin/stripe" element={<StripeAdmin />} />
           <Route path="/admin/ops" element={<OpsAdmin />} />
+          <Route path="/admin/publish" element={<PublishReadiness />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

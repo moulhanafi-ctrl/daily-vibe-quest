@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { IssueReporter } from "@/components/support/IssueReporter";
 
 export const Footer = () => {
   return (
@@ -44,6 +45,9 @@ export const Footer = () => {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground space-y-2">
+          <div className="flex justify-center mb-4">
+            <IssueReporter />
+          </div>
           <p>🏳️‍🌈 Inclusive by design. Everyone belongs here. 🏳️‍⚧️</p>
           <p>&copy; 2025 Vibe Check. All rights reserved.</p>
         </div>
