@@ -98,7 +98,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl">{t("consent.title")}</DialogTitle>
           <DialogDescription>
@@ -112,7 +112,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
           </p>
         </div>
 
-        <ScrollArea className="h-[50vh] pr-4">
+        <ScrollArea className="flex-1 pr-4 -mx-6 px-6">
           <div className="space-y-6">
             {/* Not Therapy Disclaimer */}
             <Collapsible>
@@ -205,7 +205,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
           </div>
         </ScrollArea>
 
-        <div className="space-y-6 pt-4 border-t">
+        <div className="space-y-4 pt-4 border-t mt-4 flex-shrink-0">
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <Checkbox
@@ -254,12 +254,12 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
             )}
           </div>
 
-          <div className="flex flex-col gap-3 pt-2">
+          <div className="flex flex-col gap-2">
             <Button
               onClick={handleAgree}
               disabled={!allRequiredChecked || submitting}
               size="lg"
-              className="w-full"
+              className="w-full font-semibold"
             >
               {submitting ? t("consent.actions.processing") : t("consent.actions.agree")}
             </Button>
@@ -267,7 +267,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
               variant="ghost"
               onClick={onClose}
               disabled={submitting}
-              className="w-full"
+              size="sm"
             >
               {t("consent.actions.cancel")}
             </Button>
