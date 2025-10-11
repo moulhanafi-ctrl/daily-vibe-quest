@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_audit: {
+        Row: {
+          action: string
+          actor: string
+          actor_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          input_json: Json
+          output_json: Json | null
+          rollback_ref: string | null
+          status: string
+          target: string | null
+          tool: string
+        }
+        Insert: {
+          action: string
+          actor?: string
+          actor_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_json: Json
+          output_json?: Json | null
+          rollback_ref?: string | null
+          status?: string
+          target?: string | null
+          tool: string
+        }
+        Update: {
+          action?: string
+          actor?: string
+          actor_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_json?: Json
+          output_json?: Json | null
+          rollback_ref?: string | null
+          status?: string
+          target?: string | null
+          tool?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_audit_rollback_ref_fkey"
+            columns: ["rollback_ref"]
+            isOneToOne: false
+            referencedRelation: "ai_audit"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_suggestions: {
         Row: {
           content: string
@@ -287,6 +346,110 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          flagged_by: string | null
+          id: string
+          message_id: string | null
+          room_id: string | null
+          severity: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          flagged_by?: string | null
+          id?: string
+          message_id?: string | null
+          room_id?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          flagged_by?: string | null
+          id?: string
+          message_id?: string | null
+          room_id?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidents_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderator_actions: {
+        Row: {
+          action: string
+          created_at: string
+          duration: unknown | null
+          expires_at: string | null
+          id: string
+          incident_id: string | null
+          metadata: Json | null
+          moderator_id: string
+          reason: string
+          target_user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          duration?: unknown | null
+          expires_at?: string | null
+          id?: string
+          incident_id?: string | null
+          metadata?: Json | null
+          moderator_id: string
+          reason: string
+          target_user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          duration?: unknown | null
+          expires_at?: string | null
+          id?: string
+          incident_id?: string | null
+          metadata?: Json | null
+          moderator_id?: string
+          reason?: string
+          target_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderator_actions_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
             referencedColumns: ["id"]
           },
         ]
@@ -675,18 +838,21 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          admin_role: Database["public"]["Enums"]["admin_role"] | null
           created_at: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          admin_role?: Database["public"]["Enums"]["admin_role"] | null
           created_at?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          admin_role?: Database["public"]["Enums"]["admin_role"] | null
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
@@ -711,6 +877,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      has_admin_role: {
+        Args: {
+          _admin_role: Database["public"]["Enums"]["admin_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -724,6 +897,12 @@ export type Database = {
       }
     }
     Enums: {
+      admin_role:
+        | "owner"
+        | "moderator"
+        | "support"
+        | "analyst"
+        | "store_manager"
       age_group: "child" | "teen" | "adult" | "elder"
       app_role: "admin" | "user"
       content_type: "audio" | "text" | "video"
@@ -864,6 +1043,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_role: ["owner", "moderator", "support", "analyst", "store_manager"],
       age_group: ["child", "teen", "adult", "elder"],
       app_role: ["admin", "user"],
       content_type: ["audio", "text", "video"],

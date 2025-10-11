@@ -1,5 +1,8 @@
 project_id = "hssrytzedacchvkrxgnq"
 
+[functions.admin-ai-chat]
+verify_jwt = true
+
 [functions.generate-ai-suggestions]
 verify_jwt = true
 

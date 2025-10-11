@@ -24,6 +24,7 @@ import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
 import Crisis from "./pages/legal/Crisis";
 import Inclusion from "./pages/legal/Inclusion";
 import NotFound from "./pages/NotFound";
+import AdminAI from "./pages/admin/AdminAI";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/community-guidelines" element={<CommunityGuidelines />} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/inclusion" element={<Inclusion />} />
+          <Route path="/admin/ai" element={<AdminAI />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
