@@ -21,8 +21,11 @@ export const InclusionBanner = ({ dismissible = false, compact = false }: Inclus
         <Heart className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" aria-hidden="true" />
         <div className="flex-1">
           <AlertDescription className={compact ? "text-sm" : ""}>
-            <strong>{t('inclusion.shortBanner')}</strong>{' '}
-            {!compact && t('inclusion.banner').split('.')[1]}
+            {compact ? (
+              <><strong>{t('inclusion.shortBanner')}</strong></>
+            ) : (
+              t('inclusion.banner')
+            )}
           </AlertDescription>
         </div>
         {dismissible && (
