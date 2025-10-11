@@ -1236,6 +1236,33 @@ export type Database = {
           },
         ]
       }
+      notification_prefs: {
+        Row: {
+          arthur_enabled: boolean
+          channels: string[]
+          quiet_hours: Json
+          updated_at: string
+          user_id: string
+          windows: string[]
+        }
+        Insert: {
+          arthur_enabled?: boolean
+          channels?: string[]
+          quiet_hours?: Json
+          updated_at?: string
+          user_id: string
+          windows?: string[]
+        }
+        Update: {
+          arthur_enabled?: boolean
+          channels?: string[]
+          quiet_hours?: Json
+          updated_at?: string
+          user_id?: string
+          windows?: string[]
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null

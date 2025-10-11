@@ -3,84 +3,108 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Sparkles } from "lucide-react";
 
+interface QuietHours { start: string; end: string }
+
+const DEFAULTS = {
+  enabled: false,
+  windows: ["09:00", "17:00"],
+  channels: ["push"] as ("push" | "email")[],
+  quiet_hours: { start: "21:00", end: "07:00" } as QuietHours,
+};
+
 export const ArthurSettings = () => {
   const [preferences, setPreferences] = useState({
-    enabled: true,
-    timezone: 'America/New_York',
-    max_daily_messages: 2
+    enabled: DEFAULTS.enabled,
+    windows: DEFAULTS.windows,
+    channels: DEFAULTS.channels,
+    quiet_hours: DEFAULTS.quiet_hours,
   });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadPreferences();
   }, []);
 
   const loadPreferences = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data, error } = await supabase
-      .from('arthur_preferences')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error loading preferences:', error);
-    }
-
-    if (data) {
-      setPreferences({
-        enabled: data.enabled,
-        timezone: data.timezone || 'America/New_York',
-        max_daily_messages: data.max_daily_messages || 2
+      const { data, error } = await supabase.functions.invoke("notifications-prefs", {
+        body: { op: "get" },
       });
-    }
 
-    setLoading(false);
+      if (error && (error as any).status !== 404) {
+        console.error("Error loading preferences:", error);
+      }
+
+      if (data && typeof data === "object") {
+        setPreferences({
+          enabled: !!data.arthur_enabled,
+          windows: Array.isArray(data.windows) ? data.windows : DEFAULTS.windows,
+          channels: Array.isArray(data.channels) ? data.channels : DEFAULTS.channels,
+          quiet_hours: data.quiet_hours ?? DEFAULTS.quiet_hours,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updatePreferences = async (updates: Partial<typeof preferences>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
+    setSaving(true);
     const newPreferences = { ...preferences, ...updates };
-    setPreferences(newPreferences);
+    setPreferences(newPreferences); // optimistic
 
-    const { error } = await supabase
-      .from('arthur_preferences')
-      .upsert(
-        {
-          user_id: user.id,
-          ...newPreferences,
+    try {
+      const { data, error } = await supabase.functions.invoke("notifications-prefs", {
+        body: {
+          arthur_enabled: newPreferences.enabled,
+          windows: newPreferences.windows,
+          channels: newPreferences.channels,
+          quiet_hours: newPreferences.quiet_hours,
         },
-        { onConflict: 'user_id' }
-      );
-
-    if (error) {
-      console.error('Error updating preferences:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update Arthur settings",
-        variant: "destructive"
       });
-      return;
-    }
 
-    toast({
-      title: "Settings updated",
-      description: "Your Arthur preferences have been saved"
-    });
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        // sync back from server
+        setPreferences({
+          enabled: !!data.arthur_enabled,
+          windows: data.windows ?? DEFAULTS.windows,
+          channels: data.channels ?? DEFAULTS.channels,
+          quiet_hours: data.quiet_hours ?? DEFAULTS.quiet_hours,
+        });
+      }
+
+      toast({ title: "Settings updated", description: "Your Arthur preferences have been saved" });
+    } catch (err: any) {
+      console.error("Error updating preferences:", err);
+      // revert optimistic change
+      setPreferences((prev) => ({ ...prev, ...preferences }));
+
+      const status = err?.status ?? 500;
+      const description =
+        status === 401 || status === 403
+          ? "Please sign in again to change Arthur settings."
+          : status === 409
+          ? "We’re setting up your preferences—try again."
+          : "Couldn’t save right now. Retrying…";
+
+      toast({ title: "Error", description, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
 
   return (
     <Card>
@@ -104,6 +128,7 @@ export const ArthurSettings = () => {
           <Switch
             id="arthur-enabled"
             checked={preferences.enabled}
+            disabled={saving}
             onCheckedChange={(checked) => updatePreferences({ enabled: checked })}
           />
         </div>
@@ -114,11 +139,11 @@ export const ArthurSettings = () => {
               <div>
                 <p className="text-sm font-medium mb-1">Notification Schedule</p>
                 <p className="text-sm text-muted-foreground">
-                  Arthur sends up to {preferences.max_daily_messages} personalized messages daily:
+                  Arthur sends up to 2 personalized messages daily:
                 </p>
                 <ul className="text-sm text-muted-foreground mt-2 space-y-1 ml-4">
-                  <li>• Morning message at 9:00 AM (local time)</li>
-                  <li>• Evening message at 5:00 PM (local time)</li>
+                  <li>• Morning message at {preferences.windows[0]} (local time)</li>
+                  <li>• Evening message at {preferences.windows[1]} (local time)</li>
                 </ul>
               </div>
             </div>
