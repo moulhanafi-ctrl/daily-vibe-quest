@@ -86,6 +86,7 @@ export type Database = {
       }
       chat_rooms: {
         Row: {
+          age_group: Database["public"]["Enums"]["age_group"]
           created_at: string | null
           description: string | null
           focus_area: string
@@ -93,6 +94,7 @@ export type Database = {
           name: string
         }
         Insert: {
+          age_group?: Database["public"]["Enums"]["age_group"]
           created_at?: string | null
           description?: string | null
           focus_area: string
@@ -100,6 +102,7 @@ export type Database = {
           name: string
         }
         Update: {
+          age_group?: Database["public"]["Enums"]["age_group"]
           created_at?: string | null
           description?: string | null
           focus_area?: string
