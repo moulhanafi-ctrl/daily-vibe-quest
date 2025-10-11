@@ -9,13 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 
 const MOODS = [
-  { emoji: "😊", value: "happy", label: "Happy" },
-  { emoji: "😌", value: "calm", label: "Calm" },
-  { emoji: "😰", value: "anxious", label: "Anxious" },
+  { emoji: "🤩", value: "excited", label: "Great" },
+  { emoji: "😊", value: "happy", label: "Good" },
+  { emoji: "😐", value: "calm", label: "Okay" },
+  { emoji: "😕", value: "anxious", label: "Off" },
   { emoji: "😢", value: "sad", label: "Sad" },
-  { emoji: "😠", value: "angry", label: "Angry" },
-  { emoji: "🤩", value: "excited", label: "Excited" },
-  { emoji: "😴", value: "tired", label: "Tired" },
 ];
 
 const INTENSITY_EMOJIS = ["😐", "🙂", "😊", "😃", "🤩"];
@@ -85,33 +83,33 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
   };
 
   const getAgeAppropriatePrompt = () => {
-    if (ageGroup === "child") return "How are you feeling today?";
-    if (ageGroup === "teen") return "What's your vibe right now?";
-    return "How are you doing today?";
+    if (ageGroup === "child") return "How's your vibe today? 👀";
+    if (ageGroup === "teen") return "Drop your mood emoji 💭";
+    return "What's the energy right now?";
   };
 
   return (
-    <Card>
+    <Card className="shadow-glow">
       <CardHeader>
-        <CardTitle>{getAgeAppropriatePrompt()}</CardTitle>
+        <CardTitle className="text-2xl">{getAgeAppropriatePrompt()}</CardTitle>
         <CardDescription>
-          Pick an emoji that matches your current mood
+          Pick the emoji that matches your vibe ✨
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-4 md:grid-cols-7 gap-4">
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
           {MOODS.map((mood) => (
             <button
               key={mood.value}
               onClick={() => setSelectedMood(mood.value)}
-              className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+              className={`flex flex-col items-center gap-2 p-6 rounded-2xl border-2 transition-all hover:scale-105 ${
                 selectedMood === mood.value
-                  ? "border-primary bg-primary/10"
+                  ? "border-primary bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow"
                   : "border-border hover:border-primary/50"
               }`}
             >
-              <span className="text-4xl">{mood.emoji}</span>
-              <span className="text-xs text-center">{mood.label}</span>
+              <span className="text-5xl emoji-pulse">{mood.emoji}</span>
+              <span className="text-sm font-bold text-center">{mood.label}</span>
             </button>
           ))}
         </div>
@@ -139,8 +137,8 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
             <div className="space-y-3">
               <Label htmlFor="reflection">
                 {ageGroup === "child"
-                  ? "Want to tell me about it?"
-                  : "Add a note (optional)"}
+                  ? "Wanna tell me about it? 🗣️"
+                  : "What's on your mind? (optional)"}
               </Label>
               <Textarea
                 id="reflection"
@@ -149,9 +147,10 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
                 placeholder={
                   ageGroup === "child"
                     ? "What happened today?"
-                    : "Write about your feelings..."
+                    : "Share your thoughts..."
                 }
                 rows={4}
+                className="resize-none"
               />
             </div>
 
@@ -166,8 +165,8 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
               </Label>
             </div>
 
-            <Button onClick={handleSubmit} disabled={loading} className="w-full">
-              {loading ? "Saving..." : "Save Check-in"}
+            <Button onClick={handleSubmit} disabled={loading} className="w-full shadow-glow">
+              {loading ? "Saving..." : "Save My Vibe ✨"}
             </Button>
           </>
         )}

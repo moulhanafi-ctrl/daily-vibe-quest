@@ -81,6 +81,41 @@ export type Database = {
           },
         ]
       }
+      family_invites: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          invite_code: string
+          is_used: boolean | null
+          parent_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_code: string
+          is_used?: boolean | null
+          parent_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          is_used?: boolean | null
+          parent_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invites_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_members: {
         Row: {
           family_id: string
@@ -196,7 +231,9 @@ export type Database = {
           created_at: string | null
           first_name: string | null
           id: string
+          is_parent: boolean | null
           optional_reflection: string | null
+          parent_id: string | null
           selected_focus_areas: string[] | null
           sex: string | null
           updated_at: string | null
@@ -210,7 +247,9 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id: string
+          is_parent?: boolean | null
           optional_reflection?: string | null
+          parent_id?: string | null
           selected_focus_areas?: string[] | null
           sex?: string | null
           updated_at?: string | null
@@ -224,14 +263,24 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id?: string
+          is_parent?: boolean | null
           optional_reflection?: string | null
+          parent_id?: string | null
           selected_focus_areas?: string[] | null
           sex?: string | null
           updated_at?: string | null
           username?: string | null
           zipcode?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reflections: {
         Row: {
@@ -273,6 +322,10 @@ export type Database = {
       assign_age_group: {
         Args: { user_age: number }
         Returns: Database["public"]["Enums"]["age_group"]
+      }
+      generate_family_invite_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       generate_invite_code: {
         Args: Record<PropertyKey, never>
