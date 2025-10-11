@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ShoppingCart, Star, Play, FileText } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { ArrowLeft, ShoppingCart, Star, Play, FileText, Check } from "lucide-react";
+import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 interface Product {
   id: string;
@@ -40,6 +41,13 @@ const ProductDetail = () => {
 
   useEffect(() => {
     loadProduct();
+    // Track PDP view
+    if (productId) {
+      trackEvent({ 
+        eventType: "pdp_view", 
+        metadata: { productId } 
+      });
+    }
   }, [productId]);
 
   const loadProduct = async () => {
@@ -65,7 +73,7 @@ const ProductDetail = () => {
         .limit(10);
       setReviews(reviewsData || []);
 
-      // Load related products (same age group and tags)
+      // Load related products (same age group, prioritize matching tags)
       if (productData) {
         const { data: relatedData } = await supabase
           .from("products")
@@ -73,15 +81,22 @@ const ProductDetail = () => {
           .eq("age_group", productData.age_group)
           .eq("active", true)
           .neq("id", productId)
-          .limit(4);
-        setRelatedProducts(relatedData || []);
+          .limit(6);
+        
+        // Sort by tag overlap if tags exist
+        const sorted = (relatedData || []).sort((a, b) => {
+          const aTags = a.tags || [];
+          const bTags = b.tags || [];
+          const productTags = productData.tags || [];
+          const aOverlap = aTags.filter(t => productTags.includes(t)).length;
+          const bOverlap = bTags.filter(t => productTags.includes(t)).length;
+          return bOverlap - aOverlap;
+        });
+        
+        setRelatedProducts(sorted.slice(0, 3));
       }
     } catch (error: any) {
-      toast({
-        title: "Error loading product",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Error loading product: ${error.message}`);
       navigate("/store");
     } finally {
       setLoading(false);
@@ -93,11 +108,7 @@ const ProductDetail = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "Please sign in",
-          description: "You need to be signed in to add items to cart",
-          variant: "destructive",
-        });
+        toast.error("Please sign in to add items to cart");
         navigate("/auth");
         return;
       }
@@ -122,10 +133,7 @@ const ProductDetail = () => {
 
         if (error) throw error;
 
-        toast({
-          title: "Approval requested! 📨",
-          description: "Your parent will review this purchase request",
-        });
+        toast.success("Approval requested! 📨 Your parent will review this purchase request");
         return;
       }
 
@@ -142,16 +150,19 @@ const ProductDetail = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Added to cart! 🛒",
-        description: `${product?.name} has been added to your cart`,
+      // Track add to cart event
+      trackEvent({ 
+        eventType: "add_to_cart", 
+        metadata: { 
+          productId: productId!,
+          productName: product?.name,
+          price: product?.price 
+        } 
       });
+
+      toast.success(`Added to cart! 🛒 ${product?.name} has been added to your cart`);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Error: ${error.message}`);
     } finally {
       setAddingToCart(false);
     }
@@ -249,7 +260,28 @@ const ProductDetail = () => {
               <p className="text-3xl font-bold text-primary">${product.price}</p>
             </div>
 
-            <p className="text-muted-foreground">{product.description}</p>
+            {/* Product Highlights */}
+            <Card className="p-4 bg-primary/5">
+              <h3 className="font-semibold mb-3">What's Included:</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">{product.product_type === "digital" ? "Instant digital download" : "Physical product shipped to you"}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">Age-appropriate content for {product.age_group}s</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">Designed by mental health experts</span>
+                </li>
+              </ul>
+            </Card>
+
+            <div className="border-t pt-4">
+              <p className="text-muted-foreground">{product.description}</p>
+            </div>
 
             {product.tags && product.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -260,16 +292,33 @@ const ProductDetail = () => {
             )}
 
             {product.preview_url && (
-              <Card className="p-4">
-                <h3 className="font-semibold mb-2">Preview</h3>
-                {product.product_type === "digital" && product.preview_url.includes("audio") ? (
-                  <audio controls className="w-full">
-                    <source src={product.preview_url} />
-                  </audio>
+              <Card className="p-4 bg-secondary/20">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  {product.preview_url.includes("audio") ? <Play className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                  Preview Available
+                </h3>
+                {product.preview_url.includes("audio") || product.preview_url.includes(".mp3") ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Listen to a sample:</p>
+                    <audio controls className="w-full">
+                      <source src={product.preview_url} />
+                      Your browser does not support audio playback.
+                    </audio>
+                  </div>
+                ) : product.preview_url.includes(".pdf") ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">View first page:</p>
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <a href={product.preview_url} target="_blank" rel="noopener noreferrer">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Open PDF Preview
+                      </a>
+                    </Button>
+                  </div>
                 ) : (
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="outline" size="sm" className="w-full" asChild>
                     <a href={product.preview_url} target="_blank" rel="noopener noreferrer">
-                      <FileText className="h-4 w-4 mr-2" />
+                      <Play className="h-4 w-4 mr-2" />
                       View Preview
                     </a>
                   </Button>
@@ -328,8 +377,13 @@ const ProductDetail = () => {
               )}
             </TabsContent>
             <TabsContent value="related">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {relatedProducts.map((relatedProduct) => (
+              {relatedProducts.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <p className="text-muted-foreground">No similar products found.</p>
+                </Card>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {relatedProducts.map((relatedProduct) => (
                   <Card
                     key={relatedProduct.id}
                     className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
@@ -353,8 +407,9 @@ const ProductDetail = () => {
                       <p className="text-xl font-bold text-primary">${relatedProduct.price}</p>
                     </div>
                   </Card>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

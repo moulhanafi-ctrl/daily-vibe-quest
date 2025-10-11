@@ -3,25 +3,32 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trash2, Plus, Minus } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string | null;
+  images: string[] | null;
+  product_type: "physical" | "digital";
+  age_group: string;
+  tags: string[] | null;
+}
 
 interface CartItem {
   id: string;
   quantity: number;
-  products: {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    image_url: string | null;
-    product_type: "physical" | "digital";
-  };
+  products: Product;
 }
 
 const Cart = () => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [crossSellProducts, setCrossSellProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
 
@@ -48,19 +55,37 @@ const Cart = () => {
             description,
             price,
             image_url,
-            product_type
+            images,
+            product_type,
+            age_group,
+            tags
           )
         `)
         .eq("user_id", user.id);
 
       if (error) throw error;
       setCartItems(data || []);
+
+      // Load cross-sell products based on cart contents
+      if (data && data.length > 0) {
+        const ageGroups = [...new Set(data.map(item => item.products?.age_group).filter(Boolean))];
+        const tags = [...new Set(data.flatMap(item => item.products?.tags || []))];
+        
+        let query = supabase
+          .from("products")
+          .select("*")
+          .eq("active", true)
+          .not("id", "in", `(${data.map(item => item.products?.id).join(",")})`);
+        
+        if (ageGroups.length > 0) {
+          query = query.in("age_group", ageGroups);
+        }
+        
+        const { data: crossSellData } = await query.limit(4);
+        setCrossSellProducts(crossSellData || []);
+      }
     } catch (error: any) {
-      toast({
-        title: "Error loading cart",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Error loading cart: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -78,11 +103,7 @@ const Cart = () => {
       if (error) throw error;
       loadCart();
     } catch (error: any) {
-      toast({
-        title: "Error updating quantity",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Error updating quantity: ${error.message}`);
     }
   };
 
@@ -95,13 +116,9 @@ const Cart = () => {
 
       if (error) throw error;
       loadCart();
-      toast({ title: "Item removed from cart" });
+      toast.success("Item removed from cart");
     } catch (error: any) {
-      toast({
-        title: "Error removing item",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Error removing item: ${error.message}`);
     }
   };
 
@@ -120,11 +137,7 @@ const Cart = () => {
         window.open(data.url, "_blank");
       }
     } catch (error: any) {
-      toast({
-        title: "Checkout error",
-        description: error.message || "Failed to create checkout session",
-        variant: "destructive",
-      });
+      toast.error(`Checkout error: ${error.message || "Failed to create checkout session"}`);
     } finally {
       setCheckingOut(false);
     }
@@ -255,6 +268,47 @@ const Cart = () => {
                 </Button>
               </div>
             </Card>
+
+            {/* Cross-sell recommendations */}
+            {crossSellProducts.length > 0 && (
+              <div className="mt-8">
+                <h2 className="text-xl font-bold mb-4">You May Also Like</h2>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {crossSellProducts.map((product) => (
+                    <Card
+                      key={product.id}
+                      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => navigate(`/store/product/${product.id}`)}
+                    >
+                      <div className="aspect-video bg-secondary/20 flex items-center justify-center">
+                        {product.images?.[0] || product.image_url ? (
+                          <img
+                            src={product.images?.[0] || product.image_url!}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-5xl">
+                            {product.product_type === "digital" ? "📱" : "📦"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <div className="flex gap-2 mb-2">
+                          <Badge variant="secondary">{product.age_group}</Badge>
+                          <Badge variant="outline">{product.product_type}</Badge>
+                        </div>
+                        <h3 className="font-semibold line-clamp-1 mb-1">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                          {product.description}
+                        </p>
+                        <p className="text-xl font-bold text-primary">${product.price}</p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>

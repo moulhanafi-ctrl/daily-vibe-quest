@@ -67,6 +67,19 @@ serve(async (req) => {
         });
       }
 
+      // Track purchase success event
+      await supabase.from("analytics_events").insert({
+        user_id: user.id,
+        event_type: "purchase_succeeded",
+        event_metadata: {
+          sessionId: session.id,
+          paymentIntentId: session.payment_intent,
+          amountTotal: session.amount_total,
+          currency: session.currency
+        },
+        page_url: "/checkout/success"
+      });
+
       // Get order details
       const { data: order } = await supabase
         .from("orders")
@@ -108,6 +121,19 @@ serve(async (req) => {
           console.error("Error creating entitlements:", entitlementError);
         } else {
           console.log(`Created ${digitalProducts.length} entitlements`);
+          
+          // Track entitlement grant events
+          for (const product of digitalProducts) {
+            await supabase.from("analytics_events").insert({
+              user_id: user.id,
+              event_type: "entitlement_granted",
+              event_metadata: {
+                productId: product.product_id,
+                orderId: product.order_id
+              },
+              page_url: "/library"
+            });
+          }
         }
       }
 
