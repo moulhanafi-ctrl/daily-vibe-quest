@@ -43,7 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     const emailResponse = await resend.emails.send({
-      from: "Vibe Check <onboarding@resend.dev>",
+      from: "Vibe Check <no-reply@vibecheckapps.com>",
       to: [parentEmail],
       subject: subjects[language as keyof typeof subjects] || subjects.en,
       html: `
