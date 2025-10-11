@@ -11,8 +11,9 @@ import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
 import { SaturdayTriviaCard } from "@/components/dashboard/SaturdayTriviaCard";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag, Book, MapPin } from "lucide-react";
+import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag, Book, MapPin, Trophy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [checkingSubscription, setCheckingSubscription] = useState(false);
+  const triviaEnabled = useFeatureFlag("ff.trivia");
 
   useEffect(() => {
     // Check for checkout success
@@ -158,6 +160,12 @@ const Dashboard = () => {
               <Book className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Journal</span>
             </Button>
+            {triviaEnabled && (
+              <Button onClick={() => navigate("/trivia")} variant="outline" size="sm" aria-label="Saturday Trivia">
+                <Trophy className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Trivia</span>
+              </Button>
+            )}
             <Button onClick={() => navigate("/store")} variant="outline" size="sm" aria-label="Go to store">
               <ShoppingBag className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Store</span>
