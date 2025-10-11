@@ -8,7 +8,7 @@ import { FamilyDashboard } from "@/components/dashboard/FamilyDashboard";
 import { AISuggestions } from "@/components/dashboard/AISuggestions";
 import { MotivationalContent } from "@/components/dashboard/MotivationalContent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings } from "lucide-react";
+import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
@@ -139,6 +139,10 @@ const Dashboard = () => {
                 </Button>
               </>
             )}
+            <Button onClick={() => navigate("/store")} variant="outline" size="sm" aria-label="Go to store">
+              <ShoppingBag className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Store</span>
+            </Button>
             <Button onClick={() => navigate("/chat-rooms")} variant="outline" size="sm" aria-label="Go to chat rooms">
               <MessageSquare className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Chat Rooms</span>

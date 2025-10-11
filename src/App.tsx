@@ -9,6 +9,9 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import ChatRooms from "./pages/ChatRooms";
 import ChatRoom from "./pages/ChatRoom";
+import Store from "./pages/Store";
+import AgeGroupStore from "./pages/AgeGroupStore";
+import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +29,9 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chat-rooms" element={<ChatRooms />} />
           <Route path="/chat/:roomId" element={<ChatRoom />} />
+          <Route path="/store" element={<Store />} />
+          <Route path="/store/:ageGroup" element={<AgeGroupStore />} />
+          <Route path="/cart" element={<Cart />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

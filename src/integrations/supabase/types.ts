@@ -49,6 +49,38 @@ export type Database = {
           },
         ]
       }
+      cart_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          quantity: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          quantity?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          quantity?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           created_at: string | null
@@ -285,6 +317,126 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string
+          price_at_purchase: number
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id: string
+          price_at_purchase: number
+          product_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          price_at_purchase?: number
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          shipping_address: Json | null
+          status: Database["public"]["Enums"]["order_status"]
+          stripe_payment_id: string | null
+          stripe_session_id: string | null
+          total_amount: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          shipping_address?: Json | null
+          status?: Database["public"]["Enums"]["order_status"]
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          total_amount: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          shipping_address?: Json | null
+          status?: Database["public"]["Enums"]["order_status"]
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean | null
+          age_group: Database["public"]["Enums"]["age_group"]
+          created_at: string | null
+          description: string
+          download_link: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          product_type: Database["public"]["Enums"]["product_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          age_group: Database["public"]["Enums"]["age_group"]
+          created_at?: string | null
+          description: string
+          download_link?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          product_type?: Database["public"]["Enums"]["product_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          age_group?: Database["public"]["Enums"]["age_group"]
+          created_at?: string | null
+          description?: string
+          download_link?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          product_type?: Database["public"]["Enums"]["product_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number | null
@@ -444,6 +596,8 @@ export type Database = {
         | "angry"
         | "excited"
         | "tired"
+      order_status: "pending" | "completed" | "failed" | "refunded"
+      product_type: "physical" | "digital"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -583,6 +737,8 @@ export const Constants = {
         "excited",
         "tired",
       ],
+      order_status: ["pending", "completed", "failed", "refunded"],
+      product_type: ["physical", "digital"],
     },
   },
 } as const
