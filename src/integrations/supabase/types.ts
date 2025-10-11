@@ -2257,7 +2257,7 @@ export type Database = {
         | "analyst"
         | "store_manager"
       age_group: "child" | "teen" | "adult" | "elder"
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "moderator"
       content_type: "audio" | "text" | "video"
       data_deletion_status:
         | "pending"
@@ -2416,7 +2416,7 @@ export const Constants = {
     Enums: {
       admin_role: ["owner", "moderator", "support", "analyst", "store_manager"],
       age_group: ["child", "teen", "adult", "elder"],
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "moderator"],
       content_type: ["audio", "text", "video"],
       data_deletion_status: [
         "pending",
