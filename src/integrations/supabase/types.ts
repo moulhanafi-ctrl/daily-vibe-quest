@@ -702,6 +702,48 @@ export type Database = {
           },
         ]
       }
+      family_scores: {
+        Row: {
+          family_id: string
+          id: string
+          participants: number
+          played_at: string | null
+          round_id: string
+          total_score: number
+        }
+        Insert: {
+          family_id: string
+          id?: string
+          participants?: number
+          played_at?: string | null
+          round_id: string
+          total_score?: number
+        }
+        Update: {
+          family_id?: string
+          id?: string
+          participants?: number
+          played_at?: string | null
+          round_id?: string
+          total_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_scores_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_flags: {
         Row: {
           category: string
@@ -1575,6 +1617,158 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trivia_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          notifications_enabled: boolean | null
+          sunday_reminder: boolean | null
+          timer_enabled: boolean | null
+          timer_seconds: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notifications_enabled?: boolean | null
+          sunday_reminder?: boolean | null
+          timer_enabled?: boolean | null
+          timer_seconds?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notifications_enabled?: boolean | null
+          sunday_reminder?: boolean | null
+          timer_enabled?: boolean | null
+          timer_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trivia_progress: {
+        Row: {
+          answers: Json | null
+          correct: number
+          id: string
+          played_at: string | null
+          round_id: string
+          score: number
+          streak: number | null
+          total: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          correct?: number
+          id?: string
+          played_at?: string | null
+          round_id: string
+          score?: number
+          streak?: number | null
+          total?: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          correct?: number
+          id?: string
+          played_at?: string | null
+          round_id?: string
+          score?: number
+          streak?: number | null
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_progress_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_questions: {
+        Row: {
+          active: boolean | null
+          age_group: Database["public"]["Enums"]["age_group"]
+          category: string
+          correct_option_id: string
+          created_at: string | null
+          explanation: string | null
+          id: string
+          locale: string
+          options: Json
+          prompt: string
+          sensitive: boolean | null
+          tags: string[] | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          age_group: Database["public"]["Enums"]["age_group"]
+          category: string
+          correct_option_id: string
+          created_at?: string | null
+          explanation?: string | null
+          id?: string
+          locale: string
+          options: Json
+          prompt: string
+          sensitive?: boolean | null
+          tags?: string[] | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          age_group?: Database["public"]["Enums"]["age_group"]
+          category?: string
+          correct_option_id?: string
+          created_at?: string | null
+          explanation?: string | null
+          id?: string
+          locale?: string
+          options?: Json
+          prompt?: string
+          sensitive?: boolean | null
+          tags?: string[] | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      trivia_rounds: {
+        Row: {
+          age_group: Database["public"]["Enums"]["age_group"]
+          created_at: string | null
+          date: string
+          id: string
+          question_ids: string[]
+        }
+        Insert: {
+          age_group: Database["public"]["Enums"]["age_group"]
+          created_at?: string | null
+          date: string
+          id?: string
+          question_ids: string[]
+        }
+        Update: {
+          age_group?: Database["public"]["Enums"]["age_group"]
+          created_at?: string | null
+          date?: string
+          id?: string
+          question_ids?: string[]
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

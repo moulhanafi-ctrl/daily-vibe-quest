@@ -19,6 +19,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Library from "./pages/Library";
 import Orders from "./pages/Orders";
 import Journal from "./pages/Journal";
+import Trivia from "./pages/Trivia";
 import Shipping from "./pages/policies/Shipping";
 import Refunds from "./pages/policies/Refunds";
 import Terms from "./pages/legal/Terms";
@@ -72,6 +73,7 @@ const App = () => (
           <Route path="/library" element={<Library />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/journal" element={<Journal />} />
+          <Route path="/trivia" element={<Trivia />} />
           <Route path="/policies/shipping" element={<Shipping />} />
           <Route path="/policies/refunds" element={<Refunds />} />
           <Route path="/legal" element={<LegalIndex />} />

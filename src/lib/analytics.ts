@@ -40,6 +40,16 @@ export type EventType =
   | "help_local_ranked"
   | "help_radius_changed"
   | "help_national_viewed"
+  | "trivia_round_opened"
+  | "trivia_started"
+  | "trivia_completed"
+  | "trivia_score"
+  | "trivia_streak_updated"
+  | "trivia_reflection_opened"
+  | "trivia_journal_opened"
+  | "notif_trivia_sent"
+  | "notif_trivia_opened"
+  | "notif_trivia_clicked"
   | "i18n_missing_key";
 
 interface TrackEventParams {
