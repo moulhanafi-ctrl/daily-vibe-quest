@@ -202,6 +202,41 @@ export type Database = {
         }
         Relationships: []
       }
+      child_sharing_preferences: {
+        Row: {
+          can_share_journals: boolean | null
+          child_id: string
+          created_at: string | null
+          id: string
+          share_default: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          can_share_journals?: boolean | null
+          child_id: string
+          created_at?: string | null
+          id?: string
+          share_default?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          can_share_journals?: boolean | null
+          child_id?: string
+          created_at?: string | null
+          id?: string
+          share_default?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_sharing_preferences_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entitlements: {
         Row: {
           created_at: string | null
@@ -522,6 +557,51 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_events: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          event_type: string
+          id: string
+          parent_id: string
+          payload: Json
+          sent_at: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          event_type: string
+          id?: string
+          parent_id: string
+          payload: Json
+          sent_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          parent_id?: string
+          payload?: Json
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_events_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_events_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -599,6 +679,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      parent_notification_preferences: {
+        Row: {
+          checkin_alerts: boolean | null
+          created_at: string | null
+          daily_digest: boolean | null
+          id: string
+          journal_alerts: boolean | null
+          parent_id: string
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          checkin_alerts?: boolean | null
+          created_at?: string | null
+          daily_digest?: boolean | null
+          id?: string
+          journal_alerts?: boolean | null
+          parent_id: string
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          checkin_alerts?: boolean | null
+          created_at?: string | null
+          daily_digest?: boolean | null
+          id?: string
+          journal_alerts?: boolean | null
+          parent_id?: string
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_notification_preferences_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -773,6 +897,7 @@ export type Database = {
           id: string
           is_private: boolean | null
           mood_id: string
+          shared_with_parent: boolean | null
         }
         Insert: {
           content: string
@@ -780,6 +905,7 @@ export type Database = {
           id?: string
           is_private?: boolean | null
           mood_id: string
+          shared_with_parent?: boolean | null
         }
         Update: {
           content?: string
@@ -787,6 +913,7 @@ export type Database = {
           id?: string
           is_private?: boolean | null
           mood_id?: string
+          shared_with_parent?: boolean | null
         }
         Relationships: [
           {
