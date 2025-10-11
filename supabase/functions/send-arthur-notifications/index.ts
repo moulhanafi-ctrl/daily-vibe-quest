@@ -91,7 +91,11 @@ serve(async (req) => {
           .eq('user_id', userPref.user_id)
           .gte('created_at', sevenDaysAgo.toISOString());
 
-        // Find best template based on focus areas and recent deliveries
+        // Determine time of day for template routing
+        const currentHour = new Date().getHours();
+        const timeOfDay = currentHour < 12 ? 'morning' : 'evening';
+
+        // Find best template based on focus areas, time of day, and recent deliveries
         let selectedTemplate = null;
         
         for (const focusArea of profile.selected_focus_areas) {
@@ -103,7 +107,7 @@ serve(async (req) => {
             .order('delivered_at', { ascending: false })
             .limit(10);
 
-          // Get available templates for this focus area
+          // Get available templates for this focus area, preferring time-specific ones
           const { data: templates } = await supabaseClient
             .from('arthur_templates')
             .select('*')
@@ -129,6 +133,14 @@ serve(async (req) => {
             return daysSinceDelivery >= template.cooldown_days;
           });
 
+          // First try to find a time-specific template
+          const timeSpecificTemplate = availableTemplates.find(t => t.time_of_day === timeOfDay);
+          if (timeSpecificTemplate) {
+            selectedTemplate = timeSpecificTemplate;
+            break;
+          }
+
+          // Fall back to any available template
           if (availableTemplates.length > 0) {
             selectedTemplate = availableTemplates[0];
             break;

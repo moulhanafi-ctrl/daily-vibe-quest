@@ -11,7 +11,6 @@ import { Sparkles } from "lucide-react";
 export const ArthurSettings = () => {
   const [preferences, setPreferences] = useState({
     enabled: true,
-    preferred_time: '09:00',
     timezone: 'America/New_York',
     max_daily_messages: 2
   });
@@ -38,7 +37,6 @@ export const ArthurSettings = () => {
     if (data) {
       setPreferences({
         enabled: data.enabled,
-        preferred_time: data.preferred_time || '09:00',
         timezone: data.timezone || 'America/New_York',
         max_daily_messages: data.max_daily_messages || 2
       });
@@ -109,37 +107,17 @@ export const ArthurSettings = () => {
 
         {preferences.enabled && (
           <>
-            <div className="space-y-2">
-              <Label htmlFor="preferred-time">Preferred Time</Label>
-              <Input
-                id="preferred-time"
-                type="time"
-                value={preferences.preferred_time}
-                onChange={(e) => updatePreferences({ preferred_time: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                When would you like to receive your daily message?
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="max-messages">Max Daily Messages</Label>
-              <Select
-                value={preferences.max_daily_messages.toString()}
-                onValueChange={(value) => updatePreferences({ max_daily_messages: parseInt(value) })}
-              >
-                <SelectTrigger id="max-messages">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 per day</SelectItem>
-                  <SelectItem value="2">2 per day</SelectItem>
-                  <SelectItem value="3">3 per day</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Limit how many messages you receive
-              </p>
+            <div className="p-4 bg-muted/50 rounded-lg border space-y-3">
+              <div>
+                <p className="text-sm font-medium mb-1">Notification Schedule</p>
+                <p className="text-sm text-muted-foreground">
+                  Arthur sends up to {preferences.max_daily_messages} personalized messages daily:
+                </p>
+                <ul className="text-sm text-muted-foreground mt-2 space-y-1 ml-4">
+                  <li>• Morning message at 9:00 AM (local time)</li>
+                  <li>• Evening message at 5:00 PM (local time)</li>
+                </ul>
+              </div>
             </div>
 
             <div className="p-4 bg-muted/50 rounded-lg border">
