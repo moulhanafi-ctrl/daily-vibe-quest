@@ -18,6 +18,8 @@ const MOODS = [
   { emoji: "😴", value: "tired", label: "Tired" },
 ];
 
+const INTENSITY_EMOJIS = ["😐", "🙂", "😊", "😃", "🤩"];
+
 interface MoodCheckInProps {
   userId: string;
   ageGroup: "child" | "teen" | "adult";
@@ -117,7 +119,7 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
         {selectedMood && (
           <>
             <div className="space-y-3">
-              <Label>How intense is this feeling? (1-5)</Label>
+              <Label>How intense is this feeling?</Label>
               <Slider
                 value={intensity}
                 onValueChange={setIntensity}
@@ -126,8 +128,11 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
                 step={1}
                 className="w-full"
               />
-              <div className="text-sm text-muted-foreground text-center">
-                Intensity: {intensity[0]}
+              <div className="flex items-center justify-center gap-2 text-center">
+                <span className="text-3xl">{INTENSITY_EMOJIS[intensity[0] - 1]}</span>
+                <span className="text-sm text-muted-foreground">
+                  Level {intensity[0]} of 5
+                </span>
               </div>
             </div>
 

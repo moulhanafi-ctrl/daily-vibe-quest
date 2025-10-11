@@ -13,6 +13,8 @@ const MOOD_EMOJIS: Record<string, string> = {
   tired: "😴",
 };
 
+const INTENSITY_EMOJIS = ["😐", "🙂", "😊", "😃", "🤩"];
+
 interface MoodHistoryProps {
   userId: string;
 }
@@ -103,8 +105,10 @@ export const MoodHistory = ({ userId }: MoodHistoryProps) => {
                       {format(new Date(mood.created_at), "MMM d, yyyy")}
                     </span>
                   </div>
-                  <div className="text-sm text-muted-foreground mb-2">
-                    Intensity: {mood.intensity}/5
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <span>Intensity:</span>
+                    <span className="text-lg">{INTENSITY_EMOJIS[mood.intensity - 1]}</span>
+                    <span>{mood.intensity}/5</span>
                   </div>
                   {mood.reflections?.length > 0 && (
                     <div className="text-sm mt-2 p-3 bg-muted/50 rounded">
