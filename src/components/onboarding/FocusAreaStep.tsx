@@ -10,17 +10,17 @@ interface FocusAreaStepProps {
 }
 
 const FOCUS_AREAS = [
-  { id: "depression", label: "Depression", emoji: "😔" },
-  { id: "anxiety", label: "Anxiety", emoji: "😰" },
-  { id: "grief", label: "Grief / Loss", emoji: "💔" },
-  { id: "stress", label: "Stress / Overthinking", emoji: "🧠" },
-  { id: "self-esteem", label: "Self-Esteem", emoji: "💬" },
-  { id: "relationships", label: "Relationships", emoji: "❤️" },
-  { id: "loneliness", label: "Loneliness", emoji: "🧍" },
-  { id: "pressure", label: "School or Work Pressure", emoji: "🎓" },
-  { id: "family", label: "Family Conflict", emoji: "👨‍👩‍👧" },
-  { id: "sleep", label: "Sleep / Rest", emoji: "💤" },
-  { id: "motivation", label: "Motivation & Purpose", emoji: "⚡" },
+  { id: "depression", label: "Depression", emoji: "😔", color: "bg-blue-100 border-blue-300 hover:border-blue-400" },
+  { id: "anxiety", label: "Anxiety", emoji: "😰", color: "bg-purple-100 border-purple-300 hover:border-purple-400" },
+  { id: "grief", label: "Grief / Loss", emoji: "💔", color: "bg-pink-100 border-pink-300 hover:border-pink-400" },
+  { id: "stress", label: "Stress / Overthinking", emoji: "🧠", color: "bg-indigo-100 border-indigo-300 hover:border-indigo-400" },
+  { id: "self-esteem", label: "Self-Esteem", emoji: "💬", color: "bg-cyan-100 border-cyan-300 hover:border-cyan-400" },
+  { id: "relationships", label: "Relationships", emoji: "❤️", color: "bg-rose-100 border-rose-300 hover:border-rose-400" },
+  { id: "loneliness", label: "Loneliness", emoji: "🧍", color: "bg-amber-100 border-amber-300 hover:border-amber-400" },
+  { id: "pressure", label: "School or Work Pressure", emoji: "🎓", color: "bg-emerald-100 border-emerald-300 hover:border-emerald-400" },
+  { id: "family", label: "Family Conflict", emoji: "👨‍👩‍👧", color: "bg-orange-100 border-orange-300 hover:border-orange-400" },
+  { id: "sleep", label: "Sleep / Rest", emoji: "💤", color: "bg-sky-100 border-sky-300 hover:border-sky-400" },
+  { id: "motivation", label: "Motivation & Purpose", emoji: "⚡", color: "bg-yellow-100 border-yellow-300 hover:border-yellow-400" },
 ];
 
 export const FocusAreaStep = ({ onNext, onBack }: FocusAreaStepProps) => {
@@ -59,9 +59,10 @@ export const FocusAreaStep = ({ onNext, onBack }: FocusAreaStepProps) => {
                   onClick={() => toggleArea(area.id)}
                   className={cn(
                     "flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left",
+                    area.color,
                     selected.includes(area.id)
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                      ? "ring-2 ring-primary scale-105"
+                      : ""
                   )}
                 >
                   <span className="text-2xl">{area.emoji}</span>
