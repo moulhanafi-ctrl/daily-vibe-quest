@@ -108,6 +108,176 @@ export type Database = {
           },
         ]
       }
+      arthur_config: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          intro: string
+          name: string
+          signature: string
+          tone: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          intro?: string
+          name?: string
+          signature?: string
+          tone?: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          intro?: string
+          name?: string
+          signature?: string
+          tone?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      arthur_deliveries: {
+        Row: {
+          clicked_at: string | null
+          content_sent: string
+          created_at: string | null
+          delivered_at: string | null
+          id: string
+          message_type: string
+          opened_at: string | null
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          clicked_at?: string | null
+          content_sent: string
+          created_at?: string | null
+          delivered_at?: string | null
+          id?: string
+          message_type: string
+          opened_at?: string | null
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          clicked_at?: string | null
+          content_sent?: string
+          created_at?: string | null
+          delivered_at?: string | null
+          id?: string
+          message_type?: string
+          opened_at?: string | null
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arthur_deliveries_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "arthur_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arthur_deliveries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arthur_preferences: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          max_daily_messages: number | null
+          preferred_time: string | null
+          timezone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          max_daily_messages?: number | null
+          preferred_time?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          max_daily_messages?: number | null
+          preferred_time?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arthur_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arthur_templates: {
+        Row: {
+          ab_variant: string | null
+          active: boolean | null
+          age_group: Database["public"]["Enums"]["age_group"]
+          content: string
+          cooldown_days: number | null
+          created_at: string | null
+          focus_area: string
+          id: string
+          message_type: string
+          priority: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ab_variant?: string | null
+          active?: boolean | null
+          age_group: Database["public"]["Enums"]["age_group"]
+          content: string
+          cooldown_days?: number | null
+          created_at?: string | null
+          focus_area: string
+          id?: string
+          message_type: string
+          priority?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ab_variant?: string | null
+          active?: boolean | null
+          age_group?: Database["public"]["Enums"]["age_group"]
+          content?: string
+          cooldown_days?: number | null
+          created_at?: string | null
+          focus_area?: string
+          id?: string
+          message_type?: string
+          priority?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string | null

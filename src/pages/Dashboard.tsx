@@ -7,6 +7,8 @@ import { MoodHistory } from "@/components/dashboard/MoodHistory";
 import { FamilyDashboard } from "@/components/dashboard/FamilyDashboard";
 import { AISuggestions } from "@/components/dashboard/AISuggestions";
 import { MotivationalContent } from "@/components/dashboard/MotivationalContent";
+import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
+import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -181,6 +183,10 @@ const Dashboard = () => {
               <Heart className="h-4 w-4" />
               <span className="text-xs sm:text-sm">Content</span>
             </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-1 sm:gap-2" aria-label="Settings">
+              <Settings className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Settings</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="checkin">
@@ -202,7 +208,14 @@ const Dashboard = () => {
           <TabsContent value="content">
             <MotivationalContent ageGroup={profile?.age_group} />
           </TabsContent>
+
+          <TabsContent value="settings">
+            <ArthurSettings />
+          </TabsContent>
         </Tabs>
+
+        {/* Arthur Notifications */}
+        <ArthurNotifications />
       </main>
     </div>
   );

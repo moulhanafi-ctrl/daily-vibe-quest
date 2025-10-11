@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.send-parent-notification]
 verify_jwt = true
+
+[functions.send-arthur-notifications]
+verify_jwt = false
