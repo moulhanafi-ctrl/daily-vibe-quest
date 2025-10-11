@@ -174,6 +174,10 @@ const Dashboard = () => {
               <MapPin className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Help</span>
             </Button>
+            <Button onClick={() => navigate("/family/chat")} variant="outline" size="sm" aria-label="Family Stories">
+              <Users className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Family</span>
+            </Button>
             <Button onClick={() => navigate("/chat-rooms")} variant="outline" size="sm" aria-label="Go to chat rooms">
               <MessageSquare className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Chat Rooms</span>

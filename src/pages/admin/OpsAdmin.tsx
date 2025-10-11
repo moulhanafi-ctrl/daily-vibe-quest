@@ -47,6 +47,11 @@ const OpsAdmin = () => {
               </a>
             </li>
             <li>
+              <a href="/docs/FAMILY_STORIES_SETUP.md" target="_blank" rel="noopener noreferrer">
+                Family Stories Setup & Management
+              </a>
+            </li>
+            <li>
               <a href="/docs/STRIPE_LIVE_MODE.md" target="_blank" rel="noopener noreferrer">
                 Stripe Live Mode Guide
               </a>

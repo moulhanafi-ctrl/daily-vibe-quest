@@ -8,6 +8,7 @@ import { LanguageSelector } from "@/components/settings/LanguageSelector";
 import { DataRights } from "@/components/legal/DataRights";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { ParentNotificationSettings } from "@/components/family/ParentNotificationSettings";
+import { TestContact } from "@/components/family/TestContact";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const Settings = () => {
         <h1 className="text-4xl font-bold mb-8">{t("settings", "Settings")}</h1>
 
         <Tabs defaultValue="language" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="language" className="gap-2">
               <Globe className="h-4 w-4" />
               {t("language", "Language")}
@@ -43,6 +44,9 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="arthur" className="gap-2">
               ✨ Arthur
+            </TabsTrigger>
+            <TabsTrigger value="developer" className="gap-2">
+              🔧 QA
             </TabsTrigger>
           </TabsList>
 
@@ -62,6 +66,10 @@ const Settings = () => {
 
           <TabsContent value="arthur">
             <ArthurSettings />
+          </TabsContent>
+
+          <TabsContent value="developer">
+            <TestContact />
           </TabsContent>
         </Tabs>
       </main>

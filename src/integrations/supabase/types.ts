@@ -744,6 +744,50 @@ export type Database = {
           },
         ]
       }
+      family_stories: {
+        Row: {
+          created_at: string | null
+          duration_seconds: number
+          expires_at: string | null
+          family_id: string | null
+          id: string
+          thumbnail_url: string | null
+          user_id: string
+          video_url: string
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_seconds: number
+          expires_at?: string | null
+          family_id?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          user_id: string
+          video_url: string
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_seconds?: number
+          expires_at?: string | null
+          family_id?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          user_id?: string
+          video_url?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_stories_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_flags: {
         Row: {
           category: string
@@ -1725,6 +1769,118 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      story_reactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          reaction: string
+          story_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reaction: string
+          story_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reaction?: string
+          story_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_reactions_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "family_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_views: {
+        Row: {
+          id: string
+          story_id: string
+          viewed_at: string | null
+          viewer_id: string
+        }
+        Insert: {
+          id?: string
+          story_id: string
+          viewed_at?: string | null
+          viewer_id: string
+        }
+        Update: {
+          id?: string
+          story_id?: string
+          viewed_at?: string | null
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "family_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_users: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          username?: string
+        }
+        Relationships: []
+      }
+      test_messages: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       trivia_generation_log: {
         Row: {
