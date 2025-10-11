@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.2c588c7ae9e94d3fb2dd79a1b8546184',
+  appId: 'com.dailyvibequest.app',
   appName: 'daily-vibe-quest',
   webDir: 'dist',
   server: {
