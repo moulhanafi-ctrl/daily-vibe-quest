@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MapPin, Search, SlidersHorizontal } from "lucide-react";
 import { HelpLocationCard } from "@/components/help/HelpLocationCard";
+import { CrisisBanner } from "@/components/help/CrisisBanner";
 import { ZipCodeModal } from "@/components/help/ZipCodeModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -148,6 +149,7 @@ export default function HelpNearby() {
 
   return (
     <div className="min-h-screen bg-background">
+      <CrisisBanner />
       <div className="container mx-auto px-4 py-8 max-w-6xl space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>

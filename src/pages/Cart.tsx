@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trash2, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { LegalConsentModal } from "@/components/legal/LegalConsentModal";
+import { ParentVerificationGate } from "@/components/family/ParentVerificationGate";
 import { useConsentGate } from "@/hooks/useConsentGate";
 
 interface Product {
@@ -166,23 +167,25 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            aria-label="Go back"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        </div>
-      </header>
+    <>
+      <ParentVerificationGate feature="checkout">
+        <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
+          <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+            <div className="container mx-auto px-4 py-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(-1)}
+                aria-label="Go back"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </div>
+          </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-8">Your Cart 🛒</h1>
+          <main className="container mx-auto px-4 py-8 max-w-4xl">
+            <h1 className="text-3xl font-bold mb-8">Your Cart 🛒</h1>
 
         {cartItems.length === 0 ? (
           <Card className="p-12 text-center">
@@ -320,8 +323,17 @@ const Cart = () => {
             )}
           </div>
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </ParentVerificationGate>
+    
+    <LegalConsentModal
+      open={showConsentModal}
+      onClose={() => setShowConsentModal(false)}
+      onConsent={handleConsentComplete}
+      userAgeGroup={userAgeGroup}
+    />
+  </>
   );
 };
 

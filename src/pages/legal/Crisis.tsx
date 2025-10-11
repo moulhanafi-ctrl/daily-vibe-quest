@@ -1,10 +1,16 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Phone, MessageSquare, Globe, MapPin } from "lucide-react";
 
 const Crisis = () => {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const currentLang = i18n.language;
+  
+  // Determine if user is in US (English or Spanish)
+  const isUS = currentLang === "en" || currentLang === "es";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
@@ -47,72 +53,76 @@ const Crisis = () => {
         </Card>
 
         <div className="space-y-6">
-          <Card className="p-6">
-            <div className="flex items-start gap-4">
-              <Phone className="h-8 w-8 text-primary flex-shrink-0" />
-              <div className="flex-1">
-                <h2 className="text-2xl font-semibold mb-4">United States & Canada</h2>
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">988 Suicide & Crisis Lifeline</h3>
-                    <p className="text-muted-foreground mb-2">
-                      Call or text <strong className="text-primary">988</strong>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Free, confidential support 24/7 for people in distress, prevention and crisis resources.
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Crisis Text Line</h3>
-                    <p className="text-muted-foreground mb-2">
-                      Text <strong className="text-primary">HOME</strong> to <strong className="text-primary">741741</strong>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Connect with a crisis counselor via text message.
-                    </p>
+          {isUS && (
+            <>
+              <Card className="p-6">
+                <div className="flex items-start gap-4">
+                  <Phone className="h-8 w-8 text-primary flex-shrink-0" />
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-semibold mb-4">United States</h2>
+                    <div className="space-y-3">
+                      <div className="p-4 bg-primary/10 rounded-lg border-2 border-primary">
+                        <h3 className="font-semibold text-lg mb-1">988 Suicide & Crisis Lifeline</h3>
+                        <p className="text-muted-foreground mb-2">
+                          Call or text <strong className="text-primary text-xl">988</strong>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Free, confidential support 24/7 for people in distress, prevention and crisis resources.
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold mb-1">Crisis Text Line</h3>
+                        <p className="text-muted-foreground mb-2">
+                          Text <strong className="text-primary">HOME</strong> to <strong className="text-primary">741741</strong>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Connect with a crisis counselor via text message.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </Card>
+              </Card>
 
-          <Card className="p-6">
-            <div className="flex items-start gap-4">
-              <Phone className="h-8 w-8 text-primary flex-shrink-0" />
-              <div className="flex-1">
-                <h2 className="text-2xl font-semibold mb-4">United Kingdom & Ireland</h2>
-                <div className="space-y-3">
+              <Card className="p-6">
+                <h2 className="text-2xl font-semibold mb-4">Other Important Resources</h2>
+                <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-1">Samaritans</h3>
-                    <p className="text-muted-foreground mb-2">
-                      Call <strong className="text-primary">116 123</strong> (free)
-                    </p>
-                    <p className="text-muted-foreground mb-2">
-                      Email: <a href="mailto:jo@samaritans.org" className="text-primary underline">jo@samaritans.org</a>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Available 24/7 to provide emotional support to anyone in distress.
+                    <h3 className="font-semibold mb-1">National Domestic Violence Hotline</h3>
+                    <p className="text-muted-foreground">
+                      Call <strong>1-800-799-7233</strong> or text <strong>START</strong> to <strong>88788</strong>
                     </p>
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Shout UK</h3>
-                    <p className="text-muted-foreground mb-2">
-                      Text <strong className="text-primary">SHOUT</strong> to <strong className="text-primary">85258</strong>
+                    <h3 className="font-semibold mb-1">RAINN Sexual Assault Hotline</h3>
+                    <p className="text-muted-foreground">
+                      Call <strong>1-800-656-4673</strong>
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      24/7 text support for anyone in crisis.
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Trevor Project (LGBTQ+ Youth)</h3>
+                    <p className="text-muted-foreground">
+                      Call <strong>1-866-488-7386</strong> or text <strong>START</strong> to <strong>678-678</strong>
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Veterans Crisis Line</h3>
+                    <p className="text-muted-foreground">
+                      Call <strong>1-800-273-8255</strong> and press 1, or text <strong>838255</strong>
                     </p>
                   </div>
                 </div>
-              </div>
-            </div>
-          </Card>
+              </Card>
+            </>
+          )}
 
           <Card className="p-6">
             <div className="flex items-start gap-4">
               <Globe className="h-8 w-8 text-primary flex-shrink-0" />
               <div className="flex-1">
-                <h2 className="text-2xl font-semibold mb-4">International Resources</h2>
+                <h2 className="text-2xl font-semibold mb-4">
+                  {isUS ? "International Resources" : "Crisis Support"}
+                </h2>
                 <div className="space-y-3">
                   <div>
                     <h3 className="font-semibold mb-2">Find A Helpline</h3>
@@ -134,36 +144,6 @@ const Crisis = () => {
                     </Button>
                   </div>
                 </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="text-2xl font-semibold mb-4">Other Important Resources</h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold mb-1">National Domestic Violence Hotline (US)</h3>
-                <p className="text-muted-foreground">
-                  Call <strong>1-800-799-7233</strong> or text <strong>START</strong> to <strong>88788</strong>
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-1">RAINN Sexual Assault Hotline (US)</h3>
-                <p className="text-muted-foreground">
-                  Call <strong>1-800-656-4673</strong>
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-1">Trevor Project (LGBTQ+ Youth, US)</h3>
-                <p className="text-muted-foreground">
-                  Call <strong>1-866-488-7386</strong> or text <strong>START</strong> to <strong>678-678</strong>
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-1">Veterans Crisis Line (US)</h3>
-                <p className="text-muted-foreground">
-                  Call <strong>1-800-273-8255</strong> and press 1, or text <strong>838255</strong>
-                </p>
               </div>
             </div>
           </Card>

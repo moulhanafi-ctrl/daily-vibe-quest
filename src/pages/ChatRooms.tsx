@@ -9,6 +9,7 @@ import { STRIPE_PLANS } from "@/lib/stripe";
 import { ChatRoomSkeleton } from "@/components/ChatRoomSkeleton";
 import { InclusionBanner } from "@/components/InclusionBanner";
 import { LegalConsentModal } from "@/components/legal/LegalConsentModal";
+import { ParentVerificationGate } from "@/components/family/ParentVerificationGate";
 import { useConsentGate } from "@/hooks/useConsentGate";
 
 interface ChatRoom {
@@ -143,28 +144,30 @@ const ChatRooms = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background p-4">
-      <div className="container max-w-4xl mx-auto py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/dashboard")}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
+    <>
+      <ParentVerificationGate feature="rooms">
+        <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background p-4">
+          <div className="container max-w-4xl mx-auto py-8">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/dashboard")}
+              className="mb-6"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
 
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Support Chat Rooms</h1>
-            <p className="text-muted-foreground">
-              Connect with others who share your focus areas
-            </p>
-          </div>
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-4xl font-bold mb-2">Support Chat Rooms</h1>
+                <p className="text-muted-foreground">
+                  Connect with others who share your focus areas
+                </p>
+              </div>
 
-          <InclusionBanner compact={true} />
+              <InclusionBanner compact={true} />
 
-          {!hasActiveSubscription ? (
+              {!hasActiveSubscription ? (
             <Card className="max-w-3xl mx-auto">
               <CardHeader className="text-center">
                 <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
@@ -286,14 +289,16 @@ const ChatRooms = () => {
           )}
         </div>
       </div>
-      
-      <LegalConsentModal
-        open={showConsentModal}
-        onClose={() => setShowConsentModal(false)}
-        onConsent={handleConsentComplete}
-        userAgeGroup={userAgeGroup}
-      />
     </div>
+    </ParentVerificationGate>
+    
+    <LegalConsentModal
+      open={showConsentModal}
+      onClose={() => setShowConsentModal(false)}
+      onConsent={handleConsentComplete}
+      userAgeGroup={userAgeGroup}
+    />
+  </>
   );
 };
 

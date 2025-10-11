@@ -97,6 +97,16 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               </span>
             </div>
           )}
+          
+          {/* 24/7 crisis lines always show as open */}
+          {location.type === "crisis" && location.tags?.includes("24/7") && (
+            <div className="flex items-center gap-1 text-sm">
+              <Clock className="h-3 w-3" />
+              <span className="text-green-600 font-medium">
+                Open now • 24/7
+              </span>
+            </div>
+          )}
         </div>
 
         {location.tags && location.tags.length > 0 && (
