@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.trivia-publish-rounds]
 verify_jwt = false
+
+[functions.local-help]
+verify_jwt = false

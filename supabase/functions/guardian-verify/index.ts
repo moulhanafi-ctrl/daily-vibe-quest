@@ -1,10 +1,22 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const RequestSchema = z.object({
+  guardianEmail: z.string()
+    .email("Invalid email format")
+    .max(255, "Email too long")
+    .trim()
+    .toLowerCase(),
+  code: z.string()
+    .regex(/^\d{6}$/, "Code must be 6 digits")
+    .length(6),
+});
 
 const hashCode = async (code: string): Promise<string> => {
   const encoder = new TextEncoder();
@@ -23,11 +35,6 @@ const timingSafeEqual = (a: string, b: string): boolean => {
   }
   return result === 0;
 };
-
-interface VerifyRequest {
-  guardianEmail: string;
-  code: string;
-}
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -50,15 +57,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Unauthorized");
     }
 
-    const { guardianEmail, code }: VerifyRequest = await req.json();
-
-    if (!guardianEmail || !code) {
-      throw new Error("Guardian email and code are required");
-    }
-
-    if (!/^\d{6}$/.test(code)) {
-      throw new Error("Invalid code format");
-    }
+    // Validate input with zod
+    const validatedInput = RequestSchema.parse(await req.json());
+    const { guardianEmail, code } = validatedInput;
 
     console.log(`Verifying guardian code for child ${user.id}, guardian ${guardianEmail}`);
 
@@ -188,9 +189,29 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in guardian-verify:", error);
+    
+    // Handle zod validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ 
+          ok: false,
+          verified: false,
+          error: "Invalid input format",
+          details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(", ")
+        }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    // Sanitize error messages for production
+    const clientMessage = error.message?.includes("expired") || error.message?.includes("Invalid")
+      ? error.message
+      : "Verification failed. Please try again.";
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        ok: false,
+        error: clientMessage,
         verified: false
       }),
       {

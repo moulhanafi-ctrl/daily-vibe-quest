@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -8,6 +9,18 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const RequestSchema = z.object({
+  guardianEmail: z.string()
+    .email("Invalid email format")
+    .max(255, "Email too long")
+    .trim()
+    .toLowerCase(),
+  childName: z.string()
+    .max(100, "Name too long")
+    .trim()
+    .optional(),
+});
 
 const generateCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -20,11 +33,6 @@ const hashCode = async (code: string): Promise<string> => {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
-
-interface StartRequest {
-  guardianEmail: string;
-  childName?: string;
-}
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -47,11 +55,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Unauthorized");
     }
 
-    const { guardianEmail, childName }: StartRequest = await req.json();
-
-    if (!guardianEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guardianEmail)) {
-      throw new Error("Valid guardian email is required");
-    }
+    // Validate and parse input with zod
+    const validatedInput = RequestSchema.parse(await req.json());
+    const { guardianEmail, childName } = validatedInput;
 
     console.log(`Starting guardian verification for child ${user.id}, guardian ${guardianEmail}`);
 
@@ -173,10 +179,29 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in guardian-start:", error);
+    
+    // Handle zod validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ 
+          ok: false,
+          error: "Invalid input format",
+          details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(", ")
+        }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    // Sanitize error messages for production
+    const isRateLimit = error.message?.includes("Rate limit") || error.message?.includes("wait");
+    const clientMessage = isRateLimit 
+      ? error.message 
+      : "An error occurred processing your request. Please try again.";
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ ok: false, error: clientMessage }),
       {
-        status: error.message.includes("Rate limit") || error.message.includes("wait") ? 429 : 500,
+        status: isRateLimit ? 429 : 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
