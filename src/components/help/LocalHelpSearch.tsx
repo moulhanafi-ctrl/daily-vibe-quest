@@ -26,6 +26,7 @@ interface HelpLocation {
     count?: number;
   };
   tags?: string[];
+  last_verified_at?: string | null;
   verified?: boolean;
   accepts_insurance?: boolean;
   sliding_scale?: boolean;
@@ -209,6 +210,9 @@ export const LocalHelpSearch = () => {
             ? (loc.ratings as { average?: number; count?: number })
             : undefined;
           
+          // Derive verified from last_verified_at
+          const verified = !!loc.last_verified_at;
+          
           const helpLocation: HelpLocation = {
             id: loc.id,
             name: loc.name,
@@ -220,7 +224,8 @@ export const LocalHelpSearch = () => {
             lon: loc.lon,
             open_now: loc.open_now,
             tags: loc.tags,
-            verified: loc.verified,
+            last_verified_at: loc.last_verified_at,
+            verified,
             accepts_insurance: loc.accepts_insurance,
             sliding_scale: loc.sliding_scale,
             telehealth: loc.telehealth,
@@ -228,7 +233,7 @@ export const LocalHelpSearch = () => {
             insurers: loc.insurers,
             ratings,
             distance,
-            score: calculateScore({ ...loc, ratings } as HelpLocation, distance, radius)
+            score: calculateScore({ ...loc, ratings, verified } as HelpLocation, distance, radius)
           };
           
           return helpLocation;
