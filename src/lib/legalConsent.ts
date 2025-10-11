@@ -18,7 +18,7 @@ export const hasValidConsent = async (userId: string): Promise<boolean> => {
 
     if (error) throw error;
 
-    const consent = data?.legal_consent as LegalConsent | null;
+    const consent = (data as any)?.legal_consent as LegalConsent | null;
     
     // Check if consent exists and is current version
     return !!(consent && consent.version === "1.0.0" && consent.accepted_at);
@@ -34,7 +34,7 @@ export const requiresParentalConsent = (ageGroup?: string): boolean => {
 
 export const isUserMuted = async (userId: string): Promise<{ muted: boolean; until?: Date }> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("user_mutes")
       .select("muted_until")
       .eq("user_id", userId)
@@ -48,7 +48,7 @@ export const isUserMuted = async (userId: string): Promise<{ muted: boolean; unt
     if (data) {
       return {
         muted: true,
-        until: new Date(data.muted_until),
+        until: new Date((data as any).muted_until),
       };
     }
 

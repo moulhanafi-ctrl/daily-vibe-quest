@@ -51,7 +51,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
 
       const { error } = await supabase
         .from("profiles")
-        .update({ legal_consent: legalConsent })
+        .update({ legal_consent: legalConsent } as any)
         .eq("id", user.id);
 
       if (error) throw error;
