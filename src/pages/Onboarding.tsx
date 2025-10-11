@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -24,6 +24,25 @@ const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>("welcome");
   const [data, setData] = useState<OnboardingData>({});
   const [loading, setLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setAuthLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleBasicInfo = (basicInfo: {
     firstName: string;
@@ -94,10 +113,10 @@ const Onboarding = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Setting up your profile...</p>
+        <p>{loading ? "Setting up your profile..." : "Loading..."}</p>
       </div>
     );
   }
