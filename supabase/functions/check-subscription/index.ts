@@ -96,15 +96,20 @@ serve(async (req) => {
 
     const subscription = subscriptions.data[0];
     
-    // Safely handle the timestamp conversion
+    // Determine the end date based on subscription status
     let subscriptionEnd = null;
-    if (subscription.current_period_end) {
+    const endTimestamp = subscription.status === "trialing" 
+      ? subscription.trial_end 
+      : subscription.current_period_end;
+    
+    if (endTimestamp) {
       try {
-        subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+        subscriptionEnd = new Date(endTimestamp * 1000).toISOString();
+        logStep("Converted timestamp", { endTimestamp, subscriptionEnd });
       } catch (error) {
         logStep("Error converting timestamp", { 
           error: error instanceof Error ? error.message : String(error),
-          timestamp: subscription.current_period_end 
+          timestamp: endTimestamp 
         });
       }
     }
