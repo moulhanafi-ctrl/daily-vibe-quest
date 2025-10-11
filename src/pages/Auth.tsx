@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
+import vibeCheckLogo from "@/assets/vibe-check-logo.png";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -76,8 +77,11 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
+          <div className="flex justify-center mb-4">
+            <img src={vibeCheckLogo} alt="Vibe Check Logo" className="w-16 h-16" />
+          </div>
           <CardTitle className="text-2xl text-center">
-            {isLogin ? "Welcome Back" : "Join MindfulU"}
+            {isLogin ? "Welcome Back" : "Join Vibe Check"}
           </CardTitle>
           <CardDescription className="text-center">
             {isLogin

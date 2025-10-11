@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import heroBackground from "@/assets/hero-background.jpg";
+import vibeCheckLogo from "@/assets/vibe-check-logo.png";
 
 const moods = [
   { emoji: "😊", label: "Great", color: "mint" },
@@ -32,6 +33,10 @@ export const Hero = () => {
 
       <div className="container px-4 md:px-6 relative z-10">
         <div className="flex flex-col items-center text-center space-y-8 max-w-3xl mx-auto">
+          <div className="flex items-center gap-3 animate-fade-in">
+            <img src={vibeCheckLogo} alt="Vibe Check Logo" className="w-16 h-16 md:w-20 md:h-20" />
+          </div>
+          
           <div className="inline-flex items-center gap-2 bg-card/80 backdrop-blur px-4 py-2 rounded-full shadow-soft animate-fade-in border border-primary/20">
             <Sparkles className="w-4 h-4 text-primary animate-pulse-soft" />
             <span className="text-sm font-medium">Your daily check-in awaits</span>
