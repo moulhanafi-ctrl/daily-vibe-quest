@@ -54,17 +54,24 @@ const Onboarding = () => {
         throw new Error("No user found");
       }
 
+      // Calculate age group based on age
+      const { data: ageGroupData, error: ageGroupError } = await supabase
+        .rpc("assign_age_group", { user_age: data.age });
+
+      if (ageGroupError) throw ageGroupError;
+
       // Update the user's profile with onboarding data
       const { error } = await supabase
         .from("profiles")
         .update({
           first_name: data.firstName,
           age: data.age,
+          age_group: ageGroupData, // Auto-assigned based on age
           sex: data.sex,
           zipcode: data.zipcode,
           selected_focus_areas: data.focusAreas,
           optional_reflection: data.reflection,
-          username: data.firstName, // Also update username
+          username: data.firstName,
         })
         .eq("id", user.id);
 
