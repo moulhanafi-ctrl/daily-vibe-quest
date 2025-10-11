@@ -13,11 +13,18 @@ interface ChatRoom {
   description: string;
 }
 
+interface Profile {
+  selected_focus_areas: string[];
+  subscription_status: string;
+  subscription_expires_at: string | null;
+}
+
 const ChatRooms = () => {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [userFocusAreas, setUserFocusAreas] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -28,15 +35,23 @@ const ChatRooms = () => {
           return;
         }
 
-        // Get user's focus areas
+        // Get user's profile with subscription info
         const { data: profile } = await supabase
           .from("profiles")
-          .select("selected_focus_areas")
+          .select("selected_focus_areas, subscription_status, subscription_expires_at")
           .eq("id", user.id)
           .single();
 
         const focusAreas = profile?.selected_focus_areas || [];
         setUserFocusAreas(focusAreas);
+
+        // Check subscription status
+        const isActive = profile?.subscription_status === 'active' || 
+          (profile?.subscription_status === 'trialing' && 
+           profile?.subscription_expires_at && 
+           new Date(profile.subscription_expires_at) > new Date());
+        
+        setHasActiveSubscription(isActive);
 
         // Get chat rooms for user's focus areas
         const { data: chatRooms, error } = await supabase
@@ -89,7 +104,37 @@ const ChatRooms = () => {
             </p>
           </div>
 
-          {rooms.length === 0 ? (
+          {!hasActiveSubscription ? (
+            <Card className="border-2 border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-2xl">Premium Feature</CardTitle>
+                <CardDescription>
+                  Access to community chat rooms is available with a premium subscription
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Join our supportive community and connect with others who share your focus areas. 
+                    Get instant access to:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>24/7 peer support chat rooms</li>
+                    <li>Age-appropriate safe spaces</li>
+                    <li>Moderated discussions</li>
+                    <li>Connect with people who understand</li>
+                  </ul>
+                </div>
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={() => navigate("/")}
+                >
+                  View Pricing Plans
+                </Button>
+              </CardContent>
+            </Card>
+          ) : rooms.length === 0 ? (
             <Card>
               <CardContent className="pt-6">
                 <p className="text-center text-muted-foreground">
