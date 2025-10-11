@@ -40,6 +40,7 @@ import FeatureFlags from "./pages/admin/FeatureFlags";
 import StripeAdmin from "./pages/admin/StripeAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
 import NationalHotlines from "./pages/help/NationalHotlines";
+import HelpResources from "./pages/help/HelpResources";
 import LanguagePicker from "./pages/welcome/LanguagePicker";
 import OpsAdmin from "./pages/admin/OpsAdmin";
 import PublishReadiness from "./pages/admin/PublishReadiness";
@@ -94,6 +95,7 @@ const App = () => (
           <Route path="/admin/ops" element={<OpsAdmin />} />
           <Route path="/admin/publish" element={<PublishReadiness />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/help" element={<HelpResources />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
           <Route path="/help/national" element={<NationalHotlines />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
