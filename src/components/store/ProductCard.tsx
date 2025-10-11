@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface Product {
   id: string;
@@ -22,17 +23,16 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   const [loading, setLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const navigate = useNavigate();
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "Please sign in",
-          description: "You need to be signed in to add items to cart",
-          variant: "destructive",
-        });
+        toast.error("Please sign in to add items to cart");
         return;
       }
 
@@ -48,31 +48,40 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Added to cart! 🛒",
-        description: `${product.name} has been added to your cart`,
-      });
+      toast.success(`Added to cart! 🛒 ${product.name} has been added to your cart`);
       onAddToCart();
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Error: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = `/store/product/${product.id}`}>
-      <div className="aspect-square bg-secondary/20 flex items-center justify-center">
+    <Card 
+      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" 
+      onClick={() => navigate(`/store/product/${product.id}`)}
+    >
+      <div className="aspect-square bg-secondary/20 flex items-center justify-center relative">
         {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
+          <>
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-pulse text-4xl">
+                  {product.product_type === "digital" ? "📱" : "📦"}
+                </div>
+              </div>
+            )}
+            <img
+              src={product.image_url}
+              alt={product.name}
+              loading="lazy"
+              onLoad={() => setImageLoaded(true)}
+              className={`w-full h-full object-cover transition-opacity ${
+                imageLoaded ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          </>
         ) : (
           <div className="text-6xl">
             {product.product_type === "digital" ? "📱" : "📦"}

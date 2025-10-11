@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Calendar, Tag, Lock, Share2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { JournalEntrySkeleton } from "./JournalEntrySkeleton";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface JournalListProps {
   onSelectEntry: (entry: any) => void;
@@ -14,16 +16,62 @@ interface JournalListProps {
 
 export const JournalList = ({ onSelectEntry }: JournalListProps) => {
   const [entries, setEntries] = useState<any[]>([]);
+  const [cachedEntries, setCachedEntries] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Debounce search query to reduce API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   useEffect(() => {
-    loadEntries();
-  }, [searchQuery, selectedTags]);
+    // Initial load - cache all entries
+    loadAllEntries();
+  }, []);
+
+  useEffect(() => {
+    // Filter on debounced search or tag changes
+    if (debouncedSearchQuery || selectedTags.length > 0) {
+      loadEntries();
+    } else {
+      // Use cached entries when no filters
+      setEntries(cachedEntries);
+      setLoading(false);
+    }
+  }, [debouncedSearchQuery, selectedTags, cachedEntries]);
+
+  const loadAllEntries = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      
+      setCachedEntries(data || []);
+      setEntries(data || []);
+
+      // Extract all unique tags
+      const tags = new Set<string>();
+      data?.forEach(entry => {
+        entry.tags?.forEach((tag: string) => tags.add(tag));
+      });
+      setAllTags(Array.from(tags));
+    } catch (error: any) {
+      console.error("Error loading entries:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadEntries = async () => {
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -34,8 +82,8 @@ export const JournalList = ({ onSelectEntry }: JournalListProps) => {
         .eq("user_id", user.id)
         .order("date", { ascending: false });
 
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,body.ilike.%${searchQuery}%,transcript.ilike.%${searchQuery}%`);
+      if (debouncedSearchQuery) {
+        query = query.or(`title.ilike.%${debouncedSearchQuery}%,body.ilike.%${debouncedSearchQuery}%,transcript.ilike.%${debouncedSearchQuery}%`);
       }
 
       if (selectedTags.length > 0) {
@@ -46,13 +94,6 @@ export const JournalList = ({ onSelectEntry }: JournalListProps) => {
 
       if (error) throw error;
       setEntries(data || []);
-
-      // Extract all unique tags
-      const tags = new Set<string>();
-      data?.forEach(entry => {
-        entry.tags?.forEach((tag: string) => tags.add(tag));
-      });
-      setAllTags(Array.from(tags));
     } catch (error: any) {
       console.error("Error loading entries:", error);
     } finally {
@@ -104,7 +145,11 @@ export const JournalList = ({ onSelectEntry }: JournalListProps) => {
       <CardContent>
         <ScrollArea className="h-[500px]">
           {loading ? (
-            <p className="text-center text-muted-foreground py-8">Loading...</p>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <JournalEntrySkeleton key={i} />
+              ))}
+            </div>
           ) : entries.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               No entries found. Start journaling!

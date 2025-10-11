@@ -223,23 +223,22 @@ const ChatRoom = () => {
 
         <Card className="flex-1 flex flex-col min-h-0">
           <CardHeader>
-            <div className="flex items-center justify-between gap-2">
-              <div>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex-1">
                 <CardTitle className="text-lg sm:text-xl">{room?.name || "Chat Room"}</CardTitle>
                 {room?.description && (
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">{room.description}</p>
                 )}
               </div>
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-accent" 
+                onClick={() => window.open("/legal/community-guidelines", "_blank")}
+              >
+                <Shield className="w-3 h-3 mr-1" />
+                <span className="text-xs">Be kind • No bullying • No explicit content</span>
+              </Badge>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/legal/community-guidelines")}
-              className="w-fit text-xs mt-2"
-            >
-              <Shield className="w-3 h-3 mr-1" />
-              Be kind • No bullying • No explicit content
-            </Button>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col min-h-0 p-3 sm:p-6 pt-0">
             {loading ? (

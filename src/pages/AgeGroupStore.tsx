@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/store/ProductCard";
+import { ProductSkeleton } from "@/components/store/ProductSkeleton";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface Product {
   id: string;
@@ -67,11 +68,7 @@ const AgeGroupStore = () => {
       if (error) throw error;
       setProducts(data || []);
     } catch (error: any) {
-      toast({
-        title: "Error loading products",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Error loading products: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -141,8 +138,10 @@ const AgeGroupStore = () => {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <ProductSkeleton key={i} />
+            ))}
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12">
