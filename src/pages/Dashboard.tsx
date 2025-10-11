@@ -125,7 +125,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center gap-4">
+        <div id="main-content" className="container mx-auto px-4 py-4 flex justify-between items-center gap-4">
           <div className="flex-1 min-w-0">
             <button 
               onClick={() => navigate("/dashboard")} 

@@ -55,5 +55,50 @@
     "es": "Español",
     "fr": "Français",
     "ar": "العربية"
-  }
+  },
+  "rooms": {
+    "rules_chip": "Be kind • No bullying • No explicit content",
+    "rules_aria": "Open community guidelines"
+  },
+  "email": {
+    "guardian": {
+      "subject": "Verify your connection to {{childName}}",
+      "body": "Enter this 6-digit code within 15 minutes:",
+      "hello": "Hello",
+      "verification_request": "{{childName}} is setting up a Vibe Check account and needs your verification.",
+      "code_label": "Your verification code:",
+      "expires": "This code will expire in 15 minutes.",
+      "ignore": "If you didn't request this, you can safely ignore this email."
+    },
+    "data_export": {
+      "subject": "Your Vibe Check Data Export is Ready",
+      "ready": "Your data export is ready",
+      "download_button": "Download Your Data",
+      "expires_on": "This download link will expire on {{date}}.",
+      "includes": "Your export includes:",
+      "includes_profile": "Profile information",
+      "includes_journals": "Journal entries",
+      "includes_checkins": "Check-in history",
+      "includes_notifications": "Notification preferences"
+    },
+    "data_deletion": {
+      "subject_scheduled": "Your Data Deletion Request Has Been Received",
+      "subject_completed": "Your Vibe Check Data Has Been Deleted",
+      "scheduled_title": "Data Deletion Request Received",
+      "scheduled_body": "We've received your request to delete your Vibe Check account and data.",
+      "scheduled_warning": "Important: Your data will be permanently deleted on {{date}}.",
+      "scheduled_grace": "You have a 7-day grace period to cancel this request. After that, your data will be permanently deleted and cannot be recovered.",
+      "scheduled_cancel": "To cancel this deletion, please log in to your account before the scheduled date.",
+      "completed_title": "Your Data Has Been Deleted",
+      "completed_body": "This confirms that all your Vibe Check data has been permanently deleted as requested.",
+      "completed_removed": "The following data has been removed:",
+      "completed_thanks": "Thank you for using Vibe Check. We hope we were able to support your wellness journey."
+    },
+    "common": {
+      "footer": "Vibe Check - Mental Wellness for All Ages",
+      "unsubscribe": "Unsubscribe",
+      "preferences": "Email Preferences"
+    }
+  },
+  "skip_to_content": "Skip to main content"
 }

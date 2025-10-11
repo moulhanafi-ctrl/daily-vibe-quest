@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useRTL } from "./hooks/useRTL";
+import { SkipToContent } from "@/components/layout/SkipToContent";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -36,7 +38,7 @@ import FeatureFlags from "./pages/admin/FeatureFlags";
 import StripeAdmin from "./pages/admin/StripeAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
 import LanguagePicker from "./pages/welcome/LanguagePicker";
-import { useRTL } from "./hooks/useRTL";
+import OpsAdmin from "./pages/admin/OpsAdmin";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +50,7 @@ const AppContent = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <SkipToContent />
       <AppContent />
       <Toaster />
       <Sonner />
@@ -82,6 +85,7 @@ const App = () => (
           <Route path="/admin/legal" element={<LegalAdmin />} />
           <Route path="/admin/flags" element={<FeatureFlags />} />
           <Route path="/admin/stripe" element={<StripeAdmin />} />
+          <Route path="/admin/ops" element={<OpsAdmin />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

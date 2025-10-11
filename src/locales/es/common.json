@@ -55,5 +55,50 @@
     "es": "Español",
     "fr": "Français",
     "ar": "العربية"
-  }
+  },
+  "rooms": {
+    "rules_chip": "Sé amable • No acoso • No contenido explícito",
+    "rules_aria": "Abrir guías de la comunidad"
+  },
+  "email": {
+    "guardian": {
+      "subject": "Verifica tu conexión con {{childName}}",
+      "body": "Ingresa este código de 6 dígitos dentro de 15 minutos:",
+      "hello": "Hola",
+      "verification_request": "{{childName}} está configurando una cuenta de Vibe Check y necesita tu verificación.",
+      "code_label": "Tu código de verificación:",
+      "expires": "Este código expirará en 15 minutos.",
+      "ignore": "Si no solicitaste esto, puedes ignorar este correo."
+    },
+    "data_export": {
+      "subject": "Tu exportación de datos de Vibe Check está lista",
+      "ready": "Tu exportación de datos está lista",
+      "download_button": "Descargar Tus Datos",
+      "expires_on": "Este enlace de descarga expirará el {{date}}.",
+      "includes": "Tu exportación incluye:",
+      "includes_profile": "Información del perfil",
+      "includes_journals": "Entradas del diario",
+      "includes_checkins": "Historial de check-ins",
+      "includes_notifications": "Preferencias de notificaciones"
+    },
+    "data_deletion": {
+      "subject_scheduled": "Hemos recibido tu solicitud de eliminación de datos",
+      "subject_completed": "Tus datos de Vibe Check han sido eliminados",
+      "scheduled_title": "Solicitud de eliminación de datos recibida",
+      "scheduled_body": "Hemos recibido tu solicitud para eliminar tu cuenta y datos de Vibe Check.",
+      "scheduled_warning": "Importante: Tus datos se eliminarán permanentemente el {{date}}.",
+      "scheduled_grace": "Tienes un período de gracia de 7 días para cancelar esta solicitud. Después de eso, tus datos se eliminarán permanentemente y no se podrán recuperar.",
+      "scheduled_cancel": "Para cancelar esta eliminación, inicia sesión en tu cuenta antes de la fecha programada.",
+      "completed_title": "Tus datos han sido eliminados",
+      "completed_body": "Esto confirma que todos tus datos de Vibe Check han sido eliminados permanentemente según lo solicitado.",
+      "completed_removed": "Los siguientes datos han sido eliminados:",
+      "completed_thanks": "Gracias por usar Vibe Check. Esperamos haber podido apoyar tu viaje de bienestar."
+    },
+    "common": {
+      "footer": "Vibe Check - Bienestar Mental para Todas las Edades",
+      "unsubscribe": "Cancelar suscripción",
+      "preferences": "Preferencias de correo"
+    }
+  },
+  "skip_to_content": "Ir al contenido principal"
 }

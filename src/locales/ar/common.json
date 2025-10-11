@@ -55,5 +55,50 @@
     "es": "Español",
     "fr": "Français",
     "ar": "العربية"
-  }
+  },
+  "rooms": {
+    "rules_chip": "كن لطيفاً • لا تنمر • لا محتوى صريح",
+    "rules_aria": "فتح إرشادات المجتمع"
+  },
+  "email": {
+    "guardian": {
+      "subject": "تحقق من اتصالك بـ {{childName}}",
+      "body": "أدخل هذا الرمز المكون من 6 أرقام خلال 15 دقيقة:",
+      "hello": "مرحباً",
+      "verification_request": "{{childName}} يقوم بإعداد حساب Vibe Check ويحتاج إلى تحققك.",
+      "code_label": "رمز التحقق الخاص بك:",
+      "expires": "سينتهي صلاحية هذا الرمز خلال 15 دقيقة.",
+      "ignore": "إذا لم تطلب ذلك، يمكنك تجاهل هذا البريد الإلكتروني بأمان."
+    },
+    "data_export": {
+      "subject": "تصدير بيانات Vibe Check جاهز",
+      "ready": "تصدير بياناتك جاهز",
+      "download_button": "تحميل بياناتك",
+      "expires_on": "سينتهي صلاحية رابط التحميل في {{date}}.",
+      "includes": "يتضمن التصدير الخاص بك:",
+      "includes_profile": "معلومات الملف الشخصي",
+      "includes_journals": "مدخلات اليوميات",
+      "includes_checkins": "سجل تسجيلات الدخول",
+      "includes_notifications": "تفضيلات الإشعارات"
+    },
+    "data_deletion": {
+      "subject_scheduled": "تم استلام طلب حذف بياناتك",
+      "subject_completed": "تم حذف بيانات Vibe Check الخاصة بك",
+      "scheduled_title": "تم استلام طلب حذف البيانات",
+      "scheduled_body": "لقد تلقينا طلبك لحذف حساب وبيانات Vibe Check الخاص بك.",
+      "scheduled_warning": "مهم: سيتم حذف بياناتك نهائياً في {{date}}.",
+      "scheduled_grace": "لديك فترة سماح مدتها 7 أيام لإلغاء هذا الطلب. بعد ذلك، سيتم حذف بياناتك نهائياً ولن يمكن استعادتها.",
+      "scheduled_cancel": "لإلغاء هذا الحذف، يرجى تسجيل الدخول إلى حسابك قبل التاريخ المحدد.",
+      "completed_title": "تم حذف بياناتك",
+      "completed_body": "هذا يؤكد أن جميع بيانات Vibe Check الخاصة بك تم حذفها نهائياً كما طلبت.",
+      "completed_removed": "تم إزالة البيانات التالية:",
+      "completed_thanks": "شكراً لاستخدامك Vibe Check. نأمل أن نكون قادرين على دعم رحلة صحتك."
+    },
+    "common": {
+      "footer": "Vibe Check - الصحة النفسية لجميع الأعمار",
+      "unsubscribe": "إلغاء الاشتراك",
+      "preferences": "تفضيلات البريد الإلكتروني"
+    }
+  },
+  "skip_to_content": "انتقل إلى المحتوى الرئيسي"
 }
