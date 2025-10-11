@@ -4,610 +4,481 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Phone, Globe, Navigation, Star, Clock, Shield, Heart, AlertCircle } from "lucide-react";
+import { MapPin, Phone, Globe, Navigation, AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
-import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-interface HelpLocation {
+interface LocalHelpLocation {
   id: string;
   name: string;
-  type: "crisis" | "therapy";
-  phone?: string;
-  website_url?: string;
-  address: string;
-  address_line1?: string;
-  address_line2?: string;
-  city?: string;
-  state?: string;
-  postal_code?: string;
-  lat?: number;
-  lon?: number;
-  latitude?: number;
-  longitude?: number;
-  open_now?: boolean;
-  open_hours?: any;
-  ratings?: {
-    average?: number;
-    count?: number;
-  };
-  tags?: string[];
-  last_verified_at?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  address?: string | null;
+  distance?: number | null;
   verified?: boolean;
   accepts_insurance?: boolean;
   sliding_scale?: boolean;
   telehealth?: boolean;
-  is_national?: boolean;
-  insurers?: string[];
-  distance?: number;
-  score?: number;
+  rating?: number;
+  open_now?: boolean;
 }
 
-interface UserLocation {
-  lat: number;
-  lon: number;
+interface NationalResource {
+  id: string;
+  name: string;
+  phone?: string | null;
+  text?: string | null;
+  website?: string | null;
+  tags?: string[] | null;
 }
 
-const isValidZip = /^\d{5}(-\d{4})?$/; // Accept ZIP or ZIP+4
-
-// Haversine distance calculation
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3959; // Earth's radius in miles
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
+interface LocalHelpResponse {
+  ok: boolean;
+  zip: string;
+  city: string;
+  state: string;
+  radius: number;
+  crisis_centers: LocalHelpLocation[];
+  therapists: LocalHelpLocation[];
+  error?: string;
 }
 
-// Calculate location score based on requirements
-function calculateScore(
-  location: HelpLocation, 
-  distance: number,
-  maxDistance: number,
-  userInsurance?: string
-): number {
-  const rating = location.ratings?.average || 0;
-  const ratingCount = location.ratings?.count || 0;
-  const ratingNorm = ratingCount >= 10 ? rating / 5 : 0;
-  
-  const verified = location.verified ? 1 : 0;
-  const openNow = location.open_now || location.type === 'crisis' ? 1 : 0;
-  
-  let tagMatch = 0;
-  const premiumTags = ['youth_friendly', 'lgbtq_affirming', 'bilingual', 'accessible'];
-  premiumTags.forEach(tag => {
-    if (location.tags?.some(t => t.toLowerCase().includes(tag.toLowerCase()))) {
-      tagMatch += 0.03;
-    }
-  });
-  tagMatch = Math.min(tagMatch, 0.10);
-  
-  const inNetworkMatch = userInsurance && location.insurers?.includes(userInsurance) ? 1 : 0;
-  const distanceNorm = distance / maxDistance;
-  
-  const score = 
-    0.45 * ratingNorm +
-    0.20 * verified +
-    0.10 * openNow +
-    0.10 * tagMatch +
-    0.10 * inNetworkMatch -
-    0.10 * distanceNorm;
-    
-  return score;
+function normalizeZip(input: string): string {
+  const digits = (input || "").replace(/\D/g, "");
+  return digits.slice(0, 5);
 }
 
 export const LocalHelpSearch = () => {
-  const [zipCode, setZipCode] = useState("");
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [zip, setZip] = useState("");
+  const [radius, setRadius] = useState<number>(25);
+  const [loading, setLoading] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [therapyResults, setTherapyResults] = useState<HelpLocation[]>([]);
-  const [crisisResults, setCrisisResults] = useState<HelpLocation[]>([]);
-  const [currentRadius, setCurrentRadius] = useState(25);
-  const [showExpandOption, setShowExpandOption] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<LocalHelpResponse | null>(null);
+  const [nationalResources, setNationalResources] = useState<NationalResource[]>([]);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
-  // Load user's ZIP and location from profile
+  // Load user's saved ZIP from profile and national resources
   useEffect(() => {
-    const loadUserProfile = async () => {
+    const loadInitialData = async () => {
       try {
+        // Load user ZIP if authenticated
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("zipcode, location")
+            .select("zipcode")
             .eq("id", user.id)
             .single();
           
           if (profile?.zipcode) {
-            setZipCode(profile.zipcode);
-            if (profile.location && typeof profile.location === 'object' && 'lat' in profile.location && 'lon' in profile.location) {
-              const loc = profile.location as { lat: number; lon: number };
-              setUserLocation({ 
-                lat: loc.lat, 
-                lon: loc.lon 
-              });
-              // Auto-search if we have saved location
-              await performSearch({ lat: loc.lat, lon: loc.lon }, profile.zipcode, 25);
-            }
+            const normalized = normalizeZip(profile.zipcode);
+            setZip(normalized);
+            // Auto-search with saved ZIP
+            await performSearch(normalized, radius);
           }
         }
+
+        // Load national resources
+        const { data: national, error: nationalError } = await supabase
+          .from("help_locations")
+          .select("id, name, phone, website_url, tags")
+          .eq("is_national", true)
+          .eq("is_active", true);
+
+        if (!nationalError && national) {
+          setNationalResources(
+            national.map((n) => ({
+              id: n.id,
+              name: n.name,
+              phone: n.phone,
+              text: null, // SMS numbers would need separate field
+              website: n.website_url,
+              tags: n.tags,
+            }))
+          );
+        }
       } catch (error) {
-        console.error("Error loading profile:", error);
+        console.error("Error loading initial data:", error);
       } finally {
         setIsLoadingProfile(false);
       }
     };
 
-    loadUserProfile();
+    loadInitialData();
   }, []);
 
-  const handleZipChange = async () => {
-    // Normalize to 5 digits (handle ZIP+4)
-    const normalizedZip = zipCode.trim().replace(/\D/g, '').substring(0, 5);
+  async function performSearch(zipCode: string, searchRadius: number) {
+    const normalized = normalizeZip(zipCode);
     
-    if (!normalizedZip || normalizedZip.length !== 5) {
-      toast({
-        title: "Invalid ZIP code",
-        description: "Please enter a valid 5-digit US ZIP code",
-        variant: "destructive",
-      });
+    if (!/^\d{5}$/.test(normalized)) {
+      setError("Please enter a valid 5-digit ZIP code");
+      setData(null);
       return;
     }
 
-    setIsSearching(true);
+    setError(null);
+    setLoading(true);
+
     try {
-      // Call edge function with normalized ZIP
-      const { data, error } = await supabase.functions.invoke('geocode-zip', {
-        body: { zip_code: normalizedZip }
-      });
+      const { data: response, error: fnError } = await supabase.functions.invoke<LocalHelpResponse>(
+        "local-help",
+        {
+          body: { zip_code: normalized, radius: searchRadius },
+        }
+      );
 
-      if (error) {
-        console.error("Edge function error:", error);
-        throw new Error(error.message || "Failed to validate ZIP code");
+      if (fnError) {
+        console.error("Edge function error:", fnError);
+        throw new Error("Could not fetch local resources");
       }
 
-      if (!data || !data.ok) {
-        throw new Error(data?.error || "Failed to validate ZIP code");
+      if (!response?.ok) {
+        throw new Error(response?.error || "Invalid response from server");
       }
 
-      const { city, state, lat, lon, zip } = data;
-      const newLocation = { lat, lon };
-      
-      // Update displayed ZIP to the normalized version
-      setZipCode(zip);
-      setUserLocation(newLocation);
-      setCurrentRadius(25);
+      // Guard against null/undefined payloads
+      const payload: LocalHelpResponse = {
+        ok: true,
+        zip: response.zip,
+        city: response.city,
+        state: response.state,
+        radius: response.radius,
+        therapists: response.therapists ?? [],
+        crisis_centers: response.crisis_centers ?? [],
+      };
 
-      // Perform local search
-      await performSearch(newLocation, zip, 25);
+      setData(payload);
 
-      toast({
-        title: "Location updated",
-        description: `✅ Now showing resources near ${city}, ${state}`,
-      });
-
-      await trackEvent({
-        eventType: "help_local_ranked",
-        metadata: { zip: zip, city, state }
-      });
-    } catch (error: any) {
-      console.error("ZIP update error:", error);
-      toast({
-        title: "Failed to update ZIP",
-        description: error.message || "Could not validate ZIP code. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const performSearch = async (location: UserLocation, zip: string, radius: number) => {
-    try {
-      // Fetch all local (non-national) locations
-      const { data: locations, error } = await supabase
-        .from("help_locations")
-        .select("*")
-        .or("is_national.is.null,is_national.eq.false");
-
-      if (error) throw error;
-
-      if (!locations || locations.length === 0) {
-        setTherapyResults([]);
-        setCrisisResults([]);
-        setShowExpandOption(false);
-        return;
-      }
-
-      // Calculate distances and scores
-      const locationsWithDistance: HelpLocation[] = locations
-        .map(loc => {
-          const locLat = loc.lat || loc.latitude;
-          const locLon = loc.lon || loc.longitude;
-          if (!locLat || !locLon) return null;
-          const distance = calculateDistance(location.lat, location.lon, locLat, locLon);
-          if (distance > radius) return null;
-          
-          const ratings = typeof loc.ratings === 'object' && loc.ratings !== null && !Array.isArray(loc.ratings)
-            ? (loc.ratings as { average?: number; count?: number })
-            : undefined;
-          
-          // Derive verified from last_verified_at
-          const verified = !!loc.last_verified_at;
-          
-          // Build address from components
-          const address = [loc.address_line1, loc.city, loc.state, loc.postal_code]
-            .filter(Boolean)
-            .join(", ");
-          
-          const helpLocation: HelpLocation = {
-            id: loc.id,
-            name: loc.name,
-            type: loc.type,
-            phone: loc.phone,
-            website_url: loc.website_url,
-            address,
-            address_line1: loc.address_line1,
-            address_line2: loc.address_line2,
-            city: loc.city,
-            state: loc.state,
-            postal_code: loc.postal_code,
-            lat: locLat,
-            lon: locLon,
-            latitude: locLat,
-            longitude: locLon,
-            open_now: loc.open_now,
-            tags: loc.tags,
-            last_verified_at: loc.last_verified_at,
-            verified,
-            accepts_insurance: loc.accepts_insurance,
-            sliding_scale: loc.sliding_scale,
-            telehealth: loc.telehealth,
-            is_national: loc.is_national,
-            insurers: loc.insurers,
-            ratings,
-            distance,
-            score: 0 // Calculate below
-          };
-          
-          // Calculate score after object is complete
-          helpLocation.score = calculateScore(helpLocation, distance, radius);
-          
-          return helpLocation;
-        })
-        .filter((loc): loc is HelpLocation => loc !== null);
-
-      // Separate and rank therapy and crisis
-      const therapy = locationsWithDistance
-        .filter(l => l.type === "therapy")
-        .sort((a, b) => (b.score || 0) - (a.score || 0))
-        .slice(0, 3);
-
-      const crisis = locationsWithDistance
-        .filter(l => l.type === "crisis")
-        .sort((a, b) => (b.score || 0) - (a.score || 0))
-        .slice(0, 3);
-
-      setTherapyResults(therapy);
-      setCrisisResults(crisis);
-
-      // Show expand option if we have <3 in either category
-      const needsExpansion = therapy.length < 3 || crisis.length < 3;
-      setShowExpandOption(needsExpansion && radius === 25);
-
-      // Track analytics
+      // Track successful search
       await trackEvent({
         eventType: "help_local_ranked",
         metadata: {
-          zip: zip,
-          radius: radius,
-          therapy_count: therapy.length,
-          crisis_count: crisis.length,
+          zip: normalized,
+          radius: searchRadius,
+          therapists_count: payload.therapists.length,
+          crisis_count: payload.crisis_centers.length,
         },
       });
 
-    } catch (error: any) {
-      console.error("Search error:", error);
       toast({
-        title: "Search failed",
-        description: error.message || "Failed to search for resources",
+        title: "Location found",
+        description: `Showing resources near ${payload.city}, ${payload.state}`,
+      });
+    } catch (err: any) {
+      console.error("Local help search failed:", err);
+      const errorMessage = err.message || "We couldn't fetch local results right now. National resources are still available below.";
+      setError(errorMessage);
+      
+      // Track error
+      await trackEvent({
+        eventType: "help_local_ranked",
+        metadata: { zip: normalized, error: errorMessage, success: false },
+      });
+
+      toast({
+        title: "Search error",
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
-  const handleExpandRadius = async () => {
-    if (!userLocation) return;
-    
-    setCurrentRadius(50);
-    setIsSearching(true);
-    
-    await trackEvent({
-      eventType: "help_radius_changed",
-      metadata: { from: 25, to: 50 },
-    });
-    
-    await performSearch(userLocation, zipCode, 50);
-    setIsSearching(false);
-  };
-
-  const handleCall = (location: HelpLocation) => {
-    if (location.phone) {
-      window.location.href = `tel:${location.phone}`;
-      trackEvent({
-        eventType: "help_call_clicked",
-        metadata: { 
-          id: location.id, 
-          type: location.type,
-          distance: location.distance
-        },
-      });
-    }
-  };
-
-  const handleWebsite = (location: HelpLocation) => {
-    if (location.website_url) {
-      window.open(location.website_url, "_blank");
-      trackEvent({
-        eventType: "help_website_clicked",
-        metadata: { 
-          id: location.id, 
-          type: location.type,
-          distance: location.distance
-        },
-      });
-    }
-  };
-
-  const handleDirections = (location: HelpLocation) => {
-    const address = encodeURIComponent(location.address);
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, "_blank");
-    trackEvent({
-      eventType: "help_directions_clicked",
-      metadata: { 
-        id: location.id, 
-        type: location.type,
-        distance: location.distance
-      },
-    });
-  };
-
-  const LocationCard = ({ location }: { location: HelpLocation }) => (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg">{location.name}</CardTitle>
-          <div className="flex gap-1 shrink-0">
-            {location.type === "crisis" && (
-              <Badge variant="destructive">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Crisis
-              </Badge>
-            )}
-            {location.verified && (
-              <Badge variant="secondary">
-                <Shield className="h-3 w-3 mr-1" />
-                Verified
-              </Badge>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {location.distance && (
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="h-3 w-3" />
-            {location.distance.toFixed(1)} miles away
-          </div>
-        )}
-
-        {location.ratings && location.ratings.count && location.ratings.count >= 10 && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold">{location.ratings.average?.toFixed(1)}</span>
-            </div>
-            <span className="text-sm text-muted-foreground">
-              ({location.ratings.count} reviews)
-            </span>
-          </div>
-        )}
-
-        <p className="text-sm text-muted-foreground">{location.address}</p>
-
-        {(location.open_now || location.type === 'crisis') && (
-          <div className="flex items-center gap-1 text-sm">
-            <Clock className="h-3 w-3 text-green-600" />
-            <span className="text-green-600 font-medium">Open now</span>
-          </div>
-        )}
-
-        {location.tags && location.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {location.tags.slice(0, 4).map((tag, idx) => (
-              <Badge key={idx} variant="secondary" className="text-xs">
-                {tag.replace(/_/g, " ")}
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        {location.type === "therapy" && (
-          <div className="text-xs text-muted-foreground space-y-1">
-            {location.sliding_scale && <p>• Sliding scale fees</p>}
-            {location.telehealth && <p>• Telehealth available</p>}
-            {location.accepts_insurance && location.insurers && location.insurers.length > 0 && (
-              <p>• Accepts: {location.insurers.slice(0, 2).join(", ")}</p>
-            )}
-          </div>
-        )}
-
-        <div className="flex gap-2 pt-2">
-          {location.phone && (
-            <Button
-              onClick={() => handleCall(location)}
-              className="flex-1"
-              size="lg"
-            >
-              <Phone className="h-4 w-4 mr-2" />
-              Call
-            </Button>
-          )}
-          {location.website_url && (
-            <Button
-              onClick={() => handleWebsite(location)}
-              variant="outline"
-              className="flex-1"
-            >
-              <Globe className="h-4 w-4 mr-2" />
-              Website
-            </Button>
-          )}
-          <Button 
-            onClick={() => handleDirections(location)} 
-            variant="outline"
-            size="icon"
-          >
-            <Navigation className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  async function onSearch(e?: React.FormEvent) {
+    e?.preventDefault();
+    await performSearch(zip, radius);
+  }
 
   if (isLoadingProfile) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Loading...</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Search Form */}
       <Card>
         <CardHeader>
-          <CardTitle>Your ZIP Code</CardTitle>
+          <CardTitle>Find Local Help</CardTitle>
           <CardDescription>
-            Enter your ZIP code to find local resources near you
+            Search for mental health resources near you
           </CardDescription>
-          <p className="text-xs text-muted-foreground mt-1">
-            ✓ Nationwide ZIP support • Instant resolution
-          </p>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="e.g., 48917 or 48917-1234"
-              value={zipCode}
-              onChange={(e) => setZipCode(e.target.value)}
-              maxLength={10}
-              className="max-w-xs"
-            />
-            <Button onClick={handleZipChange} disabled={isSearching}>
-              {isSearching ? "Updating..." : "Change ZIP"}
-            </Button>
-          </div>
-          {userLocation && (
-            <p className="text-sm text-muted-foreground mt-2">
-              Showing results within {currentRadius} miles of {zipCode}
-            </p>
+          <form onSubmit={onSearch} className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <label htmlFor="zip" className="text-sm font-medium mb-1 block">
+                ZIP Code
+              </label>
+              <Input
+                id="zip"
+                inputMode="numeric"
+                pattern="\d*"
+                maxLength={10}
+                value={zip}
+                onChange={(e) => setZip(e.target.value)}
+                placeholder="e.g., 48917 or 48917-1234"
+                disabled={loading}
+              />
+            </div>
+            <div className="w-full sm:w-32">
+              <label htmlFor="radius" className="text-sm font-medium mb-1 block">
+                Radius (mi)
+              </label>
+              <select
+                id="radius"
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+                disabled={loading}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="mr-2 h-4 w-4" />
+                    Search
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
 
-      {crisisResults.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-            <AlertCircle className="h-6 w-6 text-destructive" />
-            Top 3 Crisis Centers
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {crisisResults.map((location) => (
-              <LocationCard
-                key={location.id}
-                location={location}
-              />
-            ))}
-          </div>
+      {/* Results */}
+      {data && (
+        <div className="space-y-6">
+          {/* Crisis Centers */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                Crisis Centers Near {data.city}, {data.state}
+              </CardTitle>
+              <CardDescription>
+                Immediate support available 24/7
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.crisis_centers.length === 0 ? (
+                <Alert>
+                  <AlertDescription>
+                    No local crisis centers found within {data.radius} miles. National hotlines are available below 24/7.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {data.crisis_centers.map((center) => (
+                    <Card key={center.id} className="relative">
+                      <CardContent className="pt-6">
+                        <div className="space-y-2">
+                          <h4 className="font-semibold leading-tight">
+                            {center.name}
+                          </h4>
+                          {center.distance && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Navigation className="h-3 w-3" />
+                              ~{center.distance.toFixed(1)} mi away
+                            </p>
+                          )}
+                          {center.verified && (
+                            <Badge variant="secondary" className="text-xs">
+                              Verified
+                            </Badge>
+                          )}
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {center.phone && (
+                              <Button asChild variant="default" size="sm">
+                                <a href={`tel:${center.phone}`}>
+                                  <Phone className="mr-1 h-3 w-3" />
+                                  Call Now
+                                </a>
+                              </Button>
+                            )}
+                            {center.website && (
+                              <Button asChild variant="outline" size="sm">
+                                <a href={center.website} target="_blank" rel="noopener noreferrer">
+                                  <Globe className="mr-1 h-3 w-3" />
+                                  Website
+                                </a>
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Therapists */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Therapists Near {data.city}, {data.state}</CardTitle>
+              <CardDescription>
+                Licensed mental health professionals
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.therapists.length === 0 ? (
+                <Alert>
+                  <AlertDescription>
+                    No verified therapists found within {data.radius} miles. Try expanding your search radius or check national resources below.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {data.therapists.map((therapist) => (
+                    <Card key={therapist.id}>
+                      <CardContent className="pt-6">
+                        <div className="space-y-2">
+                          <h4 className="font-semibold leading-tight">
+                            {therapist.name}
+                          </h4>
+                          {therapist.distance && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Navigation className="h-3 w-3" />
+                              ~{therapist.distance.toFixed(1)} mi away
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-1">
+                            {therapist.verified && (
+                              <Badge variant="secondary" className="text-xs">
+                                Verified
+                              </Badge>
+                            )}
+                            {therapist.accepts_insurance && (
+                              <Badge variant="outline" className="text-xs">
+                                Insurance
+                              </Badge>
+                            )}
+                            {therapist.sliding_scale && (
+                              <Badge variant="outline" className="text-xs">
+                                Sliding Scale
+                              </Badge>
+                            )}
+                            {therapist.telehealth && (
+                              <Badge variant="outline" className="text-xs">
+                                Telehealth
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {therapist.phone && (
+                              <Button asChild variant="default" size="sm">
+                                <a href={`tel:${therapist.phone}`}>
+                                  <Phone className="mr-1 h-3 w-3" />
+                                  Call
+                                </a>
+                              </Button>
+                            )}
+                            {therapist.website && (
+                              <Button asChild variant="outline" size="sm">
+                                <a href={therapist.website} target="_blank" rel="noopener noreferrer">
+                                  <Globe className="mr-1 h-3 w-3" />
+                                  View
+                                </a>
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {therapyResults.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-            <Heart className="h-6 w-6 text-primary" />
-            Top 3 Therapy Facilities
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {therapyResults.map((location) => (
-              <LocationCard
-                key={location.id}
-                location={location}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {showExpandOption && userLocation && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            We found fewer than 3 local options within 25 miles.
-            <div className="flex gap-2 mt-2">
-              <Button onClick={handleExpandRadius} variant="outline" size="sm">
-                Expand to 50 miles
-              </Button>
-              <Button onClick={() => navigate('/help/national')} variant="outline" size="sm">
-                See national hotlines
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {userLocation && crisisResults.length === 0 && therapyResults.length === 0 && !isSearching && (
+      {/* National Resources - Always Show */}
+      {nationalResources.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>No Local Results Found</CardTitle>
+            <CardTitle>National Help & Resources</CardTitle>
             <CardDescription>
-              We couldn't find any mental health resources within {currentRadius} miles of {zipCode}.
+              Available 24/7 anywhere in the United States
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2">
-              {currentRadius === 25 && (
-                <Button onClick={handleExpandRadius} variant="outline">
-                  Expand to 50 miles
-                </Button>
-              )}
-              <Button onClick={() => navigate('/help/national')} variant="outline">
-                See national hotlines
-              </Button>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {nationalResources.map((resource) => (
+                <Card key={resource.id} className="border-primary/20">
+                  <CardContent className="pt-6">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold leading-tight">
+                        {resource.name}
+                      </h4>
+                      {resource.tags && resource.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {resource.tags.slice(0, 3).map((tag, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {resource.phone && (
+                          <Button asChild variant="default" size="sm">
+                            <a href={`tel:${resource.phone}`}>
+                              <Phone className="mr-1 h-3 w-3" />
+                              Call
+                            </a>
+                          </Button>
+                        )}
+                        {resource.text && (
+                          <Button asChild variant="secondary" size="sm">
+                            <a href={`sms:${resource.text}`}>
+                              Text
+                            </a>
+                          </Button>
+                        )}
+                        {resource.website && (
+                          <Button asChild variant="outline" size="sm">
+                            <a href={resource.website} target="_blank" rel="noopener noreferrer">
+                              <Globe className="mr-1 h-3 w-3" />
+                              Website
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {userLocation && (
-        <div className="flex justify-center">
-          <Button 
-            onClick={() => navigate('/help/national')} 
-            variant="link"
-            className="text-sm"
-          >
-            See national hotlines →
-          </Button>
-        </div>
       )}
     </div>
   );
