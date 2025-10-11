@@ -1950,6 +1950,33 @@ export type Database = {
         }
         Relationships: []
       }
+      zip_centroids: {
+        Row: {
+          city: string | null
+          latitude: number
+          longitude: number
+          state: string | null
+          updated_at: string | null
+          zip: string
+        }
+        Insert: {
+          city?: string | null
+          latitude: number
+          longitude: number
+          state?: string | null
+          updated_at?: string | null
+          zip: string
+        }
+        Update: {
+          city?: string | null
+          latitude?: number
+          longitude?: number
+          state?: string | null
+          updated_at?: string | null
+          zip?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -49,7 +49,7 @@ interface UserLocation {
   lon: number;
 }
 
-const isValidZip = /^\d{5}$/;
+const isValidZip = /^\d{5}(-\d{4})?$/; // Accept ZIP or ZIP+4
 
 // Haversine distance calculation
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -149,7 +149,10 @@ export const LocalHelpSearch = () => {
   }, []);
 
   const handleZipChange = async () => {
-    if (!isValidZip.test(zipCode)) {
+    // Normalize to 5 digits (handle ZIP+4)
+    const normalizedZip = zipCode.trim().replace(/\D/g, '').substring(0, 5);
+    
+    if (!normalizedZip || normalizedZip.length !== 5) {
       toast({
         title: "Invalid ZIP code",
         description: "Please enter a valid 5-digit US ZIP code",
@@ -160,9 +163,9 @@ export const LocalHelpSearch = () => {
 
     setIsSearching(true);
     try {
-      // Call edge function with new format
+      // Call edge function with normalized ZIP
       const { data, error } = await supabase.functions.invoke('geocode-zip', {
-        body: { zip_code: zipCode }
+        body: { zip_code: normalizedZip }
       });
 
       if (error) {
@@ -174,14 +177,16 @@ export const LocalHelpSearch = () => {
         throw new Error(data?.error || "Failed to validate ZIP code");
       }
 
-      const { city, state, lat, lon } = data;
+      const { city, state, lat, lon, zip } = data;
       const newLocation = { lat, lon };
       
+      // Update displayed ZIP to the normalized version
+      setZipCode(zip);
       setUserLocation(newLocation);
       setCurrentRadius(25);
 
       // Perform local search
-      await performSearch(newLocation, zipCode, 25);
+      await performSearch(newLocation, zip, 25);
 
       toast({
         title: "Location updated",
@@ -190,7 +195,7 @@ export const LocalHelpSearch = () => {
 
       await trackEvent({
         eventType: "help_local_ranked",
-        metadata: { zip: zipCode, city, state }
+        metadata: { zip: zip, city, state }
       });
     } catch (error: any) {
       console.error("ZIP update error:", error);
@@ -491,18 +496,20 @@ export const LocalHelpSearch = () => {
         <CardHeader>
           <CardTitle>Your ZIP Code</CardTitle>
           <CardDescription>
-            Change your ZIP code to find local resources near you
+            Enter your ZIP code to find local resources near you
           </CardDescription>
+          <p className="text-xs text-muted-foreground mt-1">
+            ✓ Nationwide ZIP support • Instant resolution
+          </p>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
             <Input
               type="text"
-              placeholder="Enter 5-digit ZIP code"
+              placeholder="e.g., 48917 or 48917-1234"
               value={zipCode}
               onChange={(e) => setZipCode(e.target.value)}
-              maxLength={5}
-              pattern="[0-9]{5}"
+              maxLength={10}
               className="max-w-xs"
             />
             <Button onClick={handleZipChange} disabled={isSearching}>

@@ -32,6 +32,16 @@ const OpsAdmin = () => {
           <h2>Quick Links</h2>
           <ul>
             <li>
+              <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/admin/help-locations")}>
+                Help Locations Management
+              </Button>
+            </li>
+            <li>
+              <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/admin/zip-tools")}>
+                ZIP Code Cache Management
+              </Button>
+            </li>
+            <li>
               <a href="/docs/BACKUPS_AND_RESTORE.md" target="_blank" rel="noopener noreferrer">
                 Backup & Restore Documentation
               </a>

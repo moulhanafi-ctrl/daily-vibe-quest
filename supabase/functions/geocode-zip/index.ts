@@ -11,6 +11,13 @@ interface ZipCodeRequest {
   zipCode?: string;
 }
 
+// Normalize ZIP code input (strip non-digits, keep first 5)
+function normalizeZip(input: string): string | null {
+  const digits = input.replace(/\D/g, '');
+  if (digits.length < 5) return null;
+  return digits.substring(0, 5);
+}
+
 interface ZippopotamResponse {
   places: Array<{
     'place name': string;
@@ -60,44 +67,88 @@ Deno.serve(async (req) => {
     }
 
     const body: ZipCodeRequest = await req.json();
-    const zipCode = (body.zip_code || body.zipCode)?.trim();
+    const rawZip = (body.zip_code || body.zipCode)?.trim();
+    const zipCode = normalizeZip(rawZip || '');
 
-    if (!zipCode || !/^\d{5}$/.test(zipCode)) {
-      console.warn(`[GEOCODE-ZIP][${requestId}] Invalid ZIP: ${zipCode}`);
+    if (!zipCode) {
+      console.warn(`[GEOCODE-ZIP][${requestId}] Invalid ZIP format: ${rawZip}`);
       return new Response(
-        JSON.stringify({ ok: false, error: 'Invalid ZIP code. Must be 5 digits.' }),
+        JSON.stringify({ ok: false, error: 'Invalid ZIP code format. Please provide a 5-digit ZIP code.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`[GEOCODE-ZIP][${requestId}] Validating ZIP: ${zipCode} for user: ${user.id}`);
+    console.log(`[GEOCODE-ZIP][${requestId}] Geocoding ZIP: ${zipCode} (normalized from ${rawZip}) for user: ${user.id}`);
 
-    // Use free Zippopotam.us API to validate ZIP and get city/state/coordinates
-    const zipResponse = await fetch(`https://api.zippopotam.us/us/${zipCode}`);
-    
-    if (!zipResponse.ok) {
-      console.warn(`[GEOCODE-ZIP][${requestId}] Invalid ZIP from Zippopotam: ${zipCode}`);
-      return new Response(
-        JSON.stringify({ ok: false, error: 'Invalid ZIP code' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Step 1: Check local cache first
+    const { data: cachedZip, error: cacheError } = await supabaseClient
+      .from('zip_centroids')
+      .select('*')
+      .eq('zip', zipCode)
+      .single();
+
+    let lat: number, lon: number, city: string, state: string;
+
+    if (cachedZip && !cacheError) {
+      // Cache hit!
+      console.log(`[GEOCODE-ZIP][${requestId}] Cache HIT for ZIP ${zipCode}`);
+      lat = parseFloat(cachedZip.latitude);
+      lon = parseFloat(cachedZip.longitude);
+      city = cachedZip.city;
+      state = cachedZip.state;
+    } else {
+      // Cache miss - fetch from external API
+      console.log(`[GEOCODE-ZIP][${requestId}] Cache MISS for ZIP ${zipCode}, fetching from Zippopotam.us`);
+      
+      const zipResponse = await fetch(`https://api.zippopotam.us/us/${zipCode}`);
+      
+      if (!zipResponse.ok) {
+        console.error(`[GEOCODE-ZIP][${requestId}] Zippopotam API error: ${zipResponse.status}`);
+        return new Response(
+          JSON.stringify({ 
+            ok: false, 
+            error: 'Could not find location data for this ZIP code. Please verify the ZIP code is valid.',
+            zipCode 
+          }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const zipData: ZippopotamResponse = await zipResponse.json();
+      const place = zipData.places?.[0];
+      
+      if (!place) {
+        console.warn(`[GEOCODE-ZIP][${requestId}] No place data for ZIP: ${zipCode}`);
+        return new Response(
+          JSON.stringify({ ok: false, error: 'No location data available for this ZIP code.' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      city = place['place name'];
+      state = place['state abbreviation'];
+      lat = parseFloat(place['latitude']);
+      lon = parseFloat(place['longitude']);
+
+      // Write-through cache: store for future requests
+      const { error: insertError } = await supabaseClient
+        .from('zip_centroids')
+        .upsert({
+          zip: zipCode,
+          latitude: lat,
+          longitude: lon,
+          city,
+          state,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'zip' });
+
+      if (insertError) {
+        console.error(`[GEOCODE-ZIP][${requestId}] Failed to cache ZIP:`, insertError);
+        // Continue anyway - user still gets their result
+      } else {
+        console.log(`[GEOCODE-ZIP][${requestId}] Cached ZIP ${zipCode} for future lookups`);
+      }
     }
-
-    const zipData: ZippopotamResponse = await zipResponse.json();
-    const place = zipData.places?.[0];
-    
-    if (!place) {
-      console.warn(`[GEOCODE-ZIP][${requestId}] No place data for ZIP: ${zipCode}`);
-      return new Response(
-        JSON.stringify({ ok: false, error: 'ZIP code not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const city = place['place name'];
-    const state = place['state abbreviation'];
-    const lat = parseFloat(place['latitude']);
-    const lon = parseFloat(place['longitude']);
 
     console.log(`[GEOCODE-ZIP][${requestId}] Resolved to: ${city}, ${state} (${lat}, ${lon})`);
 
