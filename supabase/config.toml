@@ -32,3 +32,18 @@ verify_jwt = true
 
 [functions.send-data-deletion-email]
 verify_jwt = true
+
+[functions.guardian-start]
+verify_jwt = true
+
+[functions.guardian-verify]
+verify_jwt = true
+
+[functions.data-export-request]
+verify_jwt = true
+
+[functions.data-delete-request]
+verify_jwt = true
+
+[functions.data-delete-cancel]
+verify_jwt = true

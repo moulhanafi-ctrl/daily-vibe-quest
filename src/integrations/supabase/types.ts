@@ -489,28 +489,31 @@ export type Database = {
         Row: {
           cancellation_token: string | null
           completed_at: string | null
+          error: string | null
           grace_period_ends_at: string | null
           id: string
           requested_at: string | null
-          status: string
+          status: Database["public"]["Enums"]["data_deletion_status"]
           user_id: string
         }
         Insert: {
           cancellation_token?: string | null
           completed_at?: string | null
+          error?: string | null
           grace_period_ends_at?: string | null
           id?: string
           requested_at?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["data_deletion_status"]
           user_id: string
         }
         Update: {
           cancellation_token?: string | null
           completed_at?: string | null
+          error?: string | null
           grace_period_ends_at?: string | null
           id?: string
           requested_at?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["data_deletion_status"]
           user_id?: string
         }
         Relationships: []
@@ -520,27 +523,33 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           download_url: string | null
+          error: string | null
           expires_at: string | null
+          file_path: string | null
           id: string
-          status: string
+          status: Database["public"]["Enums"]["data_export_status"]
           user_id: string
         }
         Insert: {
           completed_at?: string | null
           created_at?: string | null
           download_url?: string | null
+          error?: string | null
           expires_at?: string | null
+          file_path?: string | null
           id?: string
-          status?: string
+          status?: Database["public"]["Enums"]["data_export_status"]
           user_id: string
         }
         Update: {
           completed_at?: string | null
           created_at?: string | null
           download_url?: string | null
+          error?: string | null
           expires_at?: string | null
+          file_path?: string | null
           id?: string
-          status?: string
+          status?: Database["public"]["Enums"]["data_export_status"]
           user_id?: string
         }
         Relationships: []
@@ -692,6 +701,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      guardian_links: {
+        Row: {
+          attempts: number
+          child_id: string
+          code_expires_at: string | null
+          code_hash: string | null
+          created_at: string
+          guardian_email: string
+          id: string
+          last_sent_at: string | null
+          method: string
+          status: Database["public"]["Enums"]["guardian_verification_status"]
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          child_id: string
+          code_expires_at?: string | null
+          code_hash?: string | null
+          created_at?: string
+          guardian_email: string
+          id?: string
+          last_sent_at?: string | null
+          method?: string
+          status?: Database["public"]["Enums"]["guardian_verification_status"]
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          child_id?: string
+          code_expires_at?: string | null
+          code_hash?: string | null
+          created_at?: string
+          guardian_email?: string
+          id?: string
+          last_sent_at?: string | null
+          method?: string
+          status?: Database["public"]["Enums"]["guardian_verification_status"]
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Relationships: []
       }
       help_locations: {
         Row: {
@@ -1562,6 +1616,23 @@ export type Database = {
       age_group: "child" | "teen" | "adult" | "elder"
       app_role: "admin" | "user"
       content_type: "audio" | "text" | "video"
+      data_deletion_status:
+        | "pending"
+        | "cancelled"
+        | "processing"
+        | "completed"
+        | "failed"
+      data_export_status:
+        | "pending"
+        | "processing"
+        | "ready"
+        | "failed"
+        | "expired"
+      guardian_verification_status:
+        | "pending"
+        | "verified"
+        | "failed"
+        | "expired"
       help_location_type: "crisis" | "therapy"
       mood_type:
         | "happy"
@@ -1704,6 +1775,26 @@ export const Constants = {
       age_group: ["child", "teen", "adult", "elder"],
       app_role: ["admin", "user"],
       content_type: ["audio", "text", "video"],
+      data_deletion_status: [
+        "pending",
+        "cancelled",
+        "processing",
+        "completed",
+        "failed",
+      ],
+      data_export_status: [
+        "pending",
+        "processing",
+        "ready",
+        "failed",
+        "expired",
+      ],
+      guardian_verification_status: [
+        "pending",
+        "verified",
+        "failed",
+        "expired",
+      ],
       help_location_type: ["crisis", "therapy"],
       mood_type: [
         "happy",
