@@ -19,8 +19,7 @@ export const InclusionBanner = ({ dismissible = false, compact = false }: Inclus
         <Heart className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" aria-hidden="true" />
         <div className="flex-1">
           <AlertDescription className={compact ? "text-sm" : ""}>
-            <strong>Everyone belongs here.</strong> Vibe Check welcomes people of all backgrounds, identities, 
-            and experiences — including the LGBTQ+ community.
+            <strong>Everyone belongs here.</strong> Vibe Check welcomes people of all backgrounds, identities, and experiences — including the LGBTQ+ community.
           </AlertDescription>
         </div>
         {dismissible && (
