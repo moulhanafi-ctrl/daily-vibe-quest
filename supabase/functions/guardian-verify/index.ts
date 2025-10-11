@@ -115,16 +115,45 @@ const handler = async (req: Request): Promise<Response> => {
       throw updateError;
     }
 
-    // Update profile to link parent
+    // Look up the guardian's user account
+    const { data: guardianUsers, error: guardianError } = await supabase.auth.admin.listUsers();
+    
+    if (guardianError) {
+      console.error("Failed to list users:", guardianError);
+      throw new Error("Unable to verify guardian account");
+    }
+
+    // Find guardian user by email
+    const guardianUser = guardianUsers.users.find(
+      u => u.email?.toLowerCase() === guardianEmail.toLowerCase()
+    );
+
+    if (!guardianUser) {
+      throw new Error("Guardian must have a Vibe Check account. Please ask them to sign up first.");
+    }
+
+    // Verify guardian has is_parent set to true
+    const { data: guardianProfile } = await supabase
+      .from("profiles")
+      .select("is_parent")
+      .eq("id", guardianUser.id)
+      .single();
+
+    if (!guardianProfile?.is_parent) {
+      throw new Error("Guardian account must be set up as a parent account.");
+    }
+
+    // Update child profile to link to parent user
     const { error: profileError } = await supabase
       .from("profiles")
       .update({ 
-        parent_id: guardianLink.id // Store guardian_link id as reference
+        parent_id: guardianUser.id // Link to actual parent user ID
       })
       .eq("id", user.id);
 
     if (profileError) {
       console.error("Failed to update profile parent_id:", profileError);
+      throw new Error("Failed to link parent account");
     }
 
     // Log analytics event
