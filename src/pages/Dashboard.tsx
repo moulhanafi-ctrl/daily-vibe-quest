@@ -8,6 +8,7 @@ import { FamilyDashboard } from "@/components/dashboard/FamilyDashboard";
 import { AISuggestions } from "@/components/dashboard/AISuggestions";
 import { MotivationalContent } from "@/components/dashboard/MotivationalContent";
 import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
+import { SaturdayTriviaCard } from "@/components/dashboard/SaturdayTriviaCard";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag, Book, MapPin } from "lucide-react";
@@ -207,7 +208,10 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="checkin">
-            <MoodCheckIn userId={user?.id} ageGroup={profile?.age_group} />
+            <div className="space-y-6">
+              <SaturdayTriviaCard userId={user?.id} ageGroup={profile?.age_group} />
+              <MoodCheckIn userId={user?.id} ageGroup={profile?.age_group} />
+            </div>
           </TabsContent>
 
           <TabsContent value="history">

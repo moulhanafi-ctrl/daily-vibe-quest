@@ -1,0 +1,737 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, ArrowLeft, Plus, Pencil, Trash2, Play, Calendar } from "lucide-react";
+
+interface TriviaQuestion {
+  id: string;
+  locale: string;
+  age_group: string;
+  category: string;
+  type: string;
+  prompt: string;
+  options: any;
+  correct_option_id: string;
+  explanation: string;
+  tags: string[];
+  sensitive: boolean;
+  active: boolean;
+}
+
+interface TriviaRound {
+  id: string;
+  date: string;
+  age_group: string;
+  question_ids: string[];
+}
+
+export default function TriviaAdmin() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [questions, setQuestions] = useState<TriviaQuestion[]>([]);
+  const [rounds, setRounds] = useState<TriviaRound[]>([]);
+  const [editingQuestion, setEditingQuestion] = useState<TriviaQuestion | null>(null);
+  const [showQuestionDialog, setShowQuestionDialog] = useState(false);
+  const [showRoundDialog, setShowRoundDialog] = useState(false);
+  const [stats, setStats] = useState<any>(null);
+
+  // Form states
+  const [formData, setFormData] = useState({
+    locale: "en",
+    age_group: "adult",
+    category: "feelings",
+    type: "mcq",
+    prompt: "",
+    options: [{ id: "a", text: "", emoji: "" }],
+    correct_option_id: "a",
+    explanation: "",
+    tags: "",
+    sensitive: false,
+    active: true,
+  });
+
+  const [roundForm, setRoundForm] = useState({
+    date: "",
+    age_group: "adult",
+    question_ids: [] as string[],
+  });
+
+  useEffect(() => {
+    checkAdminAccess();
+  }, []);
+
+  useEffect(() => {
+    if (hasAccess) {
+      loadQuestions();
+      loadRounds();
+      loadStats();
+    }
+  }, [hasAccess]);
+
+  const checkAdminAccess = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+
+      const { data: roles, error } = await supabase
+        .from("user_roles")
+        .select("role, admin_role")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error || !roles || (!["admin"].includes(roles.role) && !["owner", "moderator"].includes(roles.admin_role))) {
+        toast({
+          title: "Access Denied",
+          description: "You need admin privileges to access this page.",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
+        return;
+      }
+
+      setHasAccess(true);
+    } catch (error) {
+      console.error("Access check error:", error);
+      navigate("/dashboard");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadQuestions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("trivia_questions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setQuestions(data || []);
+    } catch (error) {
+      console.error("Failed to load questions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load trivia questions",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadRounds = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("trivia_rounds")
+        .select("*")
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      setRounds(data || []);
+    } catch (error) {
+      console.error("Failed to load rounds:", error);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const { data: progressData } = await supabase
+        .from("trivia_progress")
+        .select("round_id, score, correct, total, streak");
+
+      if (progressData) {
+        const totalPlays = progressData.length;
+        const avgScore = progressData.reduce((acc, p) => acc + p.score, 0) / totalPlays || 0;
+        const maxStreak = Math.max(...progressData.map(p => p.streak), 0);
+        const completionRate = progressData.length > 0 
+          ? (progressData.filter(p => p.correct === p.total).length / totalPlays * 100)
+          : 0;
+
+        setStats({
+          totalPlays,
+          avgScore: avgScore.toFixed(1),
+          maxStreak,
+          completionRate: completionRate.toFixed(1),
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load stats:", error);
+    }
+  };
+
+  const handleSaveQuestion = async () => {
+    try {
+      const questionData = {
+        locale: formData.locale,
+        age_group: formData.age_group as 'child' | 'teen' | 'adult' | 'elder',
+        category: formData.category,
+        type: formData.type,
+        prompt: formData.prompt,
+        options: formData.options,
+        correct_option_id: formData.correct_option_id,
+        explanation: formData.explanation,
+        tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean),
+        sensitive: formData.sensitive,
+        active: formData.active,
+      };
+
+      if (editingQuestion) {
+        const { error } = await supabase
+          .from("trivia_questions")
+          .update(questionData)
+          .eq("id", editingQuestion.id);
+
+        if (error) throw error;
+        toast({ title: "Question updated successfully" });
+      } else {
+        const { error } = await supabase
+          .from("trivia_questions")
+          .insert(questionData);
+
+        if (error) throw error;
+        toast({ title: "Question created successfully" });
+      }
+
+      setShowQuestionDialog(false);
+      setEditingQuestion(null);
+      resetForm();
+      loadQuestions();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteQuestion = async (id: string) => {
+    if (!confirm("Delete this question?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("trivia_questions")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      toast({ title: "Question deleted" });
+      loadQuestions();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveRound = async () => {
+    try {
+      const { error } = await supabase
+        .from("trivia_rounds")
+        .insert({
+          date: roundForm.date,
+          age_group: roundForm.age_group as 'child' | 'teen' | 'adult' | 'elder',
+          question_ids: roundForm.question_ids,
+        });
+
+      if (error) throw error;
+      toast({ title: "Round created successfully" });
+      setShowRoundDialog(false);
+      setRoundForm({ date: "", age_group: "adult", question_ids: [] });
+      loadRounds();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      locale: "en",
+      age_group: "adult",
+      category: "feelings",
+      type: "mcq",
+      prompt: "",
+      options: [{ id: "a", text: "", emoji: "" }],
+      correct_option_id: "a",
+      explanation: "",
+      tags: "",
+      sensitive: false,
+      active: true,
+    });
+  };
+
+  const openEditDialog = (question: TriviaQuestion) => {
+    setEditingQuestion(question);
+    setFormData({
+      locale: question.locale,
+      age_group: question.age_group,
+      category: question.category,
+      type: question.type,
+      prompt: question.prompt,
+      options: question.options,
+      correct_option_id: question.correct_option_id,
+      explanation: question.explanation,
+      tags: question.tags.join(", "),
+      sensitive: question.sensitive,
+      active: question.active,
+    });
+    setShowQuestionDialog(true);
+  };
+
+  const addOption = () => {
+    const newId = String.fromCharCode(97 + formData.options.length);
+    setFormData({
+      ...formData,
+      options: [...formData.options, { id: newId, text: "", emoji: "" }],
+    });
+  };
+
+  const updateOption = (index: number, field: string, value: string) => {
+    const newOptions = [...formData.options];
+    newOptions[index] = { ...newOptions[index], [field]: value };
+    setFormData({ ...formData, options: newOptions });
+  };
+
+  const removeOption = (index: number) => {
+    if (formData.options.length <= 2) return;
+    const newOptions = formData.options.filter((_, i) => i !== index);
+    setFormData({ ...formData, options: newOptions });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/dashboard")}
+          className="mb-6"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Saturday Trivia Admin</h1>
+          <p className="text-muted-foreground">Manage questions, rounds, and view stats</p>
+        </div>
+
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Total Plays</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalPlays}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Avg Score</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.avgScore}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Max Streak</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.maxStreak} weeks</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Completion Rate</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.completionRate}%</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <Tabs defaultValue="questions" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="questions">Questions ({questions.length})</TabsTrigger>
+            <TabsTrigger value="rounds">Rounds ({rounds.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="questions">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Trivia Questions</CardTitle>
+                    <CardDescription>Create and manage trivia questions</CardDescription>
+                  </div>
+                  <Button onClick={() => { resetForm(); setShowQuestionDialog(true); }}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Question
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Prompt</TableHead>
+                      <TableHead>Locale</TableHead>
+                      <TableHead>Age Group</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {questions.map((q) => (
+                      <TableRow key={q.id}>
+                        <TableCell className="max-w-xs truncate">{q.prompt}</TableCell>
+                        <TableCell>{q.locale.toUpperCase()}</TableCell>
+                        <TableCell>{q.age_group}</TableCell>
+                        <TableCell>{q.category}</TableCell>
+                        <TableCell>{q.type}</TableCell>
+                        <TableCell>
+                          <Badge variant={q.active ? "default" : "secondary"}>
+                            {q.active ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="ghost" onClick={() => openEditDialog(q)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleDeleteQuestion(q.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="rounds">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Trivia Rounds</CardTitle>
+                    <CardDescription>Schedule weekly trivia rounds</CardDescription>
+                  </div>
+                  <Button onClick={() => setShowRoundDialog(true)}>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Create Round
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Age Group</TableHead>
+                      <TableHead>Questions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rounds.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell>{r.date}</TableCell>
+                        <TableCell>{r.age_group}</TableCell>
+                        <TableCell>{r.question_ids.length} questions</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Question Dialog */}
+        <Dialog open={showQuestionDialog} onOpenChange={setShowQuestionDialog}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingQuestion ? "Edit Question" : "Create Question"}</DialogTitle>
+              <DialogDescription>Fill in the question details</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Locale</Label>
+                  <Select value={formData.locale} onValueChange={(v) => setFormData({ ...formData, locale: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Spanish</SelectItem>
+                      <SelectItem value="fr">French</SelectItem>
+                      <SelectItem value="ar">Arabic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Age Group</Label>
+                  <Select value={formData.age_group} onValueChange={(v) => setFormData({ ...formData, age_group: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="child">Child (5-12)</SelectItem>
+                      <SelectItem value="teen">Teen (13-17)</SelectItem>
+                      <SelectItem value="adult">Adult (18-60)</SelectItem>
+                      <SelectItem value="elder">Elder (61+)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Category</Label>
+                  <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="feelings">Feelings</SelectItem>
+                      <SelectItem value="coping">Coping</SelectItem>
+                      <SelectItem value="empathy">Empathy</SelectItem>
+                      <SelectItem value="communication">Communication</SelectItem>
+                      <SelectItem value="habits">Habits</SelectItem>
+                      <SelectItem value="values">Values</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Type</Label>
+                  <Select value={formData.type} onValueChange={(v) => setFormData({ ...formData, type: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mcq">Multiple Choice</SelectItem>
+                      <SelectItem value="emoji">Emoji</SelectItem>
+                      <SelectItem value="scenario">Scenario</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label>Prompt</Label>
+                <Textarea
+                  value={formData.prompt}
+                  onChange={(e) => setFormData({ ...formData, prompt: e.target.value })}
+                  placeholder="Enter the question prompt"
+                />
+              </div>
+
+              <div>
+                <Label>Options</Label>
+                {formData.options.map((opt, idx) => (
+                  <div key={idx} className="flex gap-2 mb-2">
+                    <Input
+                      placeholder="Option text"
+                      value={opt.text}
+                      onChange={(e) => updateOption(idx, "text", e.target.value)}
+                    />
+                    <Input
+                      placeholder="Emoji (optional)"
+                      value={opt.emoji}
+                      onChange={(e) => updateOption(idx, "emoji", e.target.value)}
+                      className="w-24"
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeOption(idx)}
+                      disabled={formData.options.length <= 2}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button size="sm" variant="outline" onClick={addOption}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Option
+                </Button>
+              </div>
+
+              <div>
+                <Label>Correct Answer</Label>
+                <Select value={formData.correct_option_id} onValueChange={(v) => setFormData({ ...formData, correct_option_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formData.options.map((opt) => (
+                      <SelectItem key={opt.id} value={opt.id}>
+                        {opt.id.toUpperCase()}: {opt.text || "(empty)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Explanation</Label>
+                <Textarea
+                  value={formData.explanation}
+                  onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
+                  placeholder="Explain why this is the correct answer"
+                />
+              </div>
+
+              <div>
+                <Label>Tags (comma-separated)</Label>
+                <Input
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  placeholder="anxiety, sleep, etc."
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={formData.sensitive}
+                    onCheckedChange={(checked) => setFormData({ ...formData, sensitive: checked })}
+                  />
+                  <Label>Sensitive Content</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={formData.active}
+                    onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+                  />
+                  <Label>Active</Label>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowQuestionDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveQuestion}>
+                {editingQuestion ? "Update" : "Create"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Round Dialog */}
+        <Dialog open={showRoundDialog} onOpenChange={setShowRoundDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Trivia Round</DialogTitle>
+              <DialogDescription>Schedule a new weekly round</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Date (Saturday)</Label>
+                <Input
+                  type="date"
+                  value={roundForm.date}
+                  onChange={(e) => setRoundForm({ ...roundForm, date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Age Group</Label>
+                <Select value={roundForm.age_group} onValueChange={(v) => setRoundForm({ ...roundForm, age_group: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="child">Child</SelectItem>
+                    <SelectItem value="teen">Teen</SelectItem>
+                    <SelectItem value="adult">Adult</SelectItem>
+                    <SelectItem value="elder">Elder</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Questions (select 5-7)</Label>
+                <div className="border rounded p-2 max-h-48 overflow-y-auto space-y-1">
+                  {questions
+                    .filter(q => q.active && q.age_group === roundForm.age_group)
+                    .map(q => (
+                      <div key={q.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={roundForm.question_ids.includes(q.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setRoundForm({
+                                ...roundForm,
+                                question_ids: [...roundForm.question_ids, q.id],
+                              });
+                            } else {
+                              setRoundForm({
+                                ...roundForm,
+                                question_ids: roundForm.question_ids.filter(id => id !== q.id),
+                              });
+                            }
+                          }}
+                        />
+                        <span className="text-sm truncate">{q.prompt}</span>
+                      </div>
+                    ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {roundForm.question_ids.length} selected
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRoundDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveRound} disabled={roundForm.question_ids.length < 5}>
+                Create Round
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
+}

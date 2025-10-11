@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ interface TriviaRound {
 export default function Trivia() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const triviaEnabled = useFeatureFlag("ff.trivia");
   const [loading, setLoading] = useState(true);
   const [currentRound, setCurrentRound] = useState<TriviaRound | null>(null);
   const [hasPlayed, setHasPlayed] = useState(false);
@@ -108,6 +110,14 @@ export default function Trivia() {
     setHasPlayed(true);
     loadTriviaState();
   };
+
+  if (!triviaEnabled) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Trivia feature is not available</div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

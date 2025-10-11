@@ -20,6 +20,7 @@ import Library from "./pages/Library";
 import Orders from "./pages/Orders";
 import Journal from "./pages/Journal";
 import Trivia from "./pages/Trivia";
+import TriviaAdmin from "./pages/admin/TriviaAdmin";
 import Shipping from "./pages/policies/Shipping";
 import Refunds from "./pages/policies/Refunds";
 import Terms from "./pages/legal/Terms";
