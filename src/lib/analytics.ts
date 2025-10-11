@@ -50,7 +50,11 @@ export type EventType =
   | "notif_trivia_sent"
   | "notif_trivia_opened"
   | "notif_trivia_clicked"
-  | "i18n_missing_key";
+  | "i18n_missing_key"
+  | "security_banner_viewed"
+  | "security_banner_mark_done"
+  | "health_auth_leaked_pw_check_pass"
+  | "health_auth_leaked_pw_check_fail";
 
 interface TrackEventParams {
   eventType: EventType;

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { SecurityWarningBanner } from "@/components/admin/SecurityWarningBanner";
 import {
   Table,
   TableBody,
@@ -290,6 +291,8 @@ export default function HelpLocationsAdmin() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <SecurityWarningBanner />
+        
         <div className="mb-6">
           <Button variant="ghost" onClick={() => navigate("/admin/ops")} className="mb-2">
             ← Back to Admin

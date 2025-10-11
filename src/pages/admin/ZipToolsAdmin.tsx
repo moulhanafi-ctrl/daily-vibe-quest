@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Database, Download, Trash2, Upload } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SecurityWarningBanner } from "@/components/admin/SecurityWarningBanner";
 
 interface CacheStats {
   total: number;
@@ -224,6 +225,8 @@ export default function ZipToolsAdmin() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <SecurityWarningBanner />
+        
         <div className="mb-6">
           <Button variant="ghost" onClick={() => navigate("/admin/ops")} className="mb-2">
             ← Back to Admin

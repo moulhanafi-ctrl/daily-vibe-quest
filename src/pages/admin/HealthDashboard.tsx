@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, PlayCircle, RefreshCw, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
+import { ArrowLeft, PlayCircle, RefreshCw, CheckCircle, XCircle, AlertCircle, Clock, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { getAppSettings } from "@/lib/appSettings";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { trackEvent } from "@/lib/analytics";
 
 interface HealthRun {
   id: string;
@@ -171,6 +174,93 @@ export default function HealthDashboard() {
     return acc;
   }, {} as Record<string, HealthResult[]>);
 
+  function LeakedPasswordProtectionTile() {
+    const [isEnabled, setIsEnabled] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      checkStatus();
+    }, []);
+
+    const checkStatus = async () => {
+      const settings = await getAppSettings();
+      if (settings) {
+        setIsEnabled(settings.security_flags.leaked_password_protection_enabled || false);
+        
+        // Track health check result
+        trackEvent({
+          eventType: settings.security_flags.leaked_password_protection_enabled 
+            ? "health_auth_leaked_pw_check_pass" 
+            : "health_auth_leaked_pw_check_fail"
+        });
+      }
+      setLoading(false);
+    };
+
+    return (
+      <>
+        <Card className={`mb-6 ${isEnabled ? 'border-green-500' : 'border-amber-500'}`}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className={`h-5 w-5 ${isEnabled ? 'text-green-500' : 'text-amber-500'}`} />
+                <CardTitle className="text-lg">Auth: Leaked Password Protection</CardTitle>
+              </div>
+              <Badge variant={isEnabled ? "default" : "outline"} className={isEnabled ? "bg-green-500" : "bg-amber-500"}>
+                {isEnabled ? "ENABLED" : "ACTION REQUIRED"}
+              </Badge>
+            </div>
+            <CardDescription>
+              {isEnabled 
+                ? "Passwords are automatically checked against known breaches"
+                : "Manual enable required in Supabase Studio"}
+            </CardDescription>
+          </CardHeader>
+          {!isEnabled && (
+            <CardContent>
+              <Button variant="outline" size="sm" onClick={() => setShowModal(true)}>
+                Open instructions
+              </Button>
+            </CardContent>
+          )}
+        </Card>
+
+        <Dialog open={showModal} onOpenChange={setShowModal}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Enable Leaked Password Protection (Supabase Studio)</DialogTitle>
+              <DialogDescription>
+                Follow these steps to enable password protection in your Supabase project.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <ol className="list-decimal list-inside space-y-3">
+                <li>Open <strong>Authentication</strong> in the left sidebar.</li>
+                <li>Go to <strong>Settings → Email</strong> (or <strong>Providers → Email</strong> in some Studio versions).</li>
+                <li>Scroll to <strong>Password security</strong>.</li>
+                <li>Toggle <strong>Prevent the use of leaked passwords</strong> ON.</li>
+                <li>Click <strong>Save</strong>.</li>
+                <li>Return here and click <strong>Mark as Done</strong> to clear this warning.</li>
+              </ol>
+              <p className="text-muted-foreground italic text-xs mt-4">
+                (If you can't find it, try <strong>Authentication → Settings → Passwords</strong>. On Free/Hobby, the toggle may be hidden or disabled.)
+              </p>
+              <p className="text-muted-foreground text-xs mt-2">
+                <strong>Note:</strong> This is a one-time manual step in Studio. Your app can't change this setting via API.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowModal(false)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -205,6 +295,9 @@ export default function HealthDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Leaked Password Protection Warning */}
+        <LeakedPasswordProtectionTile />
 
         {/* Latest Run Summary */}
         {latestRun && (
