@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@17.3.1";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { createStripeClient, getStripeConfig } from "../_shared/stripe-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,9 +27,9 @@ serve(async (req) => {
     const { priceId } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
-      apiVersion: "2024-12-18.acacia" 
-    });
+    const config = getStripeConfig();
+    const stripe = createStripeClient();
+    console.log(`[CHECKOUT] Creating session in ${config.isLiveMode ? "LIVE" : "TEST"} mode`);
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;

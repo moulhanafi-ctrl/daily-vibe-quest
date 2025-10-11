@@ -33,6 +33,7 @@ import ArthurAdmin from "./pages/admin/ArthurAdmin";
 import Analytics from "./pages/admin/Analytics";
 import HelpAdmin from "./pages/admin/HelpAdmin";
 import FeatureFlags from "./pages/admin/FeatureFlags";
+import StripeAdmin from "./pages/admin/StripeAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
 import LanguagePicker from "./pages/welcome/LanguagePicker";
 import { useRTL } from "./hooks/useRTL";
@@ -80,6 +81,7 @@ const App = () => (
           <Route path="/admin/help" element={<HelpAdmin />} />
           <Route path="/admin/legal" element={<LegalAdmin />} />
           <Route path="/admin/flags" element={<FeatureFlags />} />
+          <Route path="/admin/stripe" element={<StripeAdmin />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

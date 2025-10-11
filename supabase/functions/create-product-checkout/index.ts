@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { createStripeClient, getStripeConfig } from "../_shared/stripe-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,9 +29,9 @@ serve(async (req) => {
       throw new Error("Cart is empty");
     }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
+    const config = getStripeConfig();
+    const stripe = createStripeClient();
+    console.log(`[PRODUCT-CHECKOUT] Creating session in ${config.isLiveMode ? "LIVE" : "TEST"} mode`);
 
     // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
