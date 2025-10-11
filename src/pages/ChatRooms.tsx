@@ -8,6 +8,8 @@ import { toast } from "@/hooks/use-toast";
 import { STRIPE_PLANS } from "@/lib/stripe";
 import { ChatRoomSkeleton } from "@/components/ChatRoomSkeleton";
 import { InclusionBanner } from "@/components/InclusionBanner";
+import { LegalConsentModal } from "@/components/legal/LegalConsentModal";
+import { useConsentGate } from "@/hooks/useConsentGate";
 
 interface ChatRoom {
   id: string;
@@ -29,6 +31,15 @@ const ChatRooms = () => {
   const [loading, setLoading] = useState(true);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  
+  // Consent gate
+  const {
+    showConsentModal,
+    setShowConsentModal,
+    loading: consentLoading,
+    userAgeGroup,
+    handleConsentComplete,
+  } = useConsentGate("rooms");
 
   useEffect(() => {
     const loadData = async () => {
@@ -275,6 +286,13 @@ const ChatRooms = () => {
           )}
         </div>
       </div>
+      
+      <LegalConsentModal
+        open={showConsentModal}
+        onClose={() => setShowConsentModal(false)}
+        onConsent={handleConsentComplete}
+        userAgeGroup={userAgeGroup}
+      />
     </div>
   );
 };

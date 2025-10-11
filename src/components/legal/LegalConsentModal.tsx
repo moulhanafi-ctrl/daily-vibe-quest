@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,6 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { trackEvent } from "@/lib/analytics";
 
 interface LegalConsentModalProps {
   open: boolean;
@@ -17,6 +19,7 @@ interface LegalConsentModalProps {
 }
 
 export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGuardian = false }: LegalConsentModalProps) => {
+  const { t } = useTranslation("legal");
   const [checkedItems, setCheckedItems] = useState({
     notTherapy: false,
     terms: false,
@@ -41,24 +44,44 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const legalConsent = {
-        version: "1.0.0",
-        accepted_at: new Date().toISOString(),
-        accepted_ip: "client", // Would need server-side tracking for real IP
-        user_agent: navigator.userAgent,
-        ...(isGuardian && { guardian_id: user.id }),
-      };
-
-      const { error } = await supabase
+      // Update profile with consent details
+      const { error: profileError } = await supabase
         .from("profiles")
-        .update({ legal_consent: legalConsent } as any)
+        .update({
+          legal_consent_version: "1.0.0",
+          legal_consent_accepted_at: new Date().toISOString(),
+          legal_consent_ip: "client",
+          legal_consent_user_agent: navigator.userAgent,
+        })
         .eq("id", user.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Insert into consent ledger
+      const { error: ledgerError } = await supabase
+        .from("consent_ledger")
+        .insert({
+          user_id: user.id,
+          version: "1.0.0",
+          accepted_ip: "client",
+          user_agent: navigator.userAgent,
+          guardian_id: isGuardian ? user.id : null,
+          terms_accepted: checkedItems.terms,
+          privacy_accepted: checkedItems.terms,
+          guidelines_accepted: checkedItems.communityRules,
+          not_therapy_acknowledged: checkedItems.notTherapy,
+        });
+
+      if (ledgerError) throw ledgerError;
+
+      trackEvent({
+        eventType: "legal_consent_accepted" as any,
+        metadata: { version: "1.0.0", is_guardian: isGuardian, age_group: userAgeGroup }
+      });
 
       toast({
-        title: "Thank you! ✅",
-        description: "You can now access all features",
+        title: t("consent.success.title"),
+        description: t("consent.success.message"),
       });
 
       onConsent();
@@ -77,16 +100,15 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Legal & Safety Consent</DialogTitle>
+          <DialogTitle className="text-2xl">{t("consent.title")}</DialogTitle>
           <DialogDescription>
-            Please review and agree to continue using Vibe Check
+            {t("consent.subtitle")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg mb-4">
           <p className="text-sm">
-            <strong>Vibe Check is inclusive of LGBTQ+ users and all identities.</strong> Harassment or 
-            discrimination results in moderation actions.
+            {t("consent.inclusionBanner")}
           </p>
         </div>
 
@@ -95,14 +117,12 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
             {/* Not Therapy Disclaimer */}
             <Collapsible>
               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors">
-                <h3 className="font-semibold text-left">⚠️ Important: This is Not Therapy</h3>
+                <h3 className="font-semibold text-left">{t("consent.notTherapy.title")}</h3>
                 <ChevronDown className="h-5 w-5" />
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2 p-4 border rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Vibe Check is not therapy, medical care, or a crisis service.</strong> It's a peer-support 
-                  and wellness space for reflection, education, and community. If you need clinical care, please 
-                  contact a licensed professional. If you're in immediate danger, call your local emergency number.
+                  {t("consent.notTherapy.content")}
                 </p>
               </CollapsibleContent>
             </Collapsible>
@@ -110,20 +130,20 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
             {/* Community Guidelines */}
             <Collapsible>
               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors">
-                <h3 className="font-semibold text-left">🤝 Community Guidelines</h3>
+                <h3 className="font-semibold text-left">{t("consent.guidelines.title")}</h3>
                 <ChevronDown className="h-5 w-5" />
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2 p-4 border rounded-lg">
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><strong>Be kind.</strong> No bullying, harassment, hate speech, or threats.</li>
-                  <li><strong>Keep it safe.</strong> No sexual content, sexual advances, or explicit messages.</li>
-                  <li><strong>Respect privacy.</strong> Don't share others' personal information.</li>
-                  <li><strong>Stay supportive.</strong> No spamming, self-promotion, or scams.</li>
-                  <li><strong>Crisis content.</strong> If you or someone expresses intent to self-harm, use the crisis resources provided and alert a moderator.</li>
+                  <li>{t("consent.guidelines.beKind")}</li>
+                  <li>{t("consent.guidelines.keepSafe")}</li>
+                  <li>{t("consent.guidelines.respectPrivacy")}</li>
+                  <li>{t("consent.guidelines.staySupportive")}</li>
+                  <li>{t("consent.guidelines.crisisContent")}</li>
                 </ul>
                 <Button variant="link" className="mt-2 p-0" asChild>
                   <a href="/community-guidelines" target="_blank">
-                    View Full Guidelines <ExternalLink className="h-3 w-3 ml-1" />
+                    {t("consent.guidelines.viewFull")} <ExternalLink className="h-3 w-3 ml-1" />
                   </a>
                 </Button>
               </CollapsibleContent>
@@ -132,19 +152,19 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
             {/* Terms of Use */}
             <Collapsible>
               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors">
-                <h3 className="font-semibold text-left">📜 Terms of Use</h3>
+                <h3 className="font-semibold text-left">{t("consent.terms.title")}</h3>
                 <ChevronDown className="h-5 w-5" />
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2 p-4 border rounded-lg">
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>Vibe Check provides wellness content and peer rooms; no medical advice.</li>
-                  <li>You must be 18+, or 13–17 with parent/guardian oversight, or &lt;13 with verified parent consent.</li>
-                  <li>We may moderate or remove content that violates rules and may restrict accounts.</li>
-                  <li>Purchases are subject to our Refund Policy; digital items grant personal, non-transferable access.</li>
+                  <li>{t("consent.terms.point1")}</li>
+                  <li>{t("consent.terms.point2")}</li>
+                  <li>{t("consent.terms.point3")}</li>
+                  <li>{t("consent.terms.point4")}</li>
                 </ul>
                 <Button variant="link" className="mt-2 p-0" asChild>
                   <a href="/terms" target="_blank">
-                    View Full Terms <ExternalLink className="h-3 w-3 ml-1" />
+                    {t("consent.terms.viewFull")} <ExternalLink className="h-3 w-3 ml-1" />
                   </a>
                 </Button>
               </CollapsibleContent>
@@ -153,17 +173,16 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
             {/* Privacy Notice */}
             <Collapsible>
               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors">
-                <h3 className="font-semibold text-left">🔒 Privacy Notice</h3>
+                <h3 className="font-semibold text-left">{t("consent.privacy.title")}</h3>
                 <ChevronDown className="h-5 w-5" />
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2 p-4 border rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  We collect only the data needed to run the app (account, age group, room membership, check-ins). 
-                  We don't sell your data.
+                  {t("consent.privacy.content")}
                 </p>
                 <Button variant="link" className="mt-2 p-0" asChild>
                   <a href="/privacy" target="_blank">
-                    View Privacy Policy <ExternalLink className="h-3 w-3 ml-1" />
+                    {t("consent.privacy.viewFull")} <ExternalLink className="h-3 w-3 ml-1" />
                   </a>
                 </Button>
               </CollapsibleContent>
@@ -172,14 +191,14 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
             {/* Crisis Resources */}
             <Collapsible>
               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-red-500/10 rounded-lg hover:bg-red-500/20 transition-colors border border-red-500/20">
-                <h3 className="font-semibold text-left text-red-600 dark:text-red-400">🆘 Crisis Resources</h3>
+                <h3 className="font-semibold text-left text-red-600 dark:text-red-400">{t("consent.crisis.title")}</h3>
                 <ChevronDown className="h-5 w-5" />
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2 p-4 border border-red-500/20 rounded-lg bg-red-500/5">
                 <ul className="space-y-2 text-sm">
-                  <li><strong>US/Canada:</strong> Call/text <strong>988</strong> (Suicide & Crisis Lifeline)</li>
-                  <li><strong>UK & Ireland:</strong> Samaritans <strong>116 123</strong></li>
-                  <li><strong>Elsewhere:</strong> <a href="https://findahelpline.com" target="_blank" rel="noopener noreferrer" className="underline">findahelpline.com</a></li>
+                  <li>{t("consent.crisis.us")}</li>
+                  <li>{t("consent.crisis.uk")}</li>
+                  <li><strong>{t("common:elsewhere", "Elsewhere")}:</strong> <a href="https://findahelpline.com" target="_blank" rel="noopener noreferrer" className="underline">findahelpline.com</a></li>
                 </ul>
               </CollapsibleContent>
             </Collapsible>
@@ -195,7 +214,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
                 onCheckedChange={(checked) => setCheckedItems(prev => ({ ...prev, notTherapy: !!checked }))}
               />
               <label htmlFor="notTherapy" className="text-sm cursor-pointer">
-                I understand Vibe Check is not therapy or medical care.
+                {t("consent.checkboxes.notTherapy")}
               </label>
             </div>
 
@@ -206,7 +225,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
                 onCheckedChange={(checked) => setCheckedItems(prev => ({ ...prev, terms: !!checked }))}
               />
               <label htmlFor="terms" className="text-sm cursor-pointer">
-                I agree to the Terms of Use and Privacy Policy.
+                {t("consent.checkboxes.terms")}
               </label>
             </div>
 
@@ -217,7 +236,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
                 onCheckedChange={(checked) => setCheckedItems(prev => ({ ...prev, communityRules: !!checked }))}
               />
               <label htmlFor="communityRules" className="text-sm cursor-pointer">
-                I agree to follow the Community Guidelines (no bullying, harassment, sexual content, or hate speech).
+                {t("consent.checkboxes.guidelines")}
               </label>
             </div>
 
@@ -229,8 +248,7 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
                   onCheckedChange={(checked) => setCheckedItems(prev => ({ ...prev, parentalConsent: !!checked }))}
                 />
                 <label htmlFor="parentalConsent" className="text-sm cursor-pointer font-medium">
-                  I am the parent/guardian and consent to my child's use of Vibe Check and to the processing 
-                  of their data as described.
+                  {t("consent.checkboxes.parentalConsent")}
                 </label>
               </div>
             )}
@@ -243,14 +261,14 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
               className="flex-1"
               disabled={submitting}
             >
-              Cancel
+              {t("consent.actions.cancel")}
             </Button>
             <Button
               onClick={handleAgree}
               disabled={!allRequiredChecked || submitting}
               className="flex-1"
             >
-              {submitting ? "Processing..." : "Agree & Continue"}
+              {submitting ? t("consent.actions.processing") : t("consent.actions.agree")}
             </Button>
           </div>
         </div>

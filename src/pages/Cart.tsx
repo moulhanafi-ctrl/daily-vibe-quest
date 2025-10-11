@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trash2, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
+import { LegalConsentModal } from "@/components/legal/LegalConsentModal";
+import { useConsentGate } from "@/hooks/useConsentGate";
 
 interface Product {
   id: string;
@@ -31,6 +33,13 @@ const Cart = () => {
   const [crossSellProducts, setCrossSellProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
+  
+  const {
+    showConsentModal,
+    setShowConsentModal,
+    userAgeGroup,
+    handleConsentComplete,
+  } = useConsentGate("purchases");
 
   useEffect(() => {
     loadCart();

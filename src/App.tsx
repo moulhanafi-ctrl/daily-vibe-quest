@@ -25,6 +25,8 @@ import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
 import Crisis from "./pages/legal/Crisis";
 import Inclusion from "./pages/legal/Inclusion";
 import LegalIndex from "./pages/legal/LegalIndex";
+import LegalAdmin from "./pages/admin/LegalAdmin";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AdminAI from "./pages/admin/AdminAI";
 import ArthurAdmin from "./pages/admin/ArthurAdmin";
@@ -75,6 +77,8 @@ const App = () => (
           <Route path="/admin/arthur" element={<ArthurAdmin />} />
           <Route path="/admin/analytics" element={<Analytics />} />
           <Route path="/admin/help" element={<HelpAdmin />} />
+          <Route path="/admin/legal" element={<LegalAdmin />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

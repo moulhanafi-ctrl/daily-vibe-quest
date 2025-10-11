@@ -24,6 +24,7 @@ export const Footer = () => {
           <div>
             <h3 className="font-semibold mb-3">Legal</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/legal" className="hover:text-primary">Legal & Safety</Link></li>
               <li><Link to="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-primary">Terms of Service</Link></li>
               <li><Link to="/community-guidelines" className="hover:text-primary">Community Guidelines</Link></li>
