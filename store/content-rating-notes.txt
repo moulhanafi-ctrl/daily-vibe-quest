@@ -1,0 +1,47 @@
+CONTENT RATING QUESTIONNAIRE NOTES
+
+App Name: Vibe Check
+Category: Health & Fitness / Lifestyle
+
+USER-GENERATED CONTENT (UGC):
+- YES, app includes user-generated content (chat rooms, family stories)
+- Content is moderated by community guidelines
+- Users can report inappropriate content
+- Profanity filter is enabled
+- User blocking features available
+
+VIOLENCE:
+- NO violent content
+
+SEXUALITY:
+- NO sexual or suggestive content
+- Strict community guidelines prohibit such content
+
+PROFANITY:
+- NO profanity in app-created content
+- UGC may contain profanity, but filtered and moderatable
+
+CONTROLLED SUBSTANCES:
+- NO promotion of drugs, alcohol, or tobacco
+- Mental health discussions may mention substance abuse in context of seeking help
+
+GAMBLING:
+- NO gambling or simulated gambling
+
+HORROR/FEAR:
+- NO horror or frightening content
+- App focuses on mental wellness and support
+
+ADVERTISING:
+- NO third-party ads (premium subscription model)
+
+AGE RATING:
+Target Age: 13+
+Reason: Mental health content, peer communication, requires maturity to engage appropriately
+
+ADDITIONAL NOTES:
+- App complies with COPPA for users under 13
+- Parent verification required for minors
+- Crisis resources and hotlines provided
+- Professional mental health disclaimer included
+- App is NOT a substitute for professional mental health care

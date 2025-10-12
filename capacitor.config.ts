@@ -2,11 +2,28 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.dailyvibequest.app',
-  appName: 'daily-vibe-quest',
+  appName: 'Vibe Check',
   webDir: 'dist',
   server: {
-    url: 'https://2c588c7a-e9e9-4d3f-b2dd-79a1b8546184.lovableproject.com?forceHideBadge=true',
-    cleartext: true
+    androidScheme: 'https'
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: '#8B5CF6',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
+      androidSpinnerStyle: 'large',
+      spinnerColor: '#FFFFFF'
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert']
+    }
+  },
+  android: {
+    allowMixedContent: false,
+    captureInput: true,
+    webContentsDebuggingEnabled: false
   }
 };
 
