@@ -85,7 +85,12 @@ export const Hero = () => {
           </div>
 
           <div className="flex flex-wrap gap-4 justify-center pt-4">
-            <Button variant="hero" size="lg" onClick={() => navigate("/auth")}>
+            <Button 
+              variant="signup" 
+              size="lg" 
+              onClick={() => navigate("/auth")}
+              className="animate-[signup-pulse_2s_ease-in-out_infinite_alternate] shadow-[var(--shadow-signup)] hover:shadow-[0_0_20px_hsl(340,75%,70%,0.5),0_0_35px_hsl(270,65%,75%,0.25)]"
+            >
               Get Started Free
             </Button>
             <Button variant="outline" size="lg" onClick={() => window.scrollTo({ top: document.getElementById('features')?.offsetTop || 0, behavior: 'smooth' })}>
