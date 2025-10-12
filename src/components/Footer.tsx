@@ -19,7 +19,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/policies/shipping" className="hover:text-primary">Shipping</Link></li>
               <li><Link to="/policies/refunds" className="hover:text-primary">Refunds</Link></li>
-              <li><a href="mailto:support@vibecheck.app" className="hover:text-primary">Contact Us</a></li>
+              <li><a href="mailto:vibecheckapps@gmail.com" className="hover:text-primary">Contact Us</a></li>
             </ul>
           </div>
           <div>

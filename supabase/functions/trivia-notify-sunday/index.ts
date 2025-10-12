@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
         const message = messages[locale] || messages.en;
 
         await resend.emails.send({
-          from: 'Vibe Check <notifications@vibecheck.app>',
+          from: 'Vibe Check <no-reply@vibecheckapps.com>',
           to: [authUser.user.email],
           subject: message.subject,
           text: message.body,
