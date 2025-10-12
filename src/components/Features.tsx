@@ -33,7 +33,7 @@ export const Features = () => {
       <div className="container mx-auto">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-4xl md:text-5xl font-bold">
-            Therapy, but <span className="text-secondary">chill</span>
+            Wellness, but <span className="text-secondary">chill</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Everything you need to maintain your mental wellness in one safe, friendly space.

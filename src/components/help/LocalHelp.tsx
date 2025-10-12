@@ -100,7 +100,7 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
           <MapPin className="h-12 w-12 text-primary mx-auto" />
           <h2 className="text-2xl font-bold">Find Local Help</h2>
           <p className="text-muted-foreground">
-            Get connected to crisis resources and therapy providers near you
+            Get connected to crisis resources and licensed mental health professionals near you
           </p>
           <Button onClick={() => setZipModalOpen(true)} size="lg">
             Enter ZIP Code
@@ -148,7 +148,7 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
         <AlertCircle className="h-4 w-4 text-destructive" />
         <AlertDescription>
           <strong>Emergency?</strong> If you're in immediate danger, call 911 or your local emergency services.
-          Vibe Check isn't therapy and can't provide emergency care.
+          Vibe Check is a wellness platform and does not provide medical advice, diagnosis, or clinical services.
         </AlertDescription>
       </Alert>
 
@@ -157,7 +157,7 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
           <div>
             <h1 className="text-3xl font-bold">Local Help</h1>
             <p className="text-muted-foreground">
-              Crisis resources and therapy providers near {userZip}
+              Crisis resources and licensed professionals near {userZip}
             </p>
           </div>
           <Button variant="outline" onClick={() => setZipModalOpen(true)}>
@@ -171,19 +171,19 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
       <div className="space-y-4">
         <div>
           <h2 className="text-2xl font-semibold mb-2 flex items-center gap-2">
-            🩺 Therapists Near Me
+            🩺 Licensed Mental Health Professionals Near Me
           </h2>
           <p className="text-muted-foreground text-sm">
             Licensed mental health professionals in your area
           </p>
         </div>
         {loading ? (
-          <p className="text-muted-foreground">Loading therapists...</p>
+          <p className="text-muted-foreground">Loading providers...</p>
         ) : therapyLocations.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
               <p className="text-muted-foreground mb-4">
-                No local therapists found for ZIP {userZip}. Try a nearby ZIP or explore telehealth options.
+                No local providers found for ZIP {userZip}. Try a nearby ZIP code or see national resources below.
               </p>
               <Button variant="outline" onClick={() => setZipModalOpen(true)}>
                 Try Different ZIP Code

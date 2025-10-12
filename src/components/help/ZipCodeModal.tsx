@@ -57,7 +57,7 @@ export const ZipCodeModal = ({ open, onOpenChange, onZipSaved }: ZipCodeModalPro
             Find Local Help
           </DialogTitle>
           <DialogDescription>
-            Enter your ZIP code to see crisis resources and therapy providers near you.
+            Enter your ZIP code to see crisis resources and licensed mental health professionals near you.
             Your location is private and only used to show nearby help.
           </DialogDescription>
         </DialogHeader>

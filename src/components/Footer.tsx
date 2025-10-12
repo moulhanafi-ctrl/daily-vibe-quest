@@ -48,6 +48,9 @@ export const Footer = () => {
           <div className="flex justify-center mb-4">
             <IssueReporter />
           </div>
+          <p className="text-xs max-w-3xl mx-auto">
+            <strong>Disclaimer:</strong> Vibe Check is a mental wellness platform and does not provide medical advice, diagnosis, or clinical services. If you are in crisis, call 988 or contact a licensed professional.
+          </p>
           <p>🏳️‍🌈 Inclusive by design. Everyone belongs here. 🏳️‍⚧️</p>
           <p>&copy; 2025 Vibe Check. All rights reserved.</p>
         </div>

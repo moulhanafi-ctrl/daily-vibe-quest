@@ -275,10 +275,10 @@ export const LocalHelpSearch = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            🩺 Therapists Near Me
+            🩺 Licensed Mental Health Professionals Near Me
           </CardTitle>
           <CardDescription>
-            {data ? `Licensed mental health professionals near ${data.city}, ${data.state}` : 'Search above to find therapists in your area'}
+            {data ? `Licensed mental health professionals near ${data.city}, ${data.state}` : 'Search above to find licensed providers in your area'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -286,13 +286,13 @@ export const LocalHelpSearch = () => {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Enter your ZIP code above to find licensed therapists near you.
+                Enter your ZIP code above to find licensed mental health professionals near you.
               </AlertDescription>
             </Alert>
           ) : data.therapists.length === 0 ? (
             <Alert>
               <AlertDescription>
-                No therapists found within {data.radius} miles of {data.city}, {data.state}. Try expanding your search radius or check national resources below.
+                No licensed providers found within {data.radius} miles of {data.city}, {data.state}. Try expanding your search radius or check national resources below.
               </AlertDescription>
             </Alert>
           ) : (
