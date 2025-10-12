@@ -114,7 +114,12 @@ const Onboarding = () => {
         description: "Welcome to your mental health journey.",
       });
       
-      navigate("/dashboard?first_checkin=true");
+      // SECURITY: Enforce parent verification for minors (COPPA compliance)
+      if (ageGroupData === 'child' || ageGroupData === 'teen') {
+        navigate("/parent-verification");
+      } else {
+        navigate("/dashboard?first_checkin=true");
+      }
     } catch (error: any) {
       toast({
         title: "Error",

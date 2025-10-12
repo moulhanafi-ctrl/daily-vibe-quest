@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useRTL } from "./hooks/useRTL";
 import { SkipToContent } from "@/components/layout/SkipToContent";
 import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
+import { ParentVerificationGate } from "@/components/family/ParentVerificationGate";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -71,6 +72,7 @@ const App = () => (
           <Route path="/welcome/language" element={<LanguagePicker />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/parent-verification" element={<ParentVerificationGate />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chat-rooms" element={<ChatRooms />} />
           <Route path="/chat/:roomId" element={<ChatRoom />} />
