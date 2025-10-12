@@ -24,16 +24,23 @@ const Auth = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        // Check if user has language preference
+        // Check if user has language preference and onboarding status
         const { data: profile } = await supabase
           .from('profiles')
-          .select('language')
+          .select('language, selected_focus_areas, username')
           .eq('id', session.user.id)
           .single();
 
         if (!profile?.language) {
           navigate('/welcome/language');
+        } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
+          navigate('/onboarding');
         } else {
+          // Show welcome back message
+          toast({ 
+            title: `Welcome back, ${profile.username || 'friend'}!`,
+            description: "Good to see you again."
+          });
           navigate('/dashboard');
         }
       }
@@ -66,12 +73,25 @@ const Auth = () => {
         });
         setIsForgotPassword(false);
       } else if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        toast({ title: "Welcome back!" });
+        
+        // Fetch user profile for welcome message
+        if (data.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', data.user.id)
+            .single();
+          
+          toast({ 
+            title: `Welcome back, ${profile?.username || 'friend'}!`,
+            description: "Good to see you again."
+          });
+        }
       } else {
         const { error } = await supabase.auth.signUp({
           email,

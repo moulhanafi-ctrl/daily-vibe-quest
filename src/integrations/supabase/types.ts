@@ -1674,6 +1674,7 @@ export type Database = {
           insurance: Json | null
           is_parent: boolean | null
           language: string | null
+          last_login_at: string | null
           legal_consent_accepted_at: string | null
           legal_consent_ip: string | null
           legal_consent_user_agent: string | null
@@ -1702,6 +1703,7 @@ export type Database = {
           insurance?: Json | null
           is_parent?: boolean | null
           language?: string | null
+          last_login_at?: string | null
           legal_consent_accepted_at?: string | null
           legal_consent_ip?: string | null
           legal_consent_user_agent?: string | null
@@ -1730,6 +1732,7 @@ export type Database = {
           insurance?: Json | null
           is_parent?: boolean | null
           language?: string | null
+          last_login_at?: string | null
           legal_consent_accepted_at?: string | null
           legal_consent_ip?: string | null
           legal_consent_user_agent?: string | null
