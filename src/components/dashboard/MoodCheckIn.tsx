@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { JournalPrompts } from "@/components/journal/JournalPrompts";
-import { Book, Mic, Lightbulb } from "lucide-react";
+import { FocusAreasPopup } from "./FocusAreasPopup";
+import { Book, Mic, Lightbulb, Target } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 
 const MOODS = [
@@ -36,6 +37,7 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
   const [loading, setLoading] = useState(false);
   const [showReflectCard, setShowReflectCard] = useState(false);
   const [lastMoodId, setLastMoodId] = useState<string | null>(null);
+  const [showFocusPopup, setShowFocusPopup] = useState(false);
 
   const handleSubmit = async () => {
     if (!selectedMood) {
@@ -219,7 +221,29 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
           ))}
         </div>
 
-        {selectedMood && (
+        {selectedMood && !showFocusPopup && (
+          <div className="pt-4">
+            <Button
+              variant="outline"
+              className="w-full border-[hsl(270,65%,75%)] hover:bg-[hsl(270,65%,75%)]/10"
+              onClick={() => setShowFocusPopup(true)}
+            >
+              <Target className="h-4 w-4 mr-2" />
+              Update Focus Areas
+            </Button>
+          </div>
+        )}
+
+        {selectedMood && showFocusPopup && (
+          <div className="pt-6 animate-slide-up">
+            <FocusAreasPopup 
+              userId={userId} 
+              onClose={() => setShowFocusPopup(false)}
+            />
+          </div>
+        )}
+
+        {selectedMood && !showFocusPopup && (
           <>
             <div className="space-y-3">
               <Label>How intense is this feeling?</Label>

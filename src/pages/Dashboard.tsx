@@ -219,10 +219,7 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="checkin">
-            <div className="space-y-6">
-              <SaturdayTriviaCard userId={user?.id} ageGroup={profile?.age_group} />
-              <MoodCheckIn userId={user?.id} ageGroup={profile?.age_group} />
-            </div>
+            <MoodCheckIn userId={user?.id} ageGroup={profile?.age_group} />
           </TabsContent>
 
           <TabsContent value="history">
@@ -238,7 +235,10 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="content">
-            <MotivationalContent ageGroup={profile?.age_group} />
+            <div className="space-y-6">
+              <SaturdayTriviaCard userId={user?.id} ageGroup={profile?.age_group} />
+              <MotivationalContent ageGroup={profile?.age_group} />
+            </div>
           </TabsContent>
 
           <TabsContent value="settings">
