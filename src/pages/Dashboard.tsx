@@ -7,7 +7,6 @@ import { MoodHistory } from "@/components/dashboard/MoodHistory";
 import { FamilyDashboard } from "@/components/dashboard/FamilyDashboard";
 import { AISuggestions } from "@/components/dashboard/AISuggestions";
 import { MotivationalContent } from "@/components/dashboard/MotivationalContent";
-import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
 import { SaturdayTriviaCard } from "@/components/dashboard/SaturdayTriviaCard";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -246,9 +245,6 @@ const Dashboard = () => {
             <ArthurSettings />
           </TabsContent>
         </Tabs>
-
-        {/* Arthur Notifications */}
-        <ArthurNotifications />
       </main>
     </div>
   );
