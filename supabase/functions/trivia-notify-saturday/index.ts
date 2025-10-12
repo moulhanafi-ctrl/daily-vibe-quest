@@ -1,9 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { Resend } from 'https://esm.sh/resend@2.0.0';
+import { verifyHmacSignature } from "../_shared/hmac-validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-signature',
 };
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
@@ -11,6 +12,14 @@ const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // SECURITY: Verify HMAC signature for cron-triggered function
+  if (!await verifyHmacSignature(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized: Invalid signature' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {

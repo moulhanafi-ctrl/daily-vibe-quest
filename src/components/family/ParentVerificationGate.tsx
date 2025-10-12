@@ -1,114 +1,252 @@
-import { ReactNode } from "react";
-import { useParentVerification } from "@/hooks/useParentVerification";
+/**
+ * Parent Verification Gate Component
+ * 
+ * SECURITY: Prevents minors (child/teen) from accessing the app without
+ * completing guardian verification. This enforces COPPA compliance.
+ */
+
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Shield, Mail, Clock } from "lucide-react";
 
-interface ParentVerificationGateProps {
-  children: ReactNode;
-  feature: "rooms" | "checkout" | "journals";
+interface Profile {
+  age_group: string;
+  parent_id: string | null;
 }
 
-export const ParentVerificationGate = ({ children, feature }: ParentVerificationGateProps) => {
-  const { isMinor, needsVerification, isVerified, ageGroup, loading } = useParentVerification();
-  const navigate = useNavigate();
+interface GuardianLink {
+  status: string;
+  guardian_email: string;
+  verified_at: string | null;
+}
 
-  const featureNames = {
-    rooms: "Chat Rooms",
-    checkout: "Store Checkout",
-    journals: "Shared Journals",
+export const ParentVerificationGate = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [guardianLink, setGuardianLink] = useState<GuardianLink | null>(null);
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+
+  useEffect(() => {
+    checkVerificationStatus();
+  }, []);
+
+  const checkVerificationStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
+      // Get user's profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("age_group, parent_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!profileData) {
+        toast.error("Profile not found");
+        navigate("/auth");
+        return;
+      }
+
+      setProfile(profileData);
+
+      // If adult/elder or has verified parent, redirect to dashboard
+      if (profileData.age_group === "adult" || profileData.age_group === "elder" || profileData.parent_id) {
+        navigate("/dashboard");
+        return;
+      }
+
+      // Check existing guardian link
+      const { data: linkData } = await supabase
+        .from("guardian_links")
+        .select("status, guardian_email, verified_at")
+        .eq("child_id", user.id)
+        .maybeSingle();
+
+      if (linkData) {
+        setGuardianLink(linkData);
+        setGuardianEmail(linkData.guardian_email);
+        
+        if (linkData.status === "verified" && linkData.verified_at) {
+          // Verification complete, redirect
+          navigate("/dashboard");
+          return;
+        }
+      }
+
+      setLoading(false);
+    } catch (error: any) {
+      console.error("Error checking verification:", error);
+      toast.error("Failed to check verification status");
+      setLoading(false);
+    }
   };
 
-  const featureDescriptions = {
-    rooms: "participate in community chat rooms",
-    checkout: "make purchases in the store",
-    journals: "share journal entries with your parent",
+  const handleSendCode = async () => {
+    if (!guardianEmail || !/\S+@\S+\.\S+/.test(guardianEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setSendingCode(true);
+    try {
+      const { error } = await supabase.functions.invoke("guardian-start", {
+        body: { guardianEmail },
+      });
+
+      if (error) throw error;
+
+      toast.success("Verification code sent! Check your parent's email.");
+      await checkVerificationStatus(); // Refresh status
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send verification code");
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!verificationCode || verificationCode.length < 6) {
+      toast.error("Please enter the 6-digit verification code");
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      const { error } = await supabase.functions.invoke("guardian-verify", {
+        body: {
+          guardianEmail,
+          code: verificationCode,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Parent verified! Welcome to Vibe Check.");
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Invalid verification code");
+    } finally {
+      setVerifying(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  // Adults and verified minors can access everything
-  if (!isMinor || isVerified) {
-    return <>{children}</>;
-  }
-
-  // Unverified minors see the gate
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <Alert className="mb-6">
-          <Shield className="h-4 w-4" />
-          <AlertTitle>Parent Verification Required</AlertTitle>
-          <AlertDescription>
-            For safety, {ageGroup === "child" ? "kids" : "teens"} need a verified parent or guardian to access {featureNames[feature]}.
-          </AlertDescription>
-        </Alert>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/20 to-background p-4">
+      <Card className="max-w-md w-full">
+        <CardHeader>
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="h-6 w-6 text-primary" />
+            <CardTitle>Parent Verification Required</CardTitle>
+          </div>
+          <CardDescription>
+            For your safety, we need a parent or guardian to verify your account before you can use Vibe Check.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!guardianLink || guardianLink.status === "pending" ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="guardian-email">
+                  <Mail className="inline h-4 w-4 mr-1" />
+                  Parent/Guardian Email
+                </Label>
+                <Input
+                  id="guardian-email"
+                  type="email"
+                  placeholder="parent@example.com"
+                  value={guardianEmail}
+                  onChange={(e) => setGuardianEmail(e.target.value)}
+                  disabled={sendingCode || !!guardianLink}
+                />
+              </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              Parent Verification Needed
-            </CardTitle>
-            <CardDescription>
-              To {featureDescriptions[feature]}, please complete parent verification
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-muted rounded-lg space-y-2">
-              <h3 className="font-semibold">Why do we need this?</h3>
-              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                <li>Keeps you safe online</li>
-                <li>Required by law (COPPA) for users under 13</li>
-                <li>Lets your parent stay informed about your wellbeing</li>
-                <li>Required for certain features like chat rooms and purchases</li>
-              </ul>
-            </div>
+              {!guardianLink && (
+                <Button
+                  onClick={handleSendCode}
+                  disabled={sendingCode}
+                  className="w-full"
+                >
+                  {sendingCode ? "Sending..." : "Send Verification Code"}
+                </Button>
+              )}
 
-            <div className="space-y-2">
-              <h3 className="font-semibold">What happens next?</h3>
-              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                <li>You'll enter your parent's email</li>
-                <li>They'll receive a verification code</li>
-                <li>They enter the code to verify</li>
-                <li>You'll get access to all features</li>
-              </ol>
-            </div>
+              {guardianLink && guardianLink.status === "pending" && (
+                <>
+                  <div className="bg-secondary/20 rounded-lg p-4 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Clock className="h-5 w-5 text-primary mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium">Code sent to {guardianEmail}</p>
+                        <p className="text-muted-foreground mt-1">
+                          Ask your parent to check their email and provide the 6-digit verification code.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-            <Button 
-              onClick={() => navigate("/settings")} 
-              className="w-full"
-            >
-              Start Parent Verification
-            </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="verification-code">6-Digit Verification Code</Label>
+                    <Input
+                      id="verification-code"
+                      type="text"
+                      placeholder="000000"
+                      maxLength={6}
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                      disabled={verifying}
+                    />
+                  </div>
 
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/dashboard")} 
-              className="w-full"
-            >
-              Back to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
+                  <Button
+                    onClick={handleVerify}
+                    disabled={verifying || verificationCode.length !== 6}
+                    className="w-full"
+                  >
+                    {verifying ? "Verifying..." : "Verify Code"}
+                  </Button>
 
-        {ageGroup === "child" && (
-          <Alert variant="default" className="mt-4">
-            <AlertTitle>For Kids (12 and under)</AlertTitle>
-            <AlertDescription>
-              Your parent will need to verify before you can use chat rooms, make purchases, or share journals.
-            </AlertDescription>
-          </Alert>
-        )}
-      </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSendCode}
+                    disabled={sendingCode}
+                    className="w-full"
+                  >
+                    Resend Code
+                  </Button>
+                </>
+              )}
+            </>
+          ) : null}
+
+          <div className="text-xs text-muted-foreground text-center pt-4 border-t">
+            This verification helps us comply with child safety laws and ensures
+            a parent or guardian is aware of your use of this mental health app.
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

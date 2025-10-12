@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trash2, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { LegalConsentModal } from "@/components/legal/LegalConsentModal";
-import { ParentVerificationGate } from "@/components/family/ParentVerificationGate";
+import { FeatureGate } from "@/components/FeatureGate";
 import { useConsentGate } from "@/hooks/useConsentGate";
 
 interface Product {
@@ -168,7 +168,7 @@ const Cart = () => {
 
   return (
     <>
-      <ParentVerificationGate feature="checkout">
+      <FeatureGate flag="checkout">
         <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
           <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
             <div className="container mx-auto px-4 py-4">
@@ -325,7 +325,7 @@ const Cart = () => {
         )}
         </main>
       </div>
-    </ParentVerificationGate>
+    </FeatureGate>
     
     <LegalConsentModal
       open={showConsentModal}

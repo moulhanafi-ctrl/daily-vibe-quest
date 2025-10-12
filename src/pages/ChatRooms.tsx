@@ -9,7 +9,7 @@ import { STRIPE_PLANS } from "@/lib/stripe";
 import { ChatRoomSkeleton } from "@/components/ChatRoomSkeleton";
 import { InclusionBanner } from "@/components/InclusionBanner";
 import { LegalConsentModal } from "@/components/legal/LegalConsentModal";
-import { ParentVerificationGate } from "@/components/family/ParentVerificationGate";
+import { FeatureGate } from "@/components/FeatureGate";
 import { useConsentGate } from "@/hooks/useConsentGate";
 
 interface ChatRoom {
@@ -145,7 +145,7 @@ const ChatRooms = () => {
 
   return (
     <>
-      <ParentVerificationGate feature="rooms">
+      <FeatureGate flag="rooms">
         <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background p-4">
           <div className="container max-w-4xl mx-auto py-8">
             <Button
@@ -290,7 +290,7 @@ const ChatRooms = () => {
         </div>
       </div>
     </div>
-    </ParentVerificationGate>
+    </FeatureGate>
     
     <LegalConsentModal
       open={showConsentModal}

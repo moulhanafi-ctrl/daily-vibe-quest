@@ -8,6 +8,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import vibeCheckLogo from "@/assets/vibe-check-logo.png";
+import { z } from "zod";
+
+// SECURITY: Input validation schema for signup
+const SignupSchema = z.object({
+  email: z.string()
+    .email("Please enter a valid email address")
+    .max(255, "Email must be less than 255 characters")
+    .trim(),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be less than 72 characters"),
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be less than 30 characters")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, hyphens, and underscores")
+    .trim(),
+  ageGroup: z.enum(["child", "teen", "adult", "elder"]),
+});
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -112,6 +130,19 @@ const Auth = () => {
           });
         }
       } else {
+        // SECURITY: Validate signup inputs
+        const validationResult = SignupSchema.safeParse({
+          email,
+          password,
+          username,
+          ageGroup,
+        });
+
+        if (!validationResult.success) {
+          const errors = validationResult.error.errors.map(e => e.message).join(", ");
+          throw new Error(errors);
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
