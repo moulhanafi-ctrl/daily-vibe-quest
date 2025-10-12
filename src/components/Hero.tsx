@@ -77,7 +77,15 @@ export const Hero = () => {
                 <p className="text-muted-foreground">
                   Thanks for sharing! Let's make today better together.
                 </p>
-                <Button variant="hero" size="lg" className="w-full" onClick={() => navigate("/auth")}>
+                <Button 
+                  type="button"
+                  variant="hero" 
+                  size="lg" 
+                  className="w-full min-h-[44px] touch-manipulation" 
+                  onClick={() => navigate("/auth")}
+                  onTouchStart={() => navigate("/auth")}
+                  aria-label="Start your wellness journey"
+                >
                   Start Your Journey
                 </Button>
               </div>
@@ -86,18 +94,24 @@ export const Hero = () => {
 
           <div className="flex flex-wrap gap-4 justify-center pt-4">
             <Button 
+              type="button"
               variant="signup" 
               size="lg" 
               onClick={() => navigate("/auth")}
-              className="animate-[signup-pulse_2s_ease-in-out_infinite_alternate] shadow-[var(--shadow-signup)] hover:shadow-[0_0_20px_hsl(340,75%,70%,0.5),0_0_35px_hsl(270,65%,75%,0.25)]"
+              onTouchStart={() => navigate("/auth")}
+              className="min-w-[44px] min-h-[44px] animate-[signup-pulse_2s_ease-in-out_infinite_alternate] shadow-[var(--shadow-signup)] hover:shadow-[0_0_20px_hsl(340,75%,70%,0.5),0_0_35px_hsl(270,65%,75%,0.25)] touch-manipulation"
+              aria-label="Sign up for Vibe Check"
             >
               Sign Up
             </Button>
             <Button 
+              type="button"
               variant="login" 
               size="lg" 
               onClick={() => navigate("/auth")}
-              className="animate-[login-pulse_2s_ease-in-out_infinite_alternate] shadow-[var(--shadow-login)] hover:shadow-[0_0_18px_hsl(270,65%,75%,0.5),0_0_30px_hsl(340,75%,70%,0.25)]"
+              onTouchStart={() => navigate("/auth")}
+              className="min-w-[44px] min-h-[44px] animate-[login-pulse_2s_ease-in-out_infinite_alternate] shadow-[var(--shadow-login)] hover:shadow-[0_0_18px_hsl(270,65%,75%,0.5),0_0_30px_hsl(340,75%,70%,0.25)] touch-manipulation"
+              aria-label="Log in to Vibe Check"
             >
               Log In
             </Button>

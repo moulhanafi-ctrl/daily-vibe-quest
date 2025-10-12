@@ -18,6 +18,25 @@ const Auth = () => {
   const [username, setUsername] = useState("");
   const [ageGroup, setAgeGroup] = useState<"child" | "teen" | "adult">("adult");
   const [loading, setLoading] = useState(false);
+  const [isPrivateMode, setIsPrivateMode] = useState(false);
+
+  // Detect Safari Private Mode
+  useEffect(() => {
+    const detectPrivateMode = async () => {
+      try {
+        localStorage.setItem('test', 'test');
+        localStorage.removeItem('test');
+      } catch (e) {
+        setIsPrivateMode(true);
+        toast({
+          title: "Private Browsing Detected",
+          description: "Please use standard browsing mode for login to work properly.",
+          variant: "destructive",
+        });
+      }
+    };
+    detectPrivateMode();
+  }, []);
 
   useEffect(() => {
     const checkAuthAndLanguage = async () => {
@@ -195,24 +214,34 @@ const Auth = () => {
                   <button
                     type="button"
                     onClick={() => setIsForgotPassword(true)}
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm text-primary hover:underline min-h-[44px] touch-manipulation inline-flex items-center"
                   >
                     Forgot password?
                   </button>
                 )}
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full min-h-[44px] touch-manipulation" 
+              disabled={loading || isPrivateMode}
+            >
               {loading ? "Loading..." : isForgotPassword ? "Send Reset Link" : isLogin ? "Sign In" : "Sign Up"}
             </Button>
+            {isPrivateMode && (
+              <p className="text-sm text-destructive text-center mt-2">
+                Private browsing mode detected. Please switch to standard mode to continue.
+              </p>
+            )}
           </form>
           <div className="mt-4 text-center">
             <button
+              type="button"
               onClick={() => {
                 setIsLogin(!isLogin);
                 setIsForgotPassword(false);
               }}
-              className="text-sm text-primary hover:underline"
+              className="text-sm text-primary hover:underline min-h-[44px] touch-manipulation inline-flex items-center justify-center"
             >
               {isLogin
                 ? "Don't have an account? Sign up"
@@ -220,8 +249,9 @@ const Auth = () => {
             </button>
             {isForgotPassword && (
               <button
+                type="button"
                 onClick={() => setIsForgotPassword(false)}
-                className="block mx-auto mt-2 text-sm text-primary hover:underline"
+                className="block mx-auto mt-2 text-sm text-primary hover:underline min-h-[44px] touch-manipulation inline-flex items-center justify-center"
               >
                 Back to sign in
               </button>
