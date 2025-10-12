@@ -98,8 +98,8 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl h-[85vh] md:max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl">{t("consent.title")}</DialogTitle>
           <DialogDescription>
             {t("consent.subtitle")}
@@ -112,8 +112,8 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
           </p>
         </div>
 
-        <ScrollArea className="flex-1 pr-4 -mx-6 px-6">
-          <div className="space-y-6">
+        <ScrollArea className="flex-1 min-h-0 pr-4 -mx-6 px-6">
+          <div className="space-y-6 pb-4">
             {/* Not Therapy Disclaimer */}
             <Collapsible>
               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors">

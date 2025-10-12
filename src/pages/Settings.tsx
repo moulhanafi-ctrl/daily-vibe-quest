@@ -8,6 +8,7 @@ import { LanguageSelector } from "@/components/settings/LanguageSelector";
 import { DataRights } from "@/components/legal/DataRights";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { ParentNotificationSettings } from "@/components/family/ParentNotificationSettings";
+import { PushNotificationSettings } from "@/components/settings/PushNotificationSettings";
 import { TestContact } from "@/components/family/TestContact";
 
 const Settings = () => {
@@ -60,7 +61,8 @@ const Settings = () => {
             <DataRights />
           </TabsContent>
 
-          <TabsContent value="notifications">
+          <TabsContent value="notifications" className="space-y-4">
+            <PushNotificationSettings />
             <ParentNotificationSettings />
           </TabsContent>
 
