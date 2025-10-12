@@ -8,9 +8,6 @@ import { Globe } from "lucide-react";
 
 const LANGUAGES = [
   { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'es', name: 'Spanish', nativeName: 'Español' },
-  { code: 'fr', name: 'French', nativeName: 'Français' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
 ];
 
 export const LanguageSelector = () => {
@@ -35,11 +32,6 @@ export const LanguageSelector = () => {
       }
 
       toast.success(t('settings.languageUpdated', 'Language updated successfully'));
-      
-      // Reload the page to apply RTL changes if needed
-      if (languageCode === 'ar' || i18n.language === 'ar') {
-        window.location.reload();
-      }
     } catch (error) {
       console.error('Error updating language:', error);
       toast.error(t('settings.languageUpdateFailed', 'Failed to update language'));

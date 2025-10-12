@@ -4,7 +4,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useRTL } from "./hooks/useRTL";
 import { SkipToContent } from "@/components/layout/SkipToContent";
 import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
 import { ParentVerificationGate } from "@/components/family/ParentVerificationGate";
@@ -53,17 +52,12 @@ import PublishReadiness from "./pages/admin/PublishReadiness";
 
 const queryClient = new QueryClient();
 
-const AppContent = () => {
-  useRTL(); // Initialize RTL support
-  return null;
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <SkipToContent />
-      <AppContent />
-      <Toaster />
+      <TooltipProvider>
+        <SkipToContent />
+        <Toaster />
       <Sonner />
       <ArthurNotifications />
       <BrowserRouter>

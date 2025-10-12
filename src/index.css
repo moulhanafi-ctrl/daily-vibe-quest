@@ -271,43 +271,5 @@ All colors MUST be HSL.
     }
   }
   
-  /* RTL Support for Arabic */
-  [dir="rtl"] {
-    direction: rtl;
-  }
-  
-  /* RTL-specific adjustments */
-  [dir="rtl"] .rotate-180 {
-    transform: rotate(0deg);
-  }
-  
-  [dir="rtl"] .rotate-0 {
-    transform: rotate(180deg);
-  }
-  
-  /* Mirror chevrons and arrows for RTL */
-  [dir="rtl"] [data-radix-collection-item] svg {
-    transform: scaleX(-1);
-  }
-  
-  /* Flip icons that indicate direction */
-  [dir="rtl"] .lucide-chevron-left,
-  [dir="rtl"] .lucide-chevron-right,
-  [dir="rtl"] .lucide-arrow-left,
-  [dir="rtl"] .lucide-arrow-right {
-    transform: scaleX(-1);
-  }
-  
-  /* Arabic font support */
-  [lang="ar"] {
-    font-family: 'Noto Naskh Arabic', 'Tajawal', 'Arial', sans-serif;
-  }
-  
-  /* Adjust spacing for Arabic text */
-  [dir="rtl"] p,
-  [dir="rtl"] span,
-  [dir="rtl"] div {
-    text-align: start;
-  }
 }
 

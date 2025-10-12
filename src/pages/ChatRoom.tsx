@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { trackEvent } from "@/lib/analytics";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useTranslation } from "react-i18next";
-import { useRTL } from "@/hooks/useRTL";
 
 interface Message {
   id: string;
@@ -34,7 +33,6 @@ const ChatRoom = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { isRTL } = useRTL();
   const [room, setRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -241,7 +239,7 @@ const ChatRoom = () => {
                 role="button"
                 aria-label={t("rooms.rules_aria")}
               >
-                <Shield className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                <Shield className="w-3 h-3 mr-1" />
                 <span className="text-xs">{t("rooms.rules_chip")}</span>
               </Badge>
             </div>

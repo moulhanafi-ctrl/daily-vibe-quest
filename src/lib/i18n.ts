@@ -4,24 +4,12 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Import translation files
 import commonEN from '@/locales/en/common.json';
-import commonES from '@/locales/es/common.json';
-import commonFR from '@/locales/fr/common.json';
-import commonAR from '@/locales/ar/common.json';
 
 import onboardingEN from '@/locales/en/onboarding.json';
-import onboardingES from '@/locales/es/onboarding.json';
-import onboardingFR from '@/locales/fr/onboarding.json';
-import onboardingAR from '@/locales/ar/onboarding.json';
 
 import arthurEN from '@/locales/en/arthur.json';
-import arthurES from '@/locales/es/arthur.json';
-import arthurFR from '@/locales/fr/arthur.json';
-import arthurAR from '@/locales/ar/arthur.json';
 
 import legalEN from '@/locales/en/legal.json';
-import legalES from '@/locales/es/legal.json';
-import legalFR from '@/locales/fr/legal.json';
-import legalAR from '@/locales/ar/legal.json';
 
 const resources = {
   en: {
@@ -29,24 +17,6 @@ const resources = {
     onboarding: onboardingEN,
     arthur: arthurEN,
     legal: legalEN,
-  },
-  es: {
-    common: commonES,
-    onboarding: onboardingES,
-    arthur: arthurES,
-    legal: legalES,
-  },
-  fr: {
-    common: commonFR,
-    onboarding: onboardingFR,
-    arthur: arthurFR,
-    legal: legalFR,
-  },
-  ar: {
-    common: commonAR,
-    onboarding: onboardingAR,
-    arthur: arthurAR,
-    legal: legalAR,
   },
 };
 
