@@ -38,6 +38,34 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
   const [showReflectCard, setShowReflectCard] = useState(false);
   const [lastMoodId, setLastMoodId] = useState<string | null>(null);
   const [showFocusPopup, setShowFocusPopup] = useState(false);
+  const [userFocusAreas, setUserFocusAreas] = useState<string[]>([]);
+  const [hasCheckedFocusAreas, setHasCheckedFocusAreas] = useState(false);
+
+  const checkAndShowFocusPopup = async () => {
+    if (hasCheckedFocusAreas) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("selected_focus_areas")
+        .eq("id", userId)
+        .single();
+
+      if (error) throw error;
+      
+      const areas = data?.selected_focus_areas || [];
+      setUserFocusAreas(areas);
+      setHasCheckedFocusAreas(true);
+      
+      // Auto-show popup if user has no focus areas
+      if (areas.length === 0) {
+        setShowFocusPopup(true);
+      }
+    } catch (error) {
+      console.error("Error checking focus areas:", error);
+      setHasCheckedFocusAreas(true);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!selectedMood) {
@@ -207,8 +235,11 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
         <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
           {MOODS.map((mood) => (
             <button
-              key={mood.value}
-              onClick={() => setSelectedMood(mood.value)}
+            key={mood.value}
+            onClick={() => {
+              setSelectedMood(mood.value);
+              checkAndShowFocusPopup();
+            }}
               className={`flex flex-col items-center gap-2 p-6 rounded-2xl border-2 transition-all hover:scale-105 ${
                 selectedMood === mood.value
                   ? "border-primary bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow"

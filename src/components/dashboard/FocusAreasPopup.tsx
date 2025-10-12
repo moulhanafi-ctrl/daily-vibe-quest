@@ -55,11 +55,22 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
   };
 
   const toggleArea = (id: string) => {
-    setSelected(prev => 
-      prev.includes(id) 
-        ? prev.filter(item => item !== id)
-        : [...prev, id]
-    );
+    setSelected(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(item => item !== id);
+      }
+      
+      if (prev.length >= 3) {
+        toast({ 
+          title: "Maximum 3 focus areas",
+          description: "You can select up to 3 areas to focus on",
+          variant: "destructive" 
+        });
+        return prev;
+      }
+      
+      return [...prev, id];
+    });
   };
 
   const handleSave = async () => {
@@ -130,28 +141,38 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {FOCUS_AREAS.map((area) => (
-              <button
-                key={area.id}
-                type="button"
-                onClick={() => toggleArea(area.id)}
-                className={cn(
-                  "flex items-center gap-3 p-4 sm:p-3.5 rounded-xl border-2 transition-all duration-300 text-left min-h-[60px] touch-manipulation",
-                  "active:scale-[0.98] sm:hover:scale-[1.02] sm:hover:shadow-[0_0_15px_rgba(122,241,199,0.3)]",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(180,70%,70%)] focus-visible:ring-offset-2",
-                  selected.includes(area.id)
-                    ? "border-[hsl(180,70%,70%)] bg-gradient-to-br from-[hsl(180,70%,70%)]/10 to-[hsl(270,65%,75%)]/10 shadow-[0_0_12px_rgba(122,241,199,0.4)] scale-[1.02]"
-                    : "border-border/50 bg-card/50"
-                )}
-                tabIndex={0}
-              >
-                <span className="text-2xl sm:text-xl animate-[emoji-pulse_2s_ease-in-out_infinite] flex-shrink-0">
-                  {area.emoji}
-                </span>
-                <span className="font-semibold text-base sm:text-sm">{area.label}</span>
-              </button>
-            ))}
+          <div className="space-y-2">
+            {selected.length >= 3 && (
+              <p className="text-xs text-muted-foreground text-center animate-fade-in">
+                💡 Maximum 3 areas selected. Deselect one to choose another.
+              </p>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {FOCUS_AREAS.map((area) => (
+                <button
+                  key={area.id}
+                  type="button"
+                  onClick={() => toggleArea(area.id)}
+                  className={cn(
+                    "flex items-center gap-3 p-4 sm:p-3.5 rounded-xl border-2 transition-all duration-300 text-left min-h-[60px] touch-manipulation",
+                    "active:scale-[0.98] sm:hover:scale-[1.02] sm:hover:shadow-[0_0_15px_rgba(122,241,199,0.3)]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(180,70%,70%)] focus-visible:ring-offset-2",
+                    selected.includes(area.id)
+                      ? "border-[hsl(180,70%,70%)] bg-gradient-to-br from-[hsl(180,70%,70%)]/10 to-[hsl(270,65%,75%)]/10 shadow-[0_0_12px_rgba(122,241,199,0.4)] scale-[1.02]"
+                      : selected.length >= 3
+                      ? "border-border/30 bg-card/30 opacity-50 cursor-not-allowed"
+                      : "border-border/50 bg-card/50"
+                  )}
+                  tabIndex={0}
+                  disabled={!selected.includes(area.id) && selected.length >= 3}
+                >
+                  <span className="text-2xl sm:text-xl animate-[emoji-pulse_2s_ease-in-out_infinite] flex-shrink-0">
+                    {area.emoji}
+                  </span>
+                  <span className="font-semibold text-base sm:text-sm">{area.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {selected.length > 0 && (
@@ -172,21 +193,21 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onClose} 
-              className="flex-1 min-h-[44px] touch-manipulation border-[hsl(270,65%,75%)]/30 hover:bg-[hsl(270,65%,75%)]/5"
-            >
-              Cancel
-            </Button>
+          <div className="flex flex-col gap-3 pt-2">
             <Button 
               onClick={handleSave} 
-              className="flex-1 min-h-[44px] touch-manipulation bg-gradient-to-r from-[hsl(180,70%,70%)] to-[hsl(270,65%,75%)] hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(122,241,199,0.3)]"
+              className="w-full min-h-[44px] touch-manipulation bg-gradient-to-r from-[hsl(180,70%,70%)] to-[hsl(270,65%,75%)] hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(122,241,199,0.3)]"
               disabled={loading || selected.length === 0}
             >
-              {loading ? "Saving..." : "Save Changes ✨"}
+              {loading ? "Saving..." : "Save Focus Areas ✨"}
+            </Button>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={onClose} 
+              className="w-full min-h-[44px] touch-manipulation text-muted-foreground hover:text-foreground"
+            >
+              Skip for Now
             </Button>
           </div>
         </CardContent>
