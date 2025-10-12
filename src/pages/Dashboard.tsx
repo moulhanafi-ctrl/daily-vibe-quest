@@ -9,8 +9,9 @@ import { AISuggestions } from "@/components/dashboard/AISuggestions";
 import { MotivationalContent } from "@/components/dashboard/MotivationalContent";
 import { SaturdayTriviaCard } from "@/components/dashboard/SaturdayTriviaCard";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
+import { FocusAreasPopup } from "@/components/dashboard/FocusAreasPopup";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag, Book, MapPin, Trophy } from "lucide-react";
+import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag, Book, MapPin, Trophy, Target } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 
@@ -21,6 +22,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [checkingSubscription, setCheckingSubscription] = useState(false);
+  const [showFocusPopup, setShowFocusPopup] = useState(false);
   const triviaEnabled = useFeatureFlag("ff.trivia");
 
   useEffect(() => {
@@ -141,6 +143,16 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex gap-2 flex-shrink-0">
+            <Button 
+              onClick={() => setShowFocusPopup(true)} 
+              variant="outline" 
+              size="sm" 
+              className="border-[hsl(180,70%,70%)] hover:bg-[hsl(180,70%,70%)]/10 hover:shadow-[0_0_12px_rgba(122,241,199,0.3)] transition-all"
+              aria-label="Update focus areas"
+            >
+              <Target className="h-4 w-4 sm:mr-2" />
+              <span className="hidden lg:inline">Focus Areas</span>
+            </Button>
             {profile?.subscription_status && profile.subscription_status !== "free" && (
               <>
                 <span className="hidden sm:flex text-xs bg-primary/10 text-primary px-3 py-1 rounded-full items-center gap-1">
@@ -246,6 +258,17 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {showFocusPopup && user?.id && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-4xl">
+            <FocusAreasPopup 
+              userId={user.id} 
+              onClose={() => setShowFocusPopup(false)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
