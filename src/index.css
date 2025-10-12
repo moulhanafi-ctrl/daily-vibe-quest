@@ -50,8 +50,10 @@ All colors MUST be HSL.
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(30 30% 96%));
     --gradient-onboarding: linear-gradient(135deg, hsl(28 85% 96%), hsl(20 80% 94%));
     --gradient-signup: linear-gradient(90deg, hsl(340, 75%, 70%), hsl(270, 65%, 75%));
+    --gradient-login: linear-gradient(90deg, hsl(180, 70%, 70%), hsl(270, 65%, 75%), hsl(340, 75%, 70%));
     --shadow-glow: 0 8px 32px hsl(15, 85%, 60%, 0.2);
     --shadow-signup: 0 0 12px hsl(340, 75%, 70%, 0.4);
+    --shadow-login: 0 0 12px hsl(180, 70%, 70%, 0.4);
     
     /* Vibe Check Custom Colors */
     --mint: 180 70% 70%;
@@ -163,6 +165,15 @@ All colors MUST be HSL.
       box-shadow: 0 0 18px hsl(340, 75%, 70%, 0.5), 0 0 40px hsl(270, 65%, 75%, 0.2);
     }
   }
+  
+  @keyframes login-pulse {
+    0% {
+      box-shadow: 0 0 10px hsl(180, 70%, 70%, 0.3), 0 0 25px hsl(270, 65%, 75%, 0.1);
+    }
+    100% {
+      box-shadow: 0 0 18px hsl(180, 70%, 70%, 0.5), 0 0 40px hsl(340, 75%, 70%, 0.2);
+    }
+  }
 }
 
 @layer utilities {
@@ -183,6 +194,11 @@ All colors MUST be HSL.
   
   .gradient-signup {
     background: var(--gradient-signup);
+  }
+  
+  .gradient-login {
+    background: var(--gradient-login);
+    background-size: 300% 100%;
   }
   
   .shadow-soft {
