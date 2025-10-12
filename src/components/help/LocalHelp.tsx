@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, MapPin } from "lucide-react";
+import { AlertCircle, MapPin, Phone, Globe } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { HelpLocationCard } from "./HelpLocationCard";
 import { ZipCodeModal } from "./ZipCodeModal";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,23 +50,33 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
   const loadLocations = async () => {
     setLoading(true);
     try {
-      // Load crisis resources (prioritize national + local)
-      const { data: crisis } = await supabase
+      // Load crisis resources (prioritize local then national)
+      const { data: crisis, error: crisisError } = await supabase
         .from("help_locations")
         .select("*")
         .eq("type", "crisis")
+        .eq("is_active", true)
         .or(`is_national.eq.true,zip_coverage.cs.{${userZip}}`)
         .order("priority", { ascending: false })
-        .limit(3);
+        .limit(5);
+
+      if (crisisError) {
+        console.error("Error loading crisis locations:", crisisError);
+      }
 
       // Load therapy providers
-      const { data: therapy } = await supabase
+      const { data: therapy, error: therapyError } = await supabase
         .from("help_locations")
         .select("*")
         .eq("type", "therapy")
+        .eq("is_active", true)
         .contains("zip_coverage", [userZip])
         .order("priority", { ascending: false })
-        .limit(3);
+        .limit(5);
+
+      if (therapyError) {
+        console.error("Error loading therapy locations:", therapyError);
+      }
 
       setCrisisLocations(crisis || []);
       setTherapyLocations(therapy || []);
@@ -104,8 +115,35 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
     );
   }
 
+  const nationalResources = [
+    {
+      id: "988",
+      name: "988 Suicide & Crisis Lifeline",
+      phone: "988",
+      website_url: "https://988lifeline.org",
+      tags: ["24/7", "Multilingual", "Crisis Support"],
+      type: "crisis" as const,
+    },
+    {
+      id: "crisis-text",
+      name: "Crisis Text Line",
+      phone: "741741",
+      website_url: "https://www.crisistextline.org",
+      tags: ["24/7", "Text Support", "Anonymous"],
+      type: "crisis" as const,
+    },
+    {
+      id: "trevor",
+      name: "The Trevor Project",
+      phone: "1-866-488-7386",
+      website_url: "https://www.thetrevorproject.org",
+      tags: ["24/7", "LGBTQ+ Youth", "Crisis Support"],
+      type: "crisis" as const,
+    },
+  ];
+
   return (
-    <div className={embedded ? "space-y-6" : "container mx-auto px-4 py-8 max-w-6xl space-y-6"}>
+    <div className={embedded ? "space-y-8" : "container mx-auto px-4 py-8 max-w-6xl space-y-8"}>
       <Alert className="border-destructive/20 bg-destructive/5">
         <AlertCircle className="h-4 w-4 text-destructive" />
         <AlertDescription>
@@ -114,7 +152,7 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
         </AlertDescription>
       </Alert>
 
-      {!embedded && (
+      {!embedded && userZip && (
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Local Help</h1>
@@ -129,61 +167,131 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
         </div>
       )}
 
-      <div className="space-y-6">
+      {/* Section 1: Therapists Near Me */}
+      <div className="space-y-4">
         <div>
-          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-            <span className="text-destructive">Crisis Now</span>
-            {crisisLocations.length > 0 && (
-              <span className="text-sm font-normal text-muted-foreground">
-                (Top {crisisLocations.length})
-              </span>
-            )}
+          <h2 className="text-2xl font-semibold mb-2 flex items-center gap-2">
+            🩺 Therapists Near Me
           </h2>
-          {loading ? (
-            <p className="text-muted-foreground">Loading...</p>
-          ) : crisisLocations.length === 0 ? (
-            <p className="text-muted-foreground">No crisis resources found. Showing national resources.</p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {crisisLocations.map((location) => (
-                <HelpLocationCard key={location.id} location={location} ageGroup={ageGroup} />
-              ))}
-            </div>
-          )}
+          <p className="text-muted-foreground text-sm">
+            Licensed mental health professionals in your area
+          </p>
         </div>
-
-        <div>
-          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-            Therapy Near You
-            {therapyLocations.length > 0 && (
-              <span className="text-sm font-normal text-muted-foreground">
-                (Top {therapyLocations.length})
-              </span>
-            )}
-          </h2>
-          {loading ? (
-            <p className="text-muted-foreground">Loading...</p>
-          ) : therapyLocations.length === 0 ? (
-            <p className="text-muted-foreground">
-              No therapy providers found in your area. Try expanding your search or checking telehealth options.
-            </p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {therapyLocations.map((location) => (
-                <HelpLocationCard key={location.id} location={location} ageGroup={ageGroup} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {(crisisLocations.length > 0 || therapyLocations.length > 0) && (
-          <div className="text-center">
-            <Button onClick={() => navigate("/help/nearby")} variant="outline" size="lg">
-              See More & Filter Results
-            </Button>
+        {loading ? (
+          <p className="text-muted-foreground">Loading therapists...</p>
+        ) : therapyLocations.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground mb-4">
+                No local therapists found for ZIP {userZip}. Try a nearby ZIP or explore telehealth options.
+              </p>
+              <Button variant="outline" onClick={() => setZipModalOpen(true)}>
+                Try Different ZIP Code
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {therapyLocations.slice(0, 3).map((location) => (
+              <HelpLocationCard key={location.id} location={location} ageGroup={ageGroup} />
+            ))}
           </div>
         )}
       </div>
+
+      {/* Section 2: Crisis Centers Near Me */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2 flex items-center gap-2">
+            🚨 Crisis Centers Near Me
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Local crisis intervention services within 25 miles
+          </p>
+        </div>
+        {loading ? (
+          <p className="text-muted-foreground">Loading crisis centers...</p>
+        ) : crisisLocations.filter(loc => !loc.is_national).length === 0 ? (
+          <Alert className="border-destructive/50">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription>
+              <strong>No local crisis centers found.</strong> Please use our national crisis resources below or dial 988 for immediate support.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {crisisLocations
+              .filter(loc => !loc.is_national)
+              .slice(0, 3)
+              .map((location) => (
+                <HelpLocationCard key={location.id} location={location} ageGroup={ageGroup} />
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* Section 3: National Crisis Hotlines & Resources */}
+      <div className="space-y-4 bg-primary/5 p-6 rounded-lg border border-primary/20">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2 flex items-center gap-2">
+            ☎️ National Crisis Hotlines & Resources
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Available 24/7 nationwide - immediate support when you need it most
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {nationalResources.map((resource) => (
+            <Card key={resource.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg">{resource.name}</CardTitle>
+                <CardDescription className="flex flex-wrap gap-2">
+                  {resource.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={() => {
+                    window.location.href = `tel:${resource.phone}`;
+                    trackEvent({ eventType: "help_call", metadata: { resource: resource.name } });
+                  }}
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  Call {resource.phone}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    window.open(resource.website_url, "_blank");
+                    trackEvent({ eventType: "help_website", metadata: { resource: resource.name } });
+                  }}
+                >
+                  <Globe className="h-4 w-4 mr-2" />
+                  Visit Website
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {(therapyLocations.length > 3 || crisisLocations.length > 3) && !embedded && (
+        <div className="text-center">
+          <Button onClick={() => navigate("/help/nearby")} size="lg">
+            View More Resources & Filter Results
+          </Button>
+        </div>
+      )}
 
       <ZipCodeModal
         open={zipModalOpen}

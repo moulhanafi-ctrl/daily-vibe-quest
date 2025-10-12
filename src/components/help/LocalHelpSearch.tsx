@@ -202,7 +202,7 @@ export const LocalHelpSearch = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Search Form */}
       <Card>
         <CardHeader>
@@ -224,7 +224,7 @@ export const LocalHelpSearch = () => {
                 maxLength={10}
                 value={zip}
                 onChange={(e) => setZip(e.target.value)}
-                placeholder="e.g., 48917 or 48917-1234"
+                placeholder="e.g., 48917"
                 disabled={loading}
               />
             </div>
@@ -271,165 +271,265 @@ export const LocalHelpSearch = () => {
         </CardContent>
       </Card>
 
-      {/* Results */}
-      {data && (
-        <div className="space-y-6">
-          {/* Crisis Centers */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                Crisis Centers Near {data.city}, {data.state}
-              </CardTitle>
-              <CardDescription>
-                Immediate support available 24/7
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {data.crisis_centers.length === 0 ? (
-                <Alert>
-                  <AlertDescription>
-                    No local crisis centers found within {data.radius} miles. National hotlines are available below 24/7.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {data.crisis_centers.map((center) => (
-                    <Card key={center.id} className="relative">
-                      <CardContent className="pt-6">
-                        <div className="space-y-2">
-                          <h4 className="font-semibold leading-tight">
-                            {center.name}
-                          </h4>
-                          {center.distance && (
-                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Navigation className="h-3 w-3" />
-                              ~{center.distance.toFixed(1)} mi away
-                            </p>
-                          )}
-                          {center.verified && (
-                            <Badge variant="secondary" className="text-xs">
-                              Verified
-                            </Badge>
-                          )}
-                          <div className="flex flex-wrap gap-2 pt-2">
-                            {center.phone && (
-                              <Button asChild variant="default" size="sm">
-                                <a href={`tel:${center.phone}`}>
-                                  <Phone className="mr-1 h-3 w-3" />
-                                  Call Now
-                                </a>
-                              </Button>
-                            )}
-                            {center.website && (
-                              <Button asChild variant="outline" size="sm">
-                                <a href={center.website} target="_blank" rel="noopener noreferrer">
-                                  <Globe className="mr-1 h-3 w-3" />
-                                  Website
-                                </a>
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      {/* Section 1: Therapists Near Me */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            🩺 Therapists Near Me
+          </CardTitle>
+          <CardDescription>
+            {data ? `Licensed mental health professionals near ${data.city}, ${data.state}` : 'Search above to find therapists in your area'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!data ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Enter your ZIP code above to find licensed therapists near you.
+              </AlertDescription>
+            </Alert>
+          ) : data.therapists.length === 0 ? (
+            <Alert>
+              <AlertDescription>
+                No therapists found within {data.radius} miles of {data.city}, {data.state}. Try expanding your search radius or check national resources below.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {data.therapists.map((therapist) => (
+                <Card key={therapist.id}>
+                  <CardContent className="pt-6">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold leading-tight">
+                        {therapist.name}
+                      </h4>
+                      {therapist.distance && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Navigation className="h-3 w-3" />
+                          ~{therapist.distance.toFixed(1)} mi away
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {therapist.verified && (
+                          <Badge variant="secondary" className="text-xs">
+                            Verified
+                          </Badge>
+                        )}
+                        {therapist.accepts_insurance && (
+                          <Badge variant="outline" className="text-xs">
+                            Insurance
+                          </Badge>
+                        )}
+                        {therapist.sliding_scale && (
+                          <Badge variant="outline" className="text-xs">
+                            Sliding Scale
+                          </Badge>
+                        )}
+                        {therapist.telehealth && (
+                          <Badge variant="outline" className="text-xs">
+                            Telehealth
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {therapist.phone && (
+                          <Button asChild variant="default" size="sm">
+                            <a href={`tel:${therapist.phone}`}>
+                              <Phone className="mr-1 h-3 w-3" />
+                              Call
+                            </a>
+                          </Button>
+                        )}
+                        {therapist.website && (
+                          <Button asChild variant="outline" size="sm">
+                            <a href={therapist.website} target="_blank" rel="noopener noreferrer">
+                              <Globe className="mr-1 h-3 w-3" />
+                              View
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-          {/* Therapists */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Therapists Near {data.city}, {data.state}</CardTitle>
-              <CardDescription>
-                Licensed mental health professionals
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {data.therapists.length === 0 ? (
-                <Alert>
-                  <AlertDescription>
-                    No verified therapists found within {data.radius} miles. Try expanding your search radius or check national resources below.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {data.therapists.map((therapist) => (
-                    <Card key={therapist.id}>
-                      <CardContent className="pt-6">
-                        <div className="space-y-2">
-                          <h4 className="font-semibold leading-tight">
-                            {therapist.name}
-                          </h4>
-                          {therapist.distance && (
-                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Navigation className="h-3 w-3" />
-                              ~{therapist.distance.toFixed(1)} mi away
-                            </p>
-                          )}
-                          <div className="flex flex-wrap gap-1">
-                            {therapist.verified && (
-                              <Badge variant="secondary" className="text-xs">
-                                Verified
-                              </Badge>
-                            )}
-                            {therapist.accepts_insurance && (
-                              <Badge variant="outline" className="text-xs">
-                                Insurance
-                              </Badge>
-                            )}
-                            {therapist.sliding_scale && (
-                              <Badge variant="outline" className="text-xs">
-                                Sliding Scale
-                              </Badge>
-                            )}
-                            {therapist.telehealth && (
-                              <Badge variant="outline" className="text-xs">
-                                Telehealth
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-2 pt-2">
-                            {therapist.phone && (
-                              <Button asChild variant="default" size="sm">
-                                <a href={`tel:${therapist.phone}`}>
-                                  <Phone className="mr-1 h-3 w-3" />
-                                  Call
-                                </a>
-                              </Button>
-                            )}
-                            {therapist.website && (
-                              <Button asChild variant="outline" size="sm">
-                                <a href={therapist.website} target="_blank" rel="noopener noreferrer">
-                                  <Globe className="mr-1 h-3 w-3" />
-                                  View
-                                </a>
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Section 2: Crisis Centers Near Me */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            🚨 Crisis Centers Near Me
+          </CardTitle>
+          <CardDescription>
+            {data ? `Immediate crisis support near ${data.city}, ${data.state}` : 'Search above to find crisis centers in your area'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!data ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Enter your ZIP code above to find crisis centers near you.
+              </AlertDescription>
+            </Alert>
+          ) : data.crisis_centers.length === 0 ? (
+            <Alert className="border-destructive/50">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <AlertDescription>
+                <strong>No local crisis centers found within {data.radius} miles.</strong> Please use our national crisis resources below or dial 988 for immediate support.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {data.crisis_centers.map((center) => (
+                <Card key={center.id} className="relative border-destructive/20">
+                  <CardContent className="pt-6">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold leading-tight">
+                        {center.name}
+                      </h4>
+                      {center.distance && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Navigation className="h-3 w-3" />
+                          ~{center.distance.toFixed(1)} mi away
+                        </p>
+                      )}
+                      {center.verified && (
+                        <Badge variant="secondary" className="text-xs">
+                          Verified
+                        </Badge>
+                      )}
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {center.phone && (
+                          <Button asChild variant="default" size="sm">
+                            <a href={`tel:${center.phone}`}>
+                              <Phone className="mr-1 h-3 w-3" />
+                              Call Now
+                            </a>
+                          </Button>
+                        )}
+                        {center.website && (
+                          <Button asChild variant="outline" size="sm">
+                            <a href={center.website} target="_blank" rel="noopener noreferrer">
+                              <Globe className="mr-1 h-3 w-3" />
+                              Website
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* National Resources - Always Show */}
-      {nationalResources.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>National Help & Resources</CardTitle>
-            <CardDescription>
-              Available 24/7 anywhere in the United States
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* Section 3: National Crisis Hotlines & Resources - Always Show */}
+      <Card className="bg-primary/5 border-primary/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            ☎️ National Crisis Hotlines & Resources
+          </CardTitle>
+          <CardDescription>
+            Available 24/7 anywhere in the United States
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {nationalResources.length === 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Hardcoded fallback national resources */}
+              <Card className="border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold leading-tight">
+                      988 Suicide & Crisis Lifeline
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-xs">24/7</Badge>
+                      <Badge variant="outline" className="text-xs">Multilingual</Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <Button asChild variant="default" size="sm">
+                        <a href="tel:988">
+                          <Phone className="mr-1 h-3 w-3" />
+                          Call 988
+                        </a>
+                      </Button>
+                      <Button asChild variant="outline" size="sm">
+                        <a href="https://988lifeline.org" target="_blank" rel="noopener noreferrer">
+                          <Globe className="mr-1 h-3 w-3" />
+                          Website
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold leading-tight">
+                      Crisis Text Line
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-xs">24/7</Badge>
+                      <Badge variant="outline" className="text-xs">Text Support</Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <Button asChild variant="default" size="sm">
+                        <a href="sms:741741">
+                          <Phone className="mr-1 h-3 w-3" />
+                          Text 741741
+                        </a>
+                      </Button>
+                      <Button asChild variant="outline" size="sm">
+                        <a href="https://www.crisistextline.org" target="_blank" rel="noopener noreferrer">
+                          <Globe className="mr-1 h-3 w-3" />
+                          Website
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold leading-tight">
+                      The Trevor Project
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-xs">24/7</Badge>
+                      <Badge variant="outline" className="text-xs">LGBTQ+ Youth</Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <Button asChild variant="default" size="sm">
+                        <a href="tel:1-866-488-7386">
+                          <Phone className="mr-1 h-3 w-3" />
+                          Call
+                        </a>
+                      </Button>
+                      <Button asChild variant="outline" size="sm">
+                        <a href="https://www.thetrevorproject.org" target="_blank" rel="noopener noreferrer">
+                          <Globe className="mr-1 h-3 w-3" />
+                          Website
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {nationalResources.map((resource) => (
                 <Card key={resource.id} className="border-primary/20">
@@ -477,9 +577,9 @@ export const LocalHelpSearch = () => {
                 </Card>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

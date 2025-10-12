@@ -5,6 +5,7 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-signature",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 // Simple in-memory rate limiter
@@ -106,16 +107,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Update user profile if authenticated
     if (userId && isAuthenticated) {
-      await supabase
+      const { error: updateError } = await supabase
         .from("profiles")
         .update({ 
-          zip_code,
-          city,
-          state,
-          latitude: userLat,
-          longitude: userLon,
+          zipcode: zip_code,
+          location: {
+            zip: zip_code,
+            city,
+            state,
+            lat: userLat,
+            lon: userLon,
+          }
         })
         .eq("id", userId);
+      
+      if (updateError) {
+        console.error("Error updating profile:", updateError);
+        // Don't fail the request, just log the error
+      }
     }
 
     // Haversine distance calculation
