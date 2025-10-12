@@ -129,20 +129,24 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div id="main-content" className="container mx-auto px-4 py-4 flex justify-between items-center gap-4">
-          <div className="flex-1 min-w-0">
+        <div className="container mx-auto px-4 py-3">
+          {/* Brand Row */}
+          <div className="flex items-center justify-between mb-3">
             <button 
               onClick={() => navigate("/dashboard")} 
-              className="text-2xl font-bold gradient-primary hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary rounded"
+              className="text-xl font-semibold bg-gradient-to-r from-[hsl(270,65%,75%)] to-[hsl(340,75%,70%)] bg-clip-text text-transparent hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary rounded px-2"
               aria-label="Go to dashboard home"
+              style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
             >
               MindfulU
             </button>
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="text-xs text-muted-foreground hidden sm:block">
               Welcome back, {profile?.username}! ({profile?.age_group})
             </p>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+
+          {/* Navigation Row */}
+          <div id="main-content" className="flex justify-center items-center gap-2 flex-wrap">
             <Button 
               onClick={() => setShowFocusPopup(true)} 
               variant="outline" 
@@ -192,6 +196,10 @@ const Dashboard = () => {
             <Button onClick={() => navigate("/chat-rooms")} variant="outline" size="sm" aria-label="Go to chat rooms">
               <MessageSquare className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Chat Rooms</span>
+            </Button>
+            <Button onClick={() => navigate("/settings")} variant="outline" size="sm" aria-label="Settings">
+              <Settings className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Settings</span>
             </Button>
             <Button onClick={handleSignOut} variant="ghost" size="sm" aria-label="Sign out">
               <LogOut className="h-4 w-4 sm:mr-2" />
