@@ -222,20 +222,20 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
         </div>
 
         {selectedMood && !showFocusPopup && (
-          <div className="pt-4">
+          <div className="pt-6">
             <Button
               variant="outline"
-              className="w-full border-[hsl(270,65%,75%)] hover:bg-[hsl(270,65%,75%)]/10"
+              className="w-full min-h-[48px] border-[hsl(270,65%,75%)] hover:bg-[hsl(270,65%,75%)]/10 active:scale-[0.98] transition-all touch-manipulation"
               onClick={() => setShowFocusPopup(true)}
             >
-              <Target className="h-4 w-4 mr-2" />
-              Update Focus Areas
+              <Target className="h-5 w-5 mr-2" />
+              <span className="font-semibold">Update Focus Areas</span>
             </Button>
           </div>
         )}
 
         {selectedMood && showFocusPopup && (
-          <div className="pt-6 animate-slide-up">
+          <div className="pt-8 sm:pt-6">
             <FocusAreasPopup 
               userId={userId} 
               onClose={() => setShowFocusPopup(false)}

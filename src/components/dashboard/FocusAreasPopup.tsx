@@ -99,22 +99,22 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
 
   return (
     <div 
-      className="animate-fade-in"
+      className="animate-slide-up"
       role="dialog"
       aria-modal="true"
       aria-labelledby="focus-areas-title"
     >
-      <Card className="shadow-[0_8px_32px_rgba(192,166,255,0.2)] border-[hsl(270,65%,75%)] backdrop-blur-sm bg-[hsl(30,40%,95%)]/95 dark:bg-[hsl(280,25%,12%)]/95">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
+      <Card className="shadow-[0_8px_32px_rgba(192,166,255,0.2)] border-[hsl(270,65%,75%)] backdrop-blur-sm bg-[hsl(30,40%,95%)]/95 dark:bg-[hsl(280,25%,12%)]/95 rounded-2xl max-w-4xl mx-auto">
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1 flex-1 min-w-0">
               <CardTitle 
                 id="focus-areas-title"
-                className="text-xl bg-gradient-to-r from-[hsl(270,65%,75%)] to-[hsl(340,75%,70%)] bg-clip-text text-transparent"
+                className="text-lg sm:text-xl bg-gradient-to-r from-[hsl(270,65%,75%)] to-[hsl(340,75%,70%)] bg-clip-text text-transparent font-semibold"
               >
                 Select Your Focus Areas ✨
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Choose areas where you'd like support
               </CardDescription>
             </div>
@@ -122,14 +122,14 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-8 w-8 p-0"
+              className="h-10 w-10 p-0 flex-shrink-0 hover:bg-[hsl(270,65%,75%)]/10"
               aria-label="Close focus areas"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {FOCUS_AREAS.map((area) => (
               <button
@@ -137,33 +137,33 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
                 type="button"
                 onClick={() => toggleArea(area.id)}
                 className={cn(
-                  "flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left",
-                  "hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(122,241,199,0.3)]",
+                  "flex items-center gap-3 p-4 sm:p-3.5 rounded-xl border-2 transition-all duration-300 text-left min-h-[60px] touch-manipulation",
+                  "active:scale-[0.98] sm:hover:scale-[1.02] sm:hover:shadow-[0_0_15px_rgba(122,241,199,0.3)]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(180,70%,70%)] focus-visible:ring-offset-2",
                   selected.includes(area.id)
-                    ? "border-[hsl(180,70%,70%)] bg-gradient-to-br from-[hsl(180,70%,70%)]/10 to-[hsl(270,65%,75%)]/10 shadow-[0_0_12px_rgba(122,241,199,0.4)] scale-105"
+                    ? "border-[hsl(180,70%,70%)] bg-gradient-to-br from-[hsl(180,70%,70%)]/10 to-[hsl(270,65%,75%)]/10 shadow-[0_0_12px_rgba(122,241,199,0.4)] scale-[1.02]"
                     : "border-border/50 bg-card/50"
                 )}
                 tabIndex={0}
               >
-                <span className="text-2xl animate-[emoji-pulse_2s_ease-in-out_infinite]">
+                <span className="text-2xl sm:text-xl animate-[emoji-pulse_2s_ease-in-out_infinite] flex-shrink-0">
                   {area.emoji}
                 </span>
-                <span className="font-semibold text-sm">{area.label}</span>
+                <span className="font-semibold text-base sm:text-sm">{area.label}</span>
               </button>
             ))}
           </div>
 
           {selected.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-muted-foreground">Selected:</span>
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-muted-foreground font-medium">Selected:</span>
               {selected.map(id => {
                 const area = FOCUS_AREAS.find(a => a.id === id);
                 return area ? (
                   <Badge 
                     key={id} 
                     variant="secondary"
-                    className="bg-gradient-to-r from-[hsl(180,70%,70%)]/20 to-[hsl(270,65%,75%)]/20"
+                    className="bg-gradient-to-r from-[hsl(180,70%,70%)]/20 to-[hsl(270,65%,75%)]/20 text-sm py-1 px-2.5"
                   >
                     {area.emoji} {area.label}
                   </Badge>
@@ -172,18 +172,18 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button 
               type="button" 
               variant="outline" 
               onClick={onClose} 
-              className="flex-1"
+              className="flex-1 min-h-[44px] touch-manipulation border-[hsl(270,65%,75%)]/30 hover:bg-[hsl(270,65%,75%)]/5"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleSave} 
-              className="flex-1 bg-gradient-to-r from-[hsl(180,70%,70%)] to-[hsl(270,65%,75%)] hover:opacity-90 transition-opacity"
+              className="flex-1 min-h-[44px] touch-manipulation bg-gradient-to-r from-[hsl(180,70%,70%)] to-[hsl(270,65%,75%)] hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(122,241,199,0.3)]"
               disabled={loading || selected.length === 0}
             >
               {loading ? "Saving..." : "Save Changes ✨"}
