@@ -78,7 +78,12 @@ async function geocode(query: string): Promise<{ lat: number; lng: number; count
     url.searchParams.set("components", "country:US|country:CA");
     const res = await fetch(url);
     const json = await res.json();
-    if (!json.results?.length) throw new Error("GEOCODE_NOT_FOUND");
+    
+    // Surface Google's own status instead of silently returning []
+    if (json.status !== "OK" || !json.results?.length) {
+      throw new Error(`GEOCODE_${json.status || "UNKNOWN"}:${json.error_message || "No results"}`);
+    }
+    
     const best = json.results[0];
     const lat = best.geometry.location.lat;
     const lng = best.geometry.location.lng;
