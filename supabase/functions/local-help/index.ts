@@ -3,6 +3,12 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 // -------- Config --------
 // Preferred provider: Google (Places + Geocoding). Fallback: Mapbox (Geocoding only) + simple OSM search.
 // Set at least ONE of: GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN in Project Settings → Functions → Environment Variables.
@@ -215,11 +221,16 @@ async function findCrisisCenters(center: { lat: number; lng: number }, radiusMet
 
 // -------- HTTP Handler --------
 serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     if (req.method !== "POST") {
       return new Response(JSON.stringify({ ok: false, error: "METHOD_NOT_ALLOWED" }), {
         status: 405,
-        headers: { "content-type": "application/json" },
+        headers: { ...corsHeaders, "content-type": "application/json" },
       });
     }
 
@@ -238,7 +249,7 @@ serve(async (req) => {
     const hit = localCache.get(cacheKey);
     const now = Date.now();
     if (hit && now - hit.ts < CACHE_TTL_MS) {
-      return new Response(JSON.stringify(hit.data), { headers: { "content-type": "application/json" } });
+      return new Response(JSON.stringify(hit.data), { headers: { ...corsHeaders, "content-type": "application/json" } });
     }
 
     // Geocode
@@ -271,7 +282,7 @@ serve(async (req) => {
 
     localCache.set(cacheKey, { ts: now, data: resp });
 
-    return new Response(JSON.stringify(resp), { headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify(resp), { headers: { ...corsHeaders, "content-type": "application/json" } });
   } catch (err) {
     const msg = (err as Error)?.message ?? "UNKNOWN";
     let userMessage = "Something went wrong.";
@@ -283,7 +294,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: false, error: msg, message: userMessage }), {
       status: 200,
-      headers: { "content-type": "application/json" },
+      headers: { ...corsHeaders, "content-type": "application/json" },
     });
   }
 });
