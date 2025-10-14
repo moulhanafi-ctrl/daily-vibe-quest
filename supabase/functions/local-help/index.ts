@@ -72,45 +72,70 @@ function hotlines(countryCode: "US" | "CA") {
 }
 
 // -------- Geocoding --------
+async function osmGeocode(query: string): Promise<{ lat: number; lng: number; countryCode: "US" | "CA" }> {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("q", query);
+  url.searchParams.set("limit", "1");
+  url.searchParams.set("countrycodes", "us,ca");
+  const res = await fetch(url, { headers: { "User-Agent": "VibeCheck/1.0" } });
+  const json = await res.json();
+  const first = json?.[0];
+  if (!first) throw new Error("GEOCODE_NOT_FOUND");
+  const lat = parseFloat(first.lat);
+  const lng = parseFloat(first.lon);
+  const cc = String(first.address?.country_code ?? "us").toUpperCase();
+  const countryCode = (cc === "CA" ? "CA" : "US") as "US" | "CA";
+  return { lat, lng, countryCode };
+}
+
 async function geocode(query: string): Promise<{ lat: number; lng: number; countryCode: "US" | "CA" }> {
-  // Prefer Google if available
+  // Try Google first
   if (GOOGLE_MAPS_API_KEY) {
-    const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
-    url.searchParams.set("address", query);
-    url.searchParams.set("key", GOOGLE_MAPS_API_KEY);
-    url.searchParams.set("components", "country:US|country:CA");
-    const res = await fetch(url);
-    const json = await res.json();
-
-    // Surface Google's own status instead of silently returning []
-    if (json.status !== "OK" || !json.results?.length) {
-      throw new Error(`GEOCODE_${json.status || "UNKNOWN"}:${json.error_message || "No results"}`);
+    try {
+      const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+      url.searchParams.set("address", query);
+      url.searchParams.set("key", GOOGLE_MAPS_API_KEY);
+      url.searchParams.set("components", "country:US|country:CA");
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.status === "OK" && json.results?.length) {
+        const best = json.results[0];
+        const lat = best.geometry.location.lat;
+        const lng = best.geometry.location.lng;
+        const countryComp = best.address_components.find((c: any) => c.types?.includes("country"));
+        const cc = (countryComp?.short_name ?? "US") as "US" | "CA";
+        if (cc !== "US" && cc !== "CA") throw new Error("UNSUPPORTED_COUNTRY");
+        return { lat, lng, countryCode: cc };
+      }
+      console.warn("[local-help] Google geocode failed:", json.status, json.error_message);
+    } catch (e) {
+      console.warn("[local-help] Google geocode error:", (e as Error).message);
     }
-
-    const best = json.results[0];
-    const lat = best.geometry.location.lat;
-    const lng = best.geometry.location.lng;
-    const countryComp = best.address_components.find((c: any) => c.types?.includes("country"));
-    const cc = (countryComp?.short_name ?? "US") as "US" | "CA";
-    if (cc !== "US" && cc !== "CA") throw new Error("UNSUPPORTED_COUNTRY");
-    return { lat, lng, countryCode: cc };
   }
 
-  // Fallback: Mapbox
+  // Mapbox fallback
   if (MAPBOX_TOKEN) {
-    const clean = query.replace(/\s+/g, "%20");
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${clean}.json?types=postcode&limit=1&country=US,CA&access_token=${MAPBOX_TOKEN}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    const feat = json.features?.[0];
-    if (!feat) throw new Error("GEOCODE_NOT_FOUND");
-    const [lng, lat] = feat.center;
-    const cc = (feat.context?.find((c: any) => c.id?.startsWith("country"))?.short_code ?? "us").toUpperCase();
-    const countryCode = (cc === "CA" ? "CA" : "US") as "US" | "CA";
-    return { lat, lng, countryCode };
+    try {
+      const clean = query.replace(/\s+/g, "%20");
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${clean}.json?types=postcode&limit=1&country=US,CA&access_token=${MAPBOX_TOKEN}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      const feat = json.features?.[0];
+      if (feat) {
+        const [lng, lat] = feat.center;
+        const cc = (feat.context?.find((c: any) => c.id?.startsWith("country"))?.short_code ?? "us").toUpperCase();
+        const countryCode = (cc === "CA" ? "CA" : "US") as "US" | "CA";
+        return { lat, lng, countryCode };
+      }
+      console.warn("[local-help] Mapbox geocode returned no features.");
+    } catch (e) {
+      console.warn("[local-help] Mapbox geocode error:", (e as Error).message);
+    }
   }
 
-  throw new Error("NO_GEOCODER_CONFIGURED");
+  // OSM last resort
+  return await osmGeocode(query);
 }
 
 // -------- Places Search (Google preferred) --------
@@ -195,9 +220,10 @@ async function findTherapists(center: { lat: number; lng: number }, radiusMeters
   const therapistKeywords = ["therapist", "counselor", "psychologist", "psychiatrist", "mental health clinic"];
   if (GOOGLE_MAPS_API_KEY) {
     const arrays = await Promise.all(therapistKeywords.map((k) => googleNearby(center, radiusMeters, k)));
-    return mergePlaces(arrays, center);
+    const merged = mergePlaces(arrays, center);
+    if (merged.length > 0) return merged;
+    // fall back if Google returned nothing (e.g., denied/invalid key)
   }
-  // Fallback best-effort
   const arrays = await Promise.all(therapistKeywords.map((k) => osmSearch(center, radiusMeters, k)));
   return mergePlaces(arrays, center);
 }
@@ -212,9 +238,10 @@ async function findCrisisCenters(center: { lat: number; lng: number }, radiusMet
   ];
   if (GOOGLE_MAPS_API_KEY) {
     const arrays = await Promise.all(crisisKeywords.map((k) => googleNearby(center, radiusMeters, k)));
-    return mergePlaces(arrays, center);
+    const merged = mergePlaces(arrays, center);
+    if (merged.length > 0) return merged;
+    // fall back if Google returned nothing (e.g., denied/invalid key)
   }
-  // Fallback best-effort
   const arrays = await Promise.all(crisisKeywords.map((k) => osmSearch(center, radiusMeters, k)));
   return mergePlaces(arrays, center);
 }
@@ -292,8 +319,10 @@ serve(async (req) => {
     if (msg === "INVALID_ZIP_OR_POSTAL") userMessage = "Please check the format (e.g., 02115 or M5V 2T6).";
     if (msg === "GEOCODE_NOT_FOUND") userMessage = "We couldn't locate that code. Try another or check spelling.";
     if (msg === "NO_GEOCODER_CONFIGURED")
-      userMessage = "Geocoder is not configured. Add GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN.";
+      userMessage = "Location lookup is unavailable. Add GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN.";
     if (msg === "UNSUPPORTED_COUNTRY") userMessage = "Only US and Canada are supported.";
+    if (typeof msg === "string" && msg.startsWith("GEOCODE_REQUEST_DENIED"))
+      userMessage = "Location lookup is temporarily unavailable. Please try again.";
 
     return new Response(JSON.stringify({ ok: false, error: msg, message: userMessage }), {
       status: 200,
