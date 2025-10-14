@@ -4,15 +4,15 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 // -------- Config --------
 // Preferred provider: Google (Places + Geocoding). Fallback: Mapbox (Geocoding only) + simple OSM search.
 // Set at least ONE of: GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN in Project Settings → Functions → Environment Variables.
-const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") ?? "";
+const GOOGLE_MAPS_API_KEY = "AIzaSyCGajFYBJTVqlCYbKhJCpz7PbkvUy3FY98"; // Google Maps API Key
 const MAPBOX_TOKEN = Deno.env.get("MAPBOX_TOKEN") ?? "";
 
 // In-memory cache per function instance (best-effort). TTL: 24 hours.
@@ -42,9 +42,7 @@ function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number) 
   const R = 3958.7613; // miles
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
@@ -57,7 +55,12 @@ function hotlines(countryCode: "US" | "CA") {
   if (countryCode === "CA") {
     return [
       { label: "988 Suicide Crisis Helpline (Canada)", call: "988", text: "988", url: "https://988.ca" },
-      { label: "Kids Help Phone", call: "+1-800-668-6868", text: "Text CONNECT to 686868", url: "https://kidshelpphone.ca" },
+      {
+        label: "Kids Help Phone",
+        call: "+1-800-668-6868",
+        text: "Text CONNECT to 686868",
+        url: "https://kidshelpphone.ca",
+      },
       { label: "Emergency", call: "911" },
     ];
   }
@@ -78,12 +81,12 @@ async function geocode(query: string): Promise<{ lat: number; lng: number; count
     url.searchParams.set("components", "country:US|country:CA");
     const res = await fetch(url);
     const json = await res.json();
-    
+
     // Surface Google's own status instead of silently returning []
     if (json.status !== "OK" || !json.results?.length) {
       throw new Error(`GEOCODE_${json.status || "UNKNOWN"}:${json.error_message || "No results"}`);
     }
-    
+
     const best = json.results[0];
     const lat = best.geometry.location.lat;
     const lng = best.geometry.location.lng;
@@ -145,7 +148,7 @@ function mergePlaces(arrays: Place[][], center: { lat: number; lng: number }) {
 async function googleNearby(
   center: { lat: number; lng: number },
   radiusMeters: number,
-  keyword: string
+  keyword: string,
 ): Promise<Place[]> {
   const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
   url.searchParams.set("location", `${center.lat},${center.lng}`);
@@ -167,11 +170,7 @@ async function googleNearby(
 }
 
 // Lightweight fallback using OpenStreetMap Nominatim for category keywords (best-effort)
-async function osmSearch(
-  center: { lat: number; lng: number },
-  radiusMeters: number,
-  q: string
-): Promise<Place[]> {
+async function osmSearch(center: { lat: number; lng: number }, radiusMeters: number, q: string): Promise<Place[]> {
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("format", "json");
   url.searchParams.set("q", q);
@@ -181,29 +180,25 @@ async function osmSearch(
   url.searchParams.set("bounded", "1");
   const res = await fetch(url, { headers: { "User-Agent": "VibeCheck/1.0" } });
   const json = await res.json();
-  const withinRadius = (json ?? []).map((r: any) => ({
-    name: r.display_name?.split(",")?.[0],
-    lat: parseFloat(r.lat),
-    lng: parseFloat(r.lon),
-    address: r.display_name,
-  })).filter((p: Place) => haversineMiles(center.lat, center.lng, p.lat, p.lng) <= radiusMeters / 1609.344);
+  const withinRadius = (json ?? [])
+    .map((r: any) => ({
+      name: r.display_name?.split(",")?.[0],
+      lat: parseFloat(r.lat),
+      lng: parseFloat(r.lon),
+      address: r.display_name,
+    }))
+    .filter((p: Place) => haversineMiles(center.lat, center.lng, p.lat, p.lng) <= radiusMeters / 1609.344);
   return withinRadius;
 }
 
 async function findTherapists(center: { lat: number; lng: number }, radiusMeters: number): Promise<Place[]> {
-  const therapistKeywords = [
-    "therapist",
-    "counselor",
-    "psychologist",
-    "psychiatrist",
-    "mental health clinic",
-  ];
+  const therapistKeywords = ["therapist", "counselor", "psychologist", "psychiatrist", "mental health clinic"];
   if (GOOGLE_MAPS_API_KEY) {
-    const arrays = await Promise.all(therapistKeywords.map(k => googleNearby(center, radiusMeters, k)));
+    const arrays = await Promise.all(therapistKeywords.map((k) => googleNearby(center, radiusMeters, k)));
     return mergePlaces(arrays, center);
   }
   // Fallback best-effort
-  const arrays = await Promise.all(therapistKeywords.map(k => osmSearch(center, radiusMeters, k)));
+  const arrays = await Promise.all(therapistKeywords.map((k) => osmSearch(center, radiusMeters, k)));
   return mergePlaces(arrays, center);
 }
 
@@ -216,18 +211,18 @@ async function findCrisisCenters(center: { lat: number; lng: number }, radiusMet
     "hospital emergency",
   ];
   if (GOOGLE_MAPS_API_KEY) {
-    const arrays = await Promise.all(crisisKeywords.map(k => googleNearby(center, radiusMeters, k)));
+    const arrays = await Promise.all(crisisKeywords.map((k) => googleNearby(center, radiusMeters, k)));
     return mergePlaces(arrays, center);
   }
   // Fallback best-effort
-  const arrays = await Promise.all(crisisKeywords.map(k => osmSearch(center, radiusMeters, k)));
+  const arrays = await Promise.all(crisisKeywords.map((k) => osmSearch(center, radiusMeters, k)));
   return mergePlaces(arrays, center);
 }
 
 // -------- HTTP Handler --------
 serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -254,7 +249,9 @@ serve(async (req) => {
     const hit = localCache.get(cacheKey);
     const now = Date.now();
     if (hit && now - hit.ts < CACHE_TTL_MS) {
-      return new Response(JSON.stringify(hit.data), { headers: { ...corsHeaders, "content-type": "application/json" } });
+      return new Response(JSON.stringify(hit.data), {
+        headers: { ...corsHeaders, "content-type": "application/json" },
+      });
     }
 
     // Geocode
@@ -294,7 +291,8 @@ serve(async (req) => {
     if (msg === "ZIP_REQUIRED") userMessage = "Please enter a ZIP/postal code.";
     if (msg === "INVALID_ZIP_OR_POSTAL") userMessage = "Please check the format (e.g., 02115 or M5V 2T6).";
     if (msg === "GEOCODE_NOT_FOUND") userMessage = "We couldn't locate that code. Try another or check spelling.";
-    if (msg === "NO_GEOCODER_CONFIGURED") userMessage = "Geocoder is not configured. Add GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN.";
+    if (msg === "NO_GEOCODER_CONFIGURED")
+      userMessage = "Geocoder is not configured. Add GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN.";
     if (msg === "UNSUPPORTED_COUNTRY") userMessage = "Only US and Canada are supported.";
 
     return new Response(JSON.stringify({ ok: false, error: msg, message: userMessage }), {

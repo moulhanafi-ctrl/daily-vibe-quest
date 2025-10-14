@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+const GOOGLE_MAPS_API_KEY = "AIzaSyXXXXXXXXXXXXXXX"; // paste your actual key here
 
 const US_ZIP = /^\d{5}(?:-\d{4})?$/;
 const CA_POSTAL = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
@@ -97,10 +98,7 @@ export default function LocalHelpSearch() {
     return (
       <div className="mt-2 text-sm">
         No results within {resp.query?.radius_miles} miles.{" "}
-        <button
-          className="underline"
-          onClick={() => runSearch(resp.query?.zip || zip, 25)}
-        >
+        <button className="underline" onClick={() => runSearch(resp.query?.zip || zip, 25)}>
           Try 25 miles
         </button>
       </div>
@@ -146,7 +144,11 @@ export default function LocalHelpSearch() {
           {loading ? "Searching…" : "Find help near me"}
         </button>
 
-        {error && <div role="alert" className="text-red-600 text-sm">{error}</div>}
+        {error && (
+          <div role="alert" className="text-red-600 text-sm">
+            {error}
+          </div>
+        )}
       </form>
 
       {/* Results */}
@@ -164,9 +166,19 @@ export default function LocalHelpSearch() {
                       {typeof t.distance_miles === "number" && `${t.distance_miles} mi`} away
                     </div>
                     <div className="flex flex-wrap gap-3 mt-2 text-sm">
-                      {t.phone && <a className="underline" href={`tel:${t.phone}`}>Call</a>}
-                      {t.website && <a className="underline" href={t.website} target="_blank" rel="noopener noreferrer">Website</a>}
-                      <a className="underline" href={t.directions_url} target="_blank" rel="noopener noreferrer">Directions</a>
+                      {t.phone && (
+                        <a className="underline" href={`tel:${t.phone}`}>
+                          Call
+                        </a>
+                      )}
+                      {t.website && (
+                        <a className="underline" href={t.website} target="_blank" rel="noopener noreferrer">
+                          Website
+                        </a>
+                      )}
+                      <a className="underline" href={t.directions_url} target="_blank" rel="noopener noreferrer">
+                        Directions
+                      </a>
                     </div>
                   </li>
                 ))}
@@ -189,9 +201,19 @@ export default function LocalHelpSearch() {
                       {typeof c.distance_miles === "number" && `${c.distance_miles} mi`} away
                     </div>
                     <div className="flex flex-wrap gap-3 mt-2 text-sm">
-                      {c.phone && <a className="underline" href={`tel:${c.phone}`}>Call</a>}
-                      {c.website && <a className="underline" href={c.website} target="_blank" rel="noopener noreferrer">Website</a>}
-                      <a className="underline" href={c.directions_url} target="_blank" rel="noopener noreferrer">Directions</a>
+                      {c.phone && (
+                        <a className="underline" href={`tel:${c.phone}`}>
+                          Call
+                        </a>
+                      )}
+                      {c.website && (
+                        <a className="underline" href={c.website} target="_blank" rel="noopener noreferrer">
+                          Website
+                        </a>
+                      )}
+                      <a className="underline" href={c.directions_url} target="_blank" rel="noopener noreferrer">
+                        Directions
+                      </a>
                     </div>
                   </li>
                 ))}
@@ -209,15 +231,28 @@ export default function LocalHelpSearch() {
                 <li key={i} className="text-sm">
                   <div className="font-medium">{h.label}</div>
                   <div className="opacity-80">
-                    {h.call && <>Call: <a className="underline" href={`tel:${h.call}`}>{h.call}</a> </>}
+                    {h.call && (
+                      <>
+                        Call:{" "}
+                        <a className="underline" href={`tel:${h.call}`}>
+                          {h.call}
+                        </a>{" "}
+                      </>
+                    )}
                     {h.text && <span>— {h.text} </span>}
-                    {h.url && <>— <a className="underline" href={h.url} target="_blank" rel="noopener noreferrer">Learn more</a></>}
+                    {h.url && (
+                      <>
+                        —{" "}
+                        <a className="underline" href={h.url} target="_blank" rel="noopener noreferrer">
+                          Learn more
+                        </a>
+                      </>
+                    )}
                   </div>
                 </li>
               ))}
             </ul>
           </div>
-
         </div>
       )}
     </div>
