@@ -159,8 +159,8 @@ export default function LocalHelpSearch() {
                     </div>
                     <div className="flex flex-wrap gap-3 mt-2 text-sm">
                       {t.phone && <a className="underline" href={`tel:${t.phone}`}>Call</a>}
-                      {t.website && <a className="underline" href={t.website} target="_blank">Website</a>}
-                      <a className="underline" href={t.directions_url} target="_blank">Directions</a>
+                      {t.website && <a className="underline" href={t.website} target="_blank" rel="noopener noreferrer">Website</a>}
+                      <a className="underline" href={t.directions_url} target="_blank" rel="noopener noreferrer">Directions</a>
                     </div>
                   </li>
                 ))}
@@ -184,8 +184,8 @@ export default function LocalHelpSearch() {
                     </div>
                     <div className="flex flex-wrap gap-3 mt-2 text-sm">
                       {c.phone && <a className="underline" href={`tel:${c.phone}`}>Call</a>}
-                      {c.website && <a className="underline" href={c.website} target="_blank">Website</a>}
-                      <a className="underline" href={c.directions_url} target="_blank">Directions</a>
+                      {c.website && <a className="underline" href={c.website} target="_blank" rel="noopener noreferrer">Website</a>}
+                      <a className="underline" href={c.directions_url} target="_blank" rel="noopener noreferrer">Directions</a>
                     </div>
                   </li>
                 ))}
@@ -205,7 +205,7 @@ export default function LocalHelpSearch() {
                   <div className="opacity-80">
                     {h.call && <>Call: <a className="underline" href={`tel:${h.call}`}>{h.call}</a> </>}
                     {h.text && <span>— {h.text} </span>}
-                    {h.url && <>— <a className="underline" href={h.url} target="_blank">Learn more</a></>}
+                    {h.url && <>— <a className="underline" href={h.url} target="_blank" rel="noopener noreferrer">Learn more</a></>}
                   </div>
                 </li>
               ))}
