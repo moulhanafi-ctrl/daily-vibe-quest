@@ -12,7 +12,8 @@ const corsHeaders = {
 // -------- Config --------
 // Preferred provider: Google (Places + Geocoding). Fallback: Mapbox (Geocoding only) + simple OSM search.
 // Set at least ONE of: GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN in Project Settings → Functions → Environment Variables.
-const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") ?? "";
+const GOOGLE_MAPS_API_KEY = "AIzaSyCGajFYBJTVqlCYbKhJCpz7PbkvUy3FY98";
+
 const MAPBOX_TOKEN = Deno.env.get("MAPBOX_TOKEN") ?? "";
 
 // In-memory cache per function instance (best-effort). TTL: 24 hours.
@@ -232,16 +233,12 @@ async function osmSearch(center: { lat: number; lng: number }, radiusMeters: num
 async function findTherapists(center: { lat: number; lng: number }, radiusMeters: number): Promise<Place[]> {
   const therapistKeywords = ["therapist", "counselor", "psychologist", "psychiatrist", "mental health clinic"];
   if (GOOGLE_MAPS_API_KEY) {
-    const arrays = await Promise.all(
-      therapistKeywords.map((k) => safeArray(googleNearby(center, radiusMeters, k)))
-    );
+    const arrays = await Promise.all(therapistKeywords.map((k) => safeArray(googleNearby(center, radiusMeters, k))));
     const merged = mergePlaces(arrays, center);
     if (merged.length > 0) return merged;
     // fall back if Google returned nothing or errored
   }
-  const arrays = await Promise.all(
-    therapistKeywords.map((k) => safeArray(osmSearch(center, radiusMeters, k)))
-  );
+  const arrays = await Promise.all(therapistKeywords.map((k) => safeArray(osmSearch(center, radiusMeters, k))));
   return mergePlaces(arrays, center);
 }
 
@@ -254,16 +251,12 @@ async function findCrisisCenters(center: { lat: number; lng: number }, radiusMet
     "hospital emergency",
   ];
   if (GOOGLE_MAPS_API_KEY) {
-    const arrays = await Promise.all(
-      crisisKeywords.map((k) => safeArray(googleNearby(center, radiusMeters, k)))
-    );
+    const arrays = await Promise.all(crisisKeywords.map((k) => safeArray(googleNearby(center, radiusMeters, k))));
     const merged = mergePlaces(arrays, center);
     if (merged.length > 0) return merged;
     // fall back if Google returned nothing or errored
   }
-  const arrays = await Promise.all(
-    crisisKeywords.map((k) => safeArray(osmSearch(center, radiusMeters, k)))
-  );
+  const arrays = await Promise.all(crisisKeywords.map((k) => safeArray(osmSearch(center, radiusMeters, k))));
   return mergePlaces(arrays, center);
 }
 
