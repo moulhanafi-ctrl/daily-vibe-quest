@@ -49,17 +49,28 @@ export default function LocalHelpSearch() {
       const { data, error } = await supabase.functions.invoke<ApiResponse>("local-help", {
         body: { zip_code: z, radius: r },
       });
-      if (error) throw error;
-      if (!data?.ok) {
-        setError(data?.message || "Something went wrong.");
-      } else {
-        setResp(data);
-        // Persist last successful query
-        try {
-          localStorage.setItem("vc_zip", data.query?.zip || z);
-          localStorage.setItem("vc_radius", String(data.query?.radius_miles ?? r));
-        } catch {}
+
+      // TEMP DEBUG LOGS
+      console.log("[local-help] data:", data);
+      console.log("[local-help] error:", error);
+
+      if (error) {
+        console.error("[local-help] invoke error:", error);
+        setError(error.message || "Network error");
+        setLoading(false);
+        return;
       }
+      if (!data?.ok) {
+        setError(data?.message || data?.error || "Something went wrong.");
+        setLoading(false);
+        return;
+      }
+
+      setResp(data);
+      try {
+        localStorage.setItem("vc_zip", data.query?.zip || z);
+        localStorage.setItem("vc_radius", String(data.query?.radius_miles ?? r));
+      } catch {}
     } catch (e: any) {
       setError(e?.message || "Network error");
     } finally {
