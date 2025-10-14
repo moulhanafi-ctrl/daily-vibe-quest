@@ -24,19 +24,17 @@ const FOCUS_AREAS = [
 ];
 
 export const FocusAreaStep = ({ onNext, onBack }: FocusAreaStepProps) => {
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const toggleArea = (id: string) => {
-    setSelected(prev => 
-      prev.includes(id) 
-        ? prev.filter(item => item !== id)
-        : [...prev, id]
-    );
+  const selectArea = (id: string) => {
+    setSelected(id);
   };
 
-  const handleSubmit = () => {
-    if (selected.length > 0) {
-      onNext(selected);
+  const handleSubmit = async () => {
+    if (selected) {
+      setIsLoading(true);
+      onNext([selected]); // Pass as array for compatibility
     }
   };
 
@@ -44,9 +42,9 @@ export const FocusAreaStep = ({ onNext, onBack }: FocusAreaStepProps) => {
     <div className="min-h-screen flex items-center justify-center bg-onboarding p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle>Select Your Focus Areas</CardTitle>
+          <CardTitle>Select Your Focus Area</CardTitle>
           <CardDescription>
-            Step 2 of 4 • Choose one or more areas where you'd like support
+            Step 2 of 4 • Choose the main area where you'd like support
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -56,45 +54,64 @@ export const FocusAreaStep = ({ onNext, onBack }: FocusAreaStepProps) => {
                 <button
                   key={area.id}
                   type="button"
-                  onClick={() => toggleArea(area.id)}
+                  onClick={() => selectArea(area.id)}
+                  disabled={isLoading}
                   className={cn(
                     "flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left",
                     area.color,
-                    selected.includes(area.id)
+                    selected === area.id
                       ? "ring-2 ring-primary scale-105"
-                      : ""
+                      : "",
+                    isLoading && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <span className="text-2xl">{area.emoji}</span>
-                  <span className="font-medium">{area.label}</span>
+                  <span className="font-medium flex-1">{area.label}</span>
+                  {selected === area.id && (
+                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-white" />
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
 
-            {selected.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+            {selected && (
+              <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
                 <span className="text-sm text-muted-foreground">Selected:</span>
-                {selected.map(id => {
-                  const area = FOCUS_AREAS.find(a => a.id === id);
+                {(() => {
+                  const area = FOCUS_AREAS.find(a => a.id === selected);
                   return area ? (
-                    <Badge key={id} variant="secondary">
+                    <Badge variant="secondary">
                       {area.emoji} {area.label}
                     </Badge>
                   ) : null;
-                })}
+                })()}
+              </div>
+            )}
+
+            {isLoading && (
+              <div className="text-center text-sm text-muted-foreground animate-pulse">
+                🌟 Setting up your support community...
               </div>
             )}
 
             <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={onBack} className="flex-1">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onBack} 
+                disabled={isLoading}
+                className="flex-1"
+              >
                 Back
               </Button>
               <Button 
                 onClick={handleSubmit} 
                 className="flex-1"
-                disabled={selected.length === 0}
+                disabled={!selected || isLoading}
               >
-                Continue
+                {isLoading ? "Setting up..." : "Continue"}
               </Button>
             </div>
           </div>

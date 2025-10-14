@@ -19,6 +19,7 @@ interface OnboardingData {
   zipcode?: string;
   focusAreas?: string[];
   reflection?: string;
+  chatRoomId?: string;
 }
 
 const Onboarding = () => {
@@ -56,8 +57,43 @@ const Onboarding = () => {
     setCurrentStep("focus-area");
   };
 
-  const handleFocusAreas = (focusAreas: string[]) => {
+  const handleFocusAreas = async (focusAreas: string[]) => {
     setData(prev => ({ ...prev, focusAreas }));
+    
+    // Find matching chat room for later redirect
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("age_group")
+          .eq("id", user.id)
+          .single();
+
+        if (profile && focusAreas.length > 0) {
+          await supabase
+            .from("profiles")
+            .update({ selected_focus_areas: focusAreas })
+            .eq("id", user.id);
+
+          // Find matching chat room
+          const { data: chatRoom } = await supabase
+            .from("chat_rooms")
+            .select("id")
+            .eq("focus_area", focusAreas[0])
+            .eq("age_group", profile.age_group)
+            .limit(1)
+            .maybeSingle();
+
+          if (chatRoom) {
+            setData(prev => ({ ...prev, chatRoomId: chatRoom.id }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error setting up focus area:", error);
+    }
+    
     setCurrentStep("deep-dive");
   };
 
@@ -117,6 +153,9 @@ const Onboarding = () => {
       // SECURITY: Enforce parent verification for minors (COPPA compliance)
       if (ageGroupData === 'child' || ageGroupData === 'teen') {
         navigate("/parent-verification");
+      } else if (data.chatRoomId) {
+        // Redirect to their focus area chat room
+        navigate(`/chat/${data.chatRoomId}`);
       } else {
         navigate("/dashboard?first_checkin=true");
       }
