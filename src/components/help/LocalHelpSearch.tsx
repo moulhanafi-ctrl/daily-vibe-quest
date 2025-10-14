@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Brain, Ambulance, Phone, Navigation, PhoneCall } from "lucide-react";
 const US_ZIP = /^\d{5}(?:-\d{4})?$/;
 const CA_POSTAL = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
@@ -162,105 +162,151 @@ export default function LocalHelpSearch() {
 
       {/* Results */}
       {!loading && resp && (
-        <div className="mt-6 space-y-4 animate-fade-in">
-          <div className="rounded-2xl border p-4">
-            <h3 className="text-lg font-semibold">Therapists near me</h3>
+        <div className="mt-8 space-y-8">
+          {/* Therapists Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="h-6 w-6 text-[#007BFF]" />
+              <h3 className="text-xl font-bold text-foreground">Therapists near me</h3>
+            </div>
             {resp.therapists && resp.therapists.length > 0 ? (
-              <ul className="mt-2 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {resp.therapists.map((t, i) => (
-                  <li key={i} className="border rounded-xl p-3">
-                    <div className="font-medium">{t.name}</div>
-                    <div className="text-sm opacity-80">{t.address}</div>
-                    <div className="text-sm mt-1">
-                      {typeof t.distance_miles === "number" && `${t.distance_miles} mi`} away
+                  <div
+                    key={i}
+                    className="bg-card rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in border border-border"
+                    style={{ animationDelay: `${i * 0.1}s` }}
+                  >
+                    <div className="h-2 bg-[#007BFF]"></div>
+                    <div className="p-4">
+                      <h4 className="font-semibold text-lg text-foreground mb-2">{t.name}</h4>
+                      <p className="text-sm text-muted-foreground mb-1">{t.address}</p>
+                      <p className="text-sm font-medium text-foreground mb-4">
+                        {typeof t.distance_miles === "number" && `${t.distance_miles} mi away`}
+                      </p>
+                      <div className="flex gap-2">
+                        <a
+                          href={t.directions_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                        >
+                          <Navigation className="h-4 w-4" />
+                          Directions
+                        </a>
+                        {t.phone && (
+                          <a
+                            href={`tel:${t.phone}`}
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+                          >
+                            <PhoneCall className="h-4 w-4" />
+                            Call
+                          </a>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-3 mt-2 text-sm">
-                      {t.phone && (
-                        <a className="underline" href={`tel:${t.phone}`}>
-                          Call
-                        </a>
-                      )}
-                      {t.website && (
-                        <a className="underline" href={t.website} target="_blank" rel="noopener noreferrer">
-                          Website
-                        </a>
-                      )}
-                      <a className="underline" href={t.directions_url} target="_blank" rel="noopener noreferrer">
-                        Directions
-                      </a>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-sm opacity-80">No results.</div>
-            )}
-            <QuickActions />
-          </div>
-
-          <div className="rounded-2xl border p-4">
-            <h3 className="text-lg font-semibold">Crisis centers near me</h3>
-            {resp.crisis_centers && resp.crisis_centers.length > 0 ? (
-              <ul className="mt-2 space-y-3">
-                {resp.crisis_centers.map((c, i) => (
-                  <li key={i} className="border rounded-xl p-3">
-                    <div className="font-medium">{c.name}</div>
-                    <div className="text-sm opacity-80">{c.address}</div>
-                    <div className="text-sm mt-1">
-                      {typeof c.distance_miles === "number" && `${c.distance_miles} mi`} away
-                    </div>
-                    <div className="flex flex-wrap gap-3 mt-2 text-sm">
-                      {c.phone && (
-                        <a className="underline" href={`tel:${c.phone}`}>
-                          Call
-                        </a>
-                      )}
-                      {c.website && (
-                        <a className="underline" href={c.website} target="_blank" rel="noopener noreferrer">
-                          Website
-                        </a>
-                      )}
-                      <a className="underline" href={c.directions_url} target="_blank" rel="noopener noreferrer">
-                        Directions
-                      </a>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-sm opacity-80">No results.</div>
-            )}
-            <QuickActions />
-          </div>
-
-          <div className="rounded-2xl border p-4">
-            <h3 className="text-lg font-semibold">National hotlines</h3>
-            <ul className="mt-2 space-y-2">
-              {(resp.hotlines ?? []).map((h, i) => (
-                <li key={i} className="text-sm">
-                  <div className="font-medium">{h.label}</div>
-                  <div className="opacity-80">
-                    {h.call && (
-                      <>
-                        Call:{" "}
-                        <a className="underline" href={`tel:${h.call}`}>
-                          {h.call}
-                        </a>{" "}
-                      </>
-                    )}
-                    {h.text && <span>— {h.text} </span>}
-                    {h.url && (
-                      <>
-                        —{" "}
-                        <a className="underline" href={h.url} target="_blank" rel="noopener noreferrer">
-                          Learn more
-                        </a>
-                      </>
-                    )}
                   </div>
-                </li>
+                ))}
+              </div>
+            ) : (
+              <div className="text-muted-foreground">No results found.</div>
+            )}
+            <QuickActions />
+          </div>
+
+          {/* Crisis Centers Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Ambulance className="h-6 w-6 text-[#DC3545]" />
+              <h3 className="text-xl font-bold text-foreground">Crisis centers near me</h3>
+            </div>
+            {resp.crisis_centers && resp.crisis_centers.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {resp.crisis_centers.map((c, i) => (
+                  <div
+                    key={i}
+                    className="bg-card rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in border border-border"
+                    style={{ animationDelay: `${i * 0.1}s` }}
+                  >
+                    <div className="h-2 bg-[#DC3545]"></div>
+                    <div className="p-4">
+                      <h4 className="font-semibold text-lg text-foreground mb-2">{c.name}</h4>
+                      <p className="text-sm text-muted-foreground mb-1">{c.address}</p>
+                      <p className="text-sm font-medium text-foreground mb-4">
+                        {typeof c.distance_miles === "number" && `${c.distance_miles} mi away`}
+                      </p>
+                      <div className="flex gap-2">
+                        <a
+                          href={c.directions_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                        >
+                          <Navigation className="h-4 w-4" />
+                          Directions
+                        </a>
+                        {c.phone && (
+                          <a
+                            href={`tel:${c.phone}`}
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+                          >
+                            <PhoneCall className="h-4 w-4" />
+                            Call
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-muted-foreground">No results found.</div>
+            )}
+            <QuickActions />
+          </div>
+
+          {/* National Hotlines Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Phone className="h-6 w-6 text-[#FFC107]" />
+              <h3 className="text-xl font-bold text-foreground">National hotlines</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(resp.hotlines ?? []).map((h, i) => (
+                <div
+                  key={i}
+                  className="bg-card rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in border border-border"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <div className="h-2 bg-[#FFC107]"></div>
+                  <div className="p-4">
+                    <h4 className="font-semibold text-lg text-foreground mb-2">{h.label}</h4>
+                    <div className="space-y-2">
+                      {h.call && (
+                        <a
+                          href={`tel:${h.call}`}
+                          className="flex items-center gap-2 text-sm text-primary hover:underline"
+                        >
+                          <PhoneCall className="h-4 w-4" />
+                          {h.call}
+                        </a>
+                      )}
+                      {h.text && <p className="text-sm text-muted-foreground">{h.text}</p>}
+                      {h.url && (
+                        <a
+                          href={h.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block text-sm text-primary hover:underline"
+                        >
+                          Learn more →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       )}
