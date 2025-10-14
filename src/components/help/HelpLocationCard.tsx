@@ -160,8 +160,10 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               onClick={handleCall}
               size="sm"
               variant={location.type === "crisis" ? "default" : "outline"}
+              aria-label={`Call ${location.name}`}
+              className="group"
             >
-              <Phone className="h-4 w-4 mr-1" />
+              <Phone className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
               Call
             </Button>
           )}
