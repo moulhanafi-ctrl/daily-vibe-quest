@@ -152,9 +152,11 @@ export default function LocalHelpSearch() {
 
       {/* Loading State */}
       {loading && (
-        <div className="mt-8 flex flex-col items-center justify-center py-12 animate-fade-in">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground text-lg">Finding trusted resources near you…</p>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm animate-fade-in">
+          <div className="flex flex-col items-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary/80 mb-4" aria-hidden="true" />
+            <p className="text-muted-foreground text-lg" aria-live="polite">Finding trusted resources near you…</p>
+          </div>
         </div>
       )}
 
