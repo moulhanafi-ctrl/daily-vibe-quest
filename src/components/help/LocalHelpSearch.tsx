@@ -160,7 +160,7 @@ export default function LocalHelpSearch() {
 
       {/* Results */}
       {!loading && resp && (
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 space-y-4 animate-fade-in">
           <div className="rounded-2xl border p-4">
             <h3 className="text-lg font-semibold">Therapists near me</h3>
             {resp.therapists && resp.therapists.length > 0 ? (
