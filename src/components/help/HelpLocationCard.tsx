@@ -66,7 +66,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
       metadata: { id: location.id, type: location.type }
     });
     const query = encodeURIComponent(location.address);
-    window.open(`https://maps.google.com/?q=${query}`, "_blank");
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank", "noopener,noreferrer");
   };
 
   const cardClass = location.website_url 
@@ -90,7 +90,16 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
             )}
           </div>
           
-          <p className="text-sm text-muted-foreground">{location.address}</p>
+          {location.address && (
+            <button
+              onClick={handleDirections}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors text-left group flex items-start gap-1.5 w-full"
+              aria-label={`Get directions to ${location.name}`}
+            >
+              <Navigation className="h-4 w-4 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+              <span className="group-hover:underline">{location.address}</span>
+            </button>
+          )}
           
           {location.distance !== undefined && (
             <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -176,12 +185,6 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
             >
               <ExternalLink className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
               Visit Website
-            </Button>
-          )}
-          {!location.is_national && (
-            <Button onClick={handleDirections} size="sm" variant="outline">
-              <Navigation className="h-4 w-4 mr-1" />
-              Directions
             </Button>
           )}
         </div>
