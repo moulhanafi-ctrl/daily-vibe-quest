@@ -1,5 +1,5 @@
 import { CrisisBanner } from "@/components/help/CrisisBanner";
-import { LocalHelpSearch } from "@/components/help/LocalHelpSearch";
+import LocalHelpSearch from "@/components/help/LocalHelpSearch";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
