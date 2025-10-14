@@ -52,7 +52,7 @@ export const Hero = () => {
           </div>
 
           <div className="w-full max-w-md space-y-6 animate-slide-up">
-            <div className="flex justify-center gap-4 flex-wrap">
+            <div className="flex justify-center gap-4 flex-wrap" role="group" aria-label="Select your current mood">
               {moods.map((mood, index) => (
                 <button
                   key={index}
@@ -65,8 +65,10 @@ export const Hero = () => {
                   style={{
                     animationDelay: `${index * 0.1}s`,
                   }}
+                  aria-label={`Select ${mood.label} mood`}
+                  aria-pressed={selectedMood === index}
                 >
-                  <span className="text-4xl transition-smooth hover:scale-125">{mood.emoji}</span>
+                  <span className="text-4xl transition-smooth hover:scale-125" aria-hidden="true">{mood.emoji}</span>
                   <span className="text-sm font-medium">{mood.label}</span>
                 </button>
               ))}
@@ -81,28 +83,28 @@ export const Hero = () => {
                   type="button"
                   variant="hero" 
                   size="lg" 
-                  className="w-full min-h-[44px] touch-manipulation" 
+                  className="w-full min-h-[44px] touch-manipulation font-semibold" 
                   onClick={() => navigate("/auth")}
                   onTouchStart={() => navigate("/auth")}
                   aria-label="Start your wellness journey"
                 >
-                  Start Your Journey
+                  Start Your Journey →
                 </Button>
               </div>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-4 justify-center pt-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 w-full max-w-md">
             <Button 
               type="button"
               variant="signup" 
               size="lg" 
               onClick={() => navigate("/auth")}
               onTouchStart={() => navigate("/auth")}
-              className="min-w-[44px] min-h-[44px] animate-[signup-pulse_2s_ease-in-out_infinite_alternate] shadow-[var(--shadow-signup)] hover:shadow-[0_0_20px_hsl(340,75%,70%,0.5),0_0_35px_hsl(270,65%,75%,0.25)] touch-manipulation"
+              className="flex-1 min-h-[52px] text-base font-semibold animate-[signup-pulse_2s_ease-in-out_infinite_alternate] shadow-[var(--shadow-signup)] hover:shadow-[0_0_20px_hsl(340,75%,70%,0.5),0_0_35px_hsl(270,65%,75%,0.25)] touch-manipulation"
               aria-label="Sign up for Vibe Check"
             >
-              Sign Up
+              Get Started Free
             </Button>
             <Button 
               type="button"
@@ -110,12 +112,16 @@ export const Hero = () => {
               size="lg" 
               onClick={() => navigate("/auth")}
               onTouchStart={() => navigate("/auth")}
-              className="min-w-[44px] min-h-[44px] animate-[login-pulse_2s_ease-in-out_infinite_alternate] shadow-[var(--shadow-login)] hover:shadow-[0_0_18px_hsl(270,65%,75%,0.5),0_0_30px_hsl(340,75%,70%,0.25)] touch-manipulation"
+              className="flex-1 min-h-[52px] text-base font-semibold animate-[login-pulse_2s_ease-in-out_infinite_alternate] shadow-[var(--shadow-login)] hover:shadow-[0_0_18px_hsl(270,65%,75%,0.5),0_0_30px_hsl(340,75%,70%,0.25)] touch-manipulation"
               aria-label="Log in to Vibe Check"
             >
               Log In
             </Button>
           </div>
+          
+          <p className="text-sm text-muted-foreground pt-2">
+            Free forever • No credit card required • 2-minute setup
+          </p>
         </div>
       </div>
 

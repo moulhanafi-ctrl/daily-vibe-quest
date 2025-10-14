@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Hero } from "@/components/Hero";
+import { Stats } from "@/components/Stats";
 import { Features } from "@/components/Features";
+import { TrustSignals } from "@/components/TrustSignals";
 import { FamilyMode } from "@/components/FamilyMode";
+import { Testimonials } from "@/components/Testimonials";
 import { Pricing } from "@/components/Pricing";
 import { Footer } from "@/components/Footer";
 import { InclusionBanner } from "@/components/InclusionBanner";
@@ -69,8 +72,11 @@ const Index = () => {
         <InclusionBanner dismissible={true} />
       </div>
       <Hero />
+      <Stats />
+      <TrustSignals />
       <Features />
       <FamilyMode />
+      <Testimonials />
       <Pricing />
       <Footer />
     </div>
