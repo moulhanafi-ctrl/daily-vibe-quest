@@ -48,13 +48,22 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
     return trimmed.replace(/^http:\/\//i, "https://");
   };
 
+  const sanitizePhone = (phone?: string) => {
+    return phone ? phone.replace(/[^\d+]/g, "") : "";
+  };
+
+  const isValidPhone = (phone?: string) => {
+    const s = sanitizePhone(phone);
+    return s.length >= 7;
+  };
+
   const handleCall = () => {
     trackEvent({
       eventType: "help_call_clicked",
       metadata: { id: location.id, type: location.type }
     });
-    if (location.phone) {
-      window.location.href = `tel:${location.phone}`;
+    if (isValidPhone(location.phone)) {
+      window.location.href = `tel:${sanitizePhone(location.phone)}`;
     }
   };
 
@@ -174,16 +183,21 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
         )}
 
         <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-          {location.phone && (
+          {isValidPhone(location.phone) && (
             <Button
+              asChild
               onClick={handleCall}
               size="sm"
               variant={location.type === "crisis" ? "default" : "outline"}
-              aria-label={`Call ${location.name}`}
               className="group"
             >
-              <Phone className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
-              Call
+              <a
+                href={`tel:${sanitizePhone(location.phone!)}`}
+                aria-label={`Call ${location.name}`}
+              >
+                <Phone className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
+                Call
+              </a>
             </Button>
           )}
           {location.website_url && (
