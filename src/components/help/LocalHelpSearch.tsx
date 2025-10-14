@@ -13,6 +13,16 @@ function normalizePostal(raw: string) {
   return s;
 }
 
+function sanitizePhone(phone?: string | null) {
+  return phone ? phone.replace(/[^\d+]/g, "") : "";
+}
+
+function isValidPhone(phone?: string | null) {
+  const s = sanitizePhone(phone);
+  return s.length >= 7;
+}
+
+
 type ResultItem = {
   name: string;
   address: string | null;
@@ -180,7 +190,20 @@ export default function LocalHelpSearch() {
                     <div className="h-2 bg-[#007BFF]"></div>
                     <div className="p-4">
                       <h4 className="font-semibold text-lg text-foreground mb-2">{t.name}</h4>
-                      <p className="text-sm text-muted-foreground mb-1">{t.address}</p>
+                      {t.address ? (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-muted-foreground hover:text-primary transition-colors text-left group inline-flex items-start gap-1.5 mb-1"
+                          aria-label={`Get directions to ${t.name}`}
+                        >
+                          <span aria-hidden>📍</span>
+                          <span className="group-hover:underline">{t.address}</span>
+                        </a>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mb-1 opacity-60">Address unavailable</p>
+                      )}
                       <p className="text-sm font-medium text-foreground mb-4">
                         {typeof t.distance_miles === "number" && `${t.distance_miles} mi away`}
                       </p>
@@ -194,9 +217,10 @@ export default function LocalHelpSearch() {
                           <Navigation className="h-4 w-4" />
                           Directions
                         </a>
-                        {t.phone && (
+                        {isValidPhone(t.phone) && (
                           <a
-                            href={`tel:${t.phone}`}
+                            href={`tel:${sanitizePhone(t.phone)}`}
+                            aria-label={`Call ${t.name}`}
                             className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
                           >
                             <PhoneCall className="h-4 w-4" />
@@ -231,7 +255,20 @@ export default function LocalHelpSearch() {
                     <div className="h-2 bg-[#DC3545]"></div>
                     <div className="p-4">
                       <h4 className="font-semibold text-lg text-foreground mb-2">{c.name}</h4>
-                      <p className="text-sm text-muted-foreground mb-1">{c.address}</p>
+                      {c.address ? (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-muted-foreground hover:text-primary transition-colors text-left group inline-flex items-start gap-1.5 mb-1"
+                          aria-label={`Get directions to ${c.name}`}
+                        >
+                          <span aria-hidden>📍</span>
+                          <span className="group-hover:underline">{c.address}</span>
+                        </a>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mb-1 opacity-60">Address unavailable</p>
+                      )}
                       <p className="text-sm font-medium text-foreground mb-4">
                         {typeof c.distance_miles === "number" && `${c.distance_miles} mi away`}
                       </p>
@@ -245,9 +282,10 @@ export default function LocalHelpSearch() {
                           <Navigation className="h-4 w-4" />
                           Directions
                         </a>
-                        {c.phone && (
+                        {isValidPhone(c.phone) && (
                           <a
-                            href={`tel:${c.phone}`}
+                            href={`tel:${sanitizePhone(c.phone)}`}
+                            aria-label={`Call ${c.name}`}
                             className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
                           >
                             <PhoneCall className="h-4 w-4" />
