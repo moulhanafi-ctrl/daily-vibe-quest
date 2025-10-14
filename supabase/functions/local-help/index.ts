@@ -1,242 +1,289 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+// supabase/functions/local-help/index.ts
+// Deno Edge Function for ZIP/Postal → therapists, crisis centers, and national hotlines (US + Canada)
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-signature",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+
+// -------- Config --------
+// Preferred provider: Google (Places + Geocoding). Fallback: Mapbox (Geocoding only) + simple OSM search.
+// Set at least ONE of: GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN in Project Settings → Functions → Environment Variables.
+const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") ?? "";
+const MAPBOX_TOKEN = Deno.env.get("MAPBOX_TOKEN") ?? "";
+
+// In-memory cache per function instance (best-effort). TTL: 24 hours.
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const localCache = new Map<string, { ts: number; data: any }>();
+
+// -------- Utilities --------
+const US_ZIP = /^\d{5}(?:-\d{4})?$/;
+const CA_POSTAL = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
+
+function normalizePostal(raw: string) {
+  let s = (raw || "").trim();
+  if (CA_POSTAL.test(s)) {
+    s = s.toUpperCase().replace(/\s+/g, "");
+    // Re-insert space for display A1A 1A1
+    s = s.slice(0, 3) + " " + s.slice(3);
+  }
+  return s;
+}
+
+function milesToMeters(m: number) {
+  return Math.round(m * 1609.344);
+}
+
+function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const toRad = (v: number) => (v * Math.PI) / 180;
+  const R = 3958.7613; // miles
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function directionsURL(lat: number, lng: number) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+}
+
+// Country-aware hotlines
+function hotlines(countryCode: "US" | "CA") {
+  if (countryCode === "CA") {
+    return [
+      { label: "988 Suicide Crisis Helpline (Canada)", call: "988", text: "988", url: "https://988.ca" },
+      { label: "Kids Help Phone", call: "+1-800-668-6868", text: "Text CONNECT to 686868", url: "https://kidshelpphone.ca" },
+      { label: "Emergency", call: "911" },
+    ];
+  }
+  return [
+    { label: "988 Suicide & Crisis Lifeline (USA)", call: "988", text: "988", url: "https://988lifeline.org" },
+    { label: "Crisis Text Line", text: "Text HOME to 741741", url: "https://www.crisistextline.org/" },
+    { label: "Emergency", call: "911" },
+  ];
+}
+
+// -------- Geocoding --------
+async function geocode(query: string): Promise<{ lat: number; lng: number; countryCode: "US" | "CA" }> {
+  // Prefer Google if available
+  if (GOOGLE_MAPS_API_KEY) {
+    const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+    url.searchParams.set("address", query);
+    url.searchParams.set("key", GOOGLE_MAPS_API_KEY);
+    url.searchParams.set("components", "country:US|country:CA");
+    const res = await fetch(url);
+    const json = await res.json();
+    if (!json.results?.length) throw new Error("GEOCODE_NOT_FOUND");
+    const best = json.results[0];
+    const lat = best.geometry.location.lat;
+    const lng = best.geometry.location.lng;
+    const countryComp = best.address_components.find((c: any) => c.types?.includes("country"));
+    const cc = (countryComp?.short_name ?? "US") as "US" | "CA";
+    if (cc !== "US" && cc !== "CA") throw new Error("UNSUPPORTED_COUNTRY");
+    return { lat, lng, countryCode: cc };
+  }
+
+  // Fallback: Mapbox
+  if (MAPBOX_TOKEN) {
+    const clean = query.replace(/\s+/g, "%20");
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${clean}.json?types=postcode&limit=1&country=US,CA&access_token=${MAPBOX_TOKEN}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const feat = json.features?.[0];
+    if (!feat) throw new Error("GEOCODE_NOT_FOUND");
+    const [lng, lat] = feat.center;
+    const cc = (feat.context?.find((c: any) => c.id?.startsWith("country"))?.short_code ?? "us").toUpperCase();
+    const countryCode = (cc === "CA" ? "CA" : "US") as "US" | "CA";
+    return { lat, lng, countryCode };
+  }
+
+  throw new Error("NO_GEOCODER_CONFIGURED");
+}
+
+// -------- Places Search (Google preferred) --------
+type Place = {
+  name: string;
+  lat: number;
+  lng: number;
+  address?: string;
+  phone?: string;
+  website?: string;
+  rating?: number;
 };
 
-// Simple in-memory rate limiter
-const rateLimits = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(key: string, maxRequests = 10, windowMs = 60000): boolean {
-  const now = Date.now();
-  const limit = rateLimits.get(key);
-  
-  if (!limit || now > limit.resetAt) {
-    rateLimits.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
+// Merge & dedupe by name+address
+function mergePlaces(arrays: Place[][], center: { lat: number; lng: number }) {
+  const map = new Map<string, Place>();
+  const keyOf = (p: Place) => `${(p.name || "").toLowerCase()}|${(p.address || "").toLowerCase()}`;
+  for (const a of arrays) {
+    for (const p of a) {
+      const k = keyOf(p);
+      if (!map.has(k)) map.set(k, p);
+    }
   }
-  
-  if (limit.count >= maxRequests) {
-    return false;
-  }
-  
-  limit.count++;
-  return true;
+  // Sort by distance, then rating desc
+  const all = [...map.values()];
+  all.sort((a, b) => {
+    const da = haversineMiles(center.lat, center.lng, a.lat, a.lng);
+    const db = haversineMiles(center.lat, center.lng, b.lat, b.lng);
+    if (da !== db) return da - db;
+    return (b.rating ?? 0) - (a.rating ?? 0);
+  });
+  return all;
 }
 
-const RequestSchema = z.object({
-  zip_code: z.string().regex(/^\d{5}$/, "ZIP code must be 5 digits"),
-  radius: z.number().min(5).max(100).optional().default(25),
-});
-
-interface ZippoResponse {
-  country: string;
-  "country abbreviation": string;
-  places: Array<{
-    "place name": string;
-    longitude: string;
-    latitude: string;
-    state: string;
-    "state abbreviation": string;
-  }>;
+async function googleNearby(
+  center: { lat: number; lng: number },
+  radiusMeters: number,
+  keyword: string
+): Promise<Place[]> {
+  const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
+  url.searchParams.set("location", `${center.lat},${center.lng}`);
+  url.searchParams.set("radius", String(radiusMeters));
+  url.searchParams.set("keyword", keyword);
+  // We avoid strict type to broaden results
+  url.searchParams.set("key", GOOGLE_MAPS_API_KEY);
+  const res = await fetch(url);
+  const json = await res.json();
+  const results: Place[] = (json.results ?? []).map((r: any) => ({
+    name: r.name,
+    lat: r.geometry?.location?.lat,
+    lng: r.geometry?.location?.lng,
+    address: r.vicinity,
+    rating: r.rating,
+    // Phone/website require a details lookup; we'll leave them undefined unless you add a Place Details call.
+  }));
+  return results;
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+// Lightweight fallback using OpenStreetMap Nominatim for category keywords (best-effort)
+async function osmSearch(
+  center: { lat: number; lng: number },
+  radiusMeters: number,
+  q: string
+): Promise<Place[]> {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("format", "json");
+  url.searchParams.set("q", q);
+  url.searchParams.set("addressdetails", "1");
+  url.searchParams.set("limit", "20");
+  url.searchParams.set("viewbox", `${center.lng - 1},${center.lat + 1},${center.lng + 1},${center.lat - 1}`);
+  url.searchParams.set("bounded", "1");
+  const res = await fetch(url, { headers: { "User-Agent": "VibeCheck/1.0" } });
+  const json = await res.json();
+  const withinRadius = (json ?? []).map((r: any) => ({
+    name: r.display_name?.split(",")?.[0],
+    lat: parseFloat(r.lat),
+    lng: parseFloat(r.lon),
+    address: r.display_name,
+  })).filter((p: Place) => haversineMiles(center.lat, center.lng, p.lat, p.lng) <= radiusMeters / 1609.344);
+  return withinRadius;
+}
+
+async function findTherapists(center: { lat: number; lng: number }, radiusMeters: number): Promise<Place[]> {
+  const therapistKeywords = [
+    "therapist",
+    "counselor",
+    "psychologist",
+    "psychiatrist",
+    "mental health clinic",
+  ];
+  if (GOOGLE_MAPS_API_KEY) {
+    const arrays = await Promise.all(therapistKeywords.map(k => googleNearby(center, radiusMeters, k)));
+    return mergePlaces(arrays, center);
   }
+  // Fallback best-effort
+  const arrays = await Promise.all(therapistKeywords.map(k => osmSearch(center, radiusMeters, k)));
+  return mergePlaces(arrays, center);
+}
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+async function findCrisisCenters(center: { lat: number; lng: number }, radiusMeters: number): Promise<Place[]> {
+  const crisisKeywords = [
+    "crisis center",
+    "suicide prevention",
+    "behavioral health urgent care",
+    "mental health crisis",
+    "hospital emergency",
+  ];
+  if (GOOGLE_MAPS_API_KEY) {
+    const arrays = await Promise.all(crisisKeywords.map(k => googleNearby(center, radiusMeters, k)));
+    return mergePlaces(arrays, center);
+  }
+  // Fallback best-effort
+  const arrays = await Promise.all(crisisKeywords.map(k => osmSearch(center, radiusMeters, k)));
+  return mergePlaces(arrays, center);
+}
 
+// -------- HTTP Handler --------
+serve(async (req) => {
   try {
-    // Get user (authenticated or anonymous)
-    const authHeader = req.headers.get("Authorization");
-    let userId: string | null = null;
-    let isAuthenticated = false;
-
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-      if (!authError && user) {
-        userId = user.id;
-        isAuthenticated = true;
-      }
+    if (req.method !== "POST") {
+      return new Response(JSON.stringify({ ok: false, error: "METHOD_NOT_ALLOWED" }), {
+        status: 405,
+        headers: { "content-type": "application/json" },
+      });
     }
 
-    // Rate limiting: authenticated users get higher limits
-    const rateLimitKey = userId || req.headers.get("x-forwarded-for") || "anon";
-    const maxRequests = isAuthenticated ? 30 : 10;
-    
-    if (!checkRateLimit(rateLimitKey, maxRequests, 60000)) {
-      return new Response(
-        JSON.stringify({ ok: false, error: "Rate limit exceeded. Please try again later." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const body = await req.json().catch(() => ({}));
+    let zip_code = String(body?.zip_code ?? "").trim();
+    let radius = Number(body?.radius ?? 20);
+
+    if (!zip_code) throw new Error("ZIP_REQUIRED");
+    if (!US_ZIP.test(zip_code) && !CA_POSTAL.test(zip_code)) {
+      throw new Error("INVALID_ZIP_OR_POSTAL");
+    }
+    if (![15, 20, 25].includes(radius)) radius = 20;
+
+    const normalized = normalizePostal(zip_code);
+    const cacheKey = `${normalized}|${radius}`;
+    const hit = localCache.get(cacheKey);
+    const now = Date.now();
+    if (hit && now - hit.ts < CACHE_TTL_MS) {
+      return new Response(JSON.stringify(hit.data), { headers: { "content-type": "application/json" } });
     }
 
-    // Validate input
-    const body = RequestSchema.parse(await req.json());
-    const { zip_code, radius } = body;
+    // Geocode
+    const geo = await geocode(normalized);
+    const center = { lat: geo.lat, lng: geo.lng };
+    const radiusMeters = milesToMeters(radius);
 
-    // Geocode ZIP using Zippopotam API
-    console.log(`Geocoding ZIP: ${zip_code}`);
-    const zipResponse = await fetch(`https://api.zippopotam.us/us/${zip_code}`);
-    
-    if (!zipResponse.ok) {
-      return new Response(
-        JSON.stringify({ ok: false, error: "Invalid ZIP code or ZIP not found" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Places
+    const therapists = (await findTherapists(center, radiusMeters)).slice(0, 3);
+    const crisis = (await findCrisisCenters(center, radiusMeters)).slice(0, 3);
 
-    const zipData: ZippoResponse = await zipResponse.json();
-    const place = zipData.places[0];
-    const city = place["place name"];
-    const state = place["state abbreviation"];
-    const userLat = parseFloat(place.latitude);
-    const userLon = parseFloat(place.longitude);
+    const toResult = (p: Place) => ({
+      name: p.name,
+      address: p.address ?? null,
+      phone: p.phone ?? null,
+      website: p.website ?? null,
+      distance_miles: Number(haversineMiles(center.lat, center.lng, p.lat, p.lng).toFixed(1)),
+      directions_url: directionsURL(p.lat, p.lng),
+    });
 
-    console.log(`Location: ${city}, ${state} (${userLat}, ${userLon})`);
-
-    // Update user profile if authenticated
-    if (userId && isAuthenticated) {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ 
-          zipcode: zip_code,
-          location: {
-            zip: zip_code,
-            city,
-            state,
-            lat: userLat,
-            lon: userLon,
-          }
-        })
-        .eq("id", userId);
-      
-      if (updateError) {
-        console.error("Error updating profile:", updateError);
-        // Don't fail the request, just log the error
-      }
-    }
-
-    // Haversine distance calculation
-    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-      const R = 3959; // Earth's radius in miles
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+    const resp = {
+      ok: true,
+      countryCode: geo.countryCode,
+      query: { zip: normalized, radius_miles: radius },
+      center,
+      therapists: therapists.map(toResult),
+      crisis_centers: crisis.map(toResult),
+      hotlines: hotlines(geo.countryCode),
     };
 
-    // Fetch nearby locations (crisis centers and therapists)
-    const { data: locations, error: locError } = await supabase
-      .from("help_locations")
-      .select("*")
-      .eq("is_active", true)
-      .not("lat", "is", null)
-      .not("lon", "is", null);
+    localCache.set(cacheKey, { ts: now, data: resp });
 
-    if (locError) {
-      console.error("Error fetching locations:", locError);
-      return new Response(
-        JSON.stringify({ ok: false, error: "Failed to fetch nearby resources" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    return new Response(JSON.stringify(resp), { headers: { "content-type": "application/json" } });
+  } catch (err) {
+    const msg = (err as Error)?.message ?? "UNKNOWN";
+    let userMessage = "Something went wrong.";
+    if (msg === "ZIP_REQUIRED") userMessage = "Please enter a ZIP/postal code.";
+    if (msg === "INVALID_ZIP_OR_POSTAL") userMessage = "Please check the format (e.g., 02115 or M5V 2T6).";
+    if (msg === "GEOCODE_NOT_FOUND") userMessage = "We couldn't locate that code. Try another or check spelling.";
+    if (msg === "NO_GEOCODER_CONFIGURED") userMessage = "Geocoder is not configured. Add GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN.";
+    if (msg === "UNSUPPORTED_COUNTRY") userMessage = "Only US and Canada are supported.";
 
-    // Calculate distances and filter by radius
-    const locationsWithDistance = (locations || [])
-      .map((loc: any) => {
-        const distance = calculateDistance(userLat, userLon, loc.lat, loc.lon);
-        return { ...loc, distance };
-      })
-      .filter((loc: any) => loc.distance <= radius)
-      .sort((a: any, b: any) => a.distance - b.distance);
-
-    // Separate by type
-    const crisisCenters = locationsWithDistance
-      .filter((loc: any) => loc.type === "crisis")
-      .slice(0, 5)
-      .map((loc: any) => ({
-        id: loc.id,
-        name: loc.name,
-        phone: loc.phone,
-        address: `${loc.address_line1 || ""}, ${loc.city || ""}, ${loc.state || ""}`.trim(),
-        distance: Math.round(loc.distance * 10) / 10,
-        open_now: loc.open_now,
-        verified: !!loc.last_verified_at,
-      }));
-
-    const therapists = locationsWithDistance
-      .filter((loc: any) => loc.type === "therapy")
-      .slice(0, 10)
-      .map((loc: any) => ({
-        id: loc.id,
-        name: loc.name,
-        phone: loc.phone,
-        website: loc.website_url,
-        address: `${loc.address_line1 || ""}, ${loc.city || ""}, ${loc.state || ""}`.trim(),
-        distance: Math.round(loc.distance * 10) / 10,
-        accepts_insurance: loc.accepts_insurance,
-        sliding_scale: loc.sliding_scale,
-        telehealth: loc.telehealth,
-        rating: loc.ratings?.average,
-      }));
-
-    console.log(`Found ${crisisCenters.length} crisis centers and ${therapists.length} therapists within ${radius} miles`);
-
-    // Return results
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        zip: zip_code,
-        city,
-        state,
-        radius,
-        crisis_centers: crisisCenters,
-        therapists: therapists,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (error: any) {
-    console.error("Error in local-help:", error);
-    
-    // Handle validation errors
-    if (error instanceof z.ZodError) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: "Invalid request format",
-          details: error.errors.map(e => e.message).join(", ")
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Generic error response (don't leak internals)
-    return new Response(
-      JSON.stringify({ 
-        ok: false, 
-        error: "An error occurred processing your request" 
-      }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ ok: false, error: msg, message: userMessage }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
   }
-};
-
-serve(handler);
+});

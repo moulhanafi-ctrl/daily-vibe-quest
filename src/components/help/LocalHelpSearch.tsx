@@ -10,60 +10,52 @@ import { trackEvent } from "@/lib/analytics";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LocalHelpLocation {
-  id: string;
   name: string;
   phone?: string | null;
   website?: string | null;
   address?: string | null;
-  distance?: number | null;
-  verified?: boolean;
-  accepts_insurance?: boolean;
-  sliding_scale?: boolean;
-  telehealth?: boolean;
-  rating?: number;
-  open_now?: boolean;
+  distance_miles?: number;
+  directions_url?: string;
 }
 
-interface NationalResource {
-  id: string;
-  name: string;
-  phone?: string | null;
-  text?: string | null;
-  website?: string | null;
-  tags?: string[] | null;
+interface Hotline {
+  label: string;
+  call?: string;
+  text?: string;
+  url?: string;
 }
 
 interface LocalHelpResponse {
   ok: boolean;
-  zip: string;
-  city: string;
-  state: string;
-  radius: number;
-  crisis_centers: LocalHelpLocation[];
+  countryCode: "US" | "CA";
+  query: {
+    zip: string;
+    radius_miles: number;
+  };
+  center: {
+    lat: number;
+    lng: number;
+  };
   therapists: LocalHelpLocation[];
+  crisis_centers: LocalHelpLocation[];
+  hotlines: Hotline[];
   error?: string;
-}
-
-function normalizeZip(input: string): string {
-  const digits = (input || "").replace(/\D/g, "");
-  return digits.slice(0, 5);
+  message?: string;
 }
 
 export const LocalHelpSearch = () => {
   const [zip, setZip] = useState("");
-  const [radius, setRadius] = useState<number>(25);
+  const [radius, setRadius] = useState<number>(20);
   const [loading, setLoading] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<LocalHelpResponse | null>(null);
-  const [nationalResources, setNationalResources] = useState<NationalResource[]>([]);
   const { toast } = useToast();
 
-  // Load user's saved ZIP from profile and national resources
+  // Load user's saved ZIP from profile
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        // Load user ZIP if authenticated
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: profile } = await supabase
@@ -73,31 +65,10 @@ export const LocalHelpSearch = () => {
             .single();
           
           if (profile?.zipcode) {
-            const normalized = normalizeZip(profile.zipcode);
-            setZip(normalized);
+            setZip(profile.zipcode);
             // Auto-search with saved ZIP
-            await performSearch(normalized, radius);
+            await performSearch(profile.zipcode, radius);
           }
-        }
-
-        // Load national resources
-        const { data: national, error: nationalError } = await supabase
-          .from("help_locations")
-          .select("id, name, phone, website_url, tags")
-          .eq("is_national", true)
-          .eq("is_active", true);
-
-        if (!nationalError && national) {
-          setNationalResources(
-            national.map((n) => ({
-              id: n.id,
-              name: n.name,
-              phone: n.phone,
-              text: null, // SMS numbers would need separate field
-              website: n.website_url,
-              tags: n.tags,
-            }))
-          );
         }
       } catch (error) {
         console.error("Error loading initial data:", error);
@@ -110,10 +81,10 @@ export const LocalHelpSearch = () => {
   }, []);
 
   async function performSearch(zipCode: string, searchRadius: number) {
-    const normalized = normalizeZip(zipCode);
+    const trimmed = zipCode.trim();
     
-    if (!/^\d{5}$/.test(normalized)) {
-      setError("Please enter a valid 5-digit ZIP code");
+    if (!trimmed) {
+      setError("Please enter a ZIP code or postal code");
       setData(null);
       return;
     }
@@ -125,7 +96,7 @@ export const LocalHelpSearch = () => {
       const { data: response, error: fnError } = await supabase.functions.invoke<LocalHelpResponse>(
         "local-help",
         {
-          body: { zip_code: normalized, radius: searchRadius },
+          body: { zip_code: trimmed, radius: searchRadius },
         }
       );
 
@@ -135,46 +106,36 @@ export const LocalHelpSearch = () => {
       }
 
       if (!response?.ok) {
-        throw new Error(response?.error || "Invalid response from server");
+        throw new Error(response?.message || response?.error || "Invalid response from server");
       }
 
-      // Guard against null/undefined payloads
-      const payload: LocalHelpResponse = {
-        ok: true,
-        zip: response.zip,
-        city: response.city,
-        state: response.state,
-        radius: response.radius,
-        therapists: response.therapists ?? [],
-        crisis_centers: response.crisis_centers ?? [],
-      };
-
-      setData(payload);
+      setData(response);
 
       // Track successful search
       await trackEvent({
         eventType: "help_local_ranked",
         metadata: {
-          zip: normalized,
+          zip: response.query.zip,
           radius: searchRadius,
-          therapists_count: payload.therapists.length,
-          crisis_count: payload.crisis_centers.length,
+          country: response.countryCode,
+          therapists_count: response.therapists.length,
+          crisis_count: response.crisis_centers.length,
         },
       });
 
       toast({
         title: "Location found",
-        description: `Showing resources near ${payload.city}, ${payload.state}`,
+        description: `Showing resources near ${response.query.zip}`,
       });
     } catch (err: any) {
       console.error("Local help search failed:", err);
-      const errorMessage = err.message || "We couldn't fetch local results right now. National resources are still available below.";
+      const errorMessage = err.message || "We couldn't fetch local results right now.";
       setError(errorMessage);
       
       // Track error
       await trackEvent({
         eventType: "help_local_ranked",
-        metadata: { zip: normalized, error: errorMessage, success: false },
+        metadata: { zip: trimmed, error: errorMessage, success: false },
       });
 
       toast({
@@ -215,16 +176,14 @@ export const LocalHelpSearch = () => {
           <form onSubmit={onSearch} className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <label htmlFor="zip" className="text-sm font-medium mb-1 block">
-                ZIP Code
+                ZIP / Postal Code
               </label>
               <Input
                 id="zip"
-                inputMode="numeric"
-                pattern="\d*"
                 maxLength={10}
                 value={zip}
                 onChange={(e) => setZip(e.target.value)}
-                placeholder="e.g., 48917"
+                placeholder="e.g., 02115 or M5V 2T6"
                 disabled={loading}
               />
             </div>
@@ -239,10 +198,9 @@ export const LocalHelpSearch = () => {
                 disabled={loading}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value={10}>10</option>
+                <option value={15}>15</option>
+                <option value={20}>20</option>
                 <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
               </select>
             </div>
             <div className="flex items-end">
@@ -278,7 +236,7 @@ export const LocalHelpSearch = () => {
             🩺 Licensed Mental Health Professionals Near Me
           </CardTitle>
           <CardDescription>
-            {data ? `Licensed mental health professionals near ${data.city}, ${data.state}` : 'Search above to find licensed providers in your area'}
+            {data ? `Licensed mental health professionals near ${data.query.zip}` : 'Search above to find licensed providers in your area'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -292,46 +250,29 @@ export const LocalHelpSearch = () => {
           ) : data.therapists.length === 0 ? (
             <Alert>
               <AlertDescription>
-                No licensed providers found within {data.radius} miles of {data.city}, {data.state}. Try expanding your search radius or check national resources below.
+                No licensed providers found within {data.query.radius_miles} miles of {data.query.zip}. Try expanding your search radius or check national resources below.
               </AlertDescription>
             </Alert>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {data.therapists.map((therapist) => (
-                <Card key={therapist.id}>
+              {data.therapists.map((therapist, idx) => (
+                <Card key={idx}>
                   <CardContent className="pt-6">
                     <div className="space-y-2">
                       <h4 className="font-semibold leading-tight">
                         {therapist.name}
                       </h4>
-                      {therapist.distance && (
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Navigation className="h-3 w-3" />
-                          ~{therapist.distance.toFixed(1)} mi away
+                      {therapist.address && (
+                        <p className="text-sm text-muted-foreground">
+                          {therapist.address}
                         </p>
                       )}
-                      <div className="flex flex-wrap gap-1">
-                        {therapist.verified && (
-                          <Badge variant="secondary" className="text-xs">
-                            Verified
-                          </Badge>
-                        )}
-                        {therapist.accepts_insurance && (
-                          <Badge variant="outline" className="text-xs">
-                            Insurance
-                          </Badge>
-                        )}
-                        {therapist.sliding_scale && (
-                          <Badge variant="outline" className="text-xs">
-                            Sliding Scale
-                          </Badge>
-                        )}
-                        {therapist.telehealth && (
-                          <Badge variant="outline" className="text-xs">
-                            Telehealth
-                          </Badge>
-                        )}
-                      </div>
+                      {therapist.distance_miles !== undefined && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Navigation className="h-3 w-3" />
+                          ~{therapist.distance_miles} mi away
+                        </p>
+                      )}
                       <div className="flex flex-wrap gap-2 pt-2">
                         {therapist.phone && (
                           <Button asChild variant="default" size="sm">
@@ -345,7 +286,15 @@ export const LocalHelpSearch = () => {
                           <Button asChild variant="outline" size="sm">
                             <a href={therapist.website} target="_blank" rel="noopener noreferrer">
                               <Globe className="mr-1 h-3 w-3" />
-                              View
+                              Website
+                            </a>
+                          </Button>
+                        )}
+                        {therapist.directions_url && (
+                          <Button asChild variant="outline" size="sm">
+                            <a href={therapist.directions_url} target="_blank" rel="noopener noreferrer">
+                              <MapPin className="mr-1 h-3 w-3" />
+                              Directions
                             </a>
                           </Button>
                         )}
@@ -366,7 +315,7 @@ export const LocalHelpSearch = () => {
             🚨 Crisis Centers Near Me
           </CardTitle>
           <CardDescription>
-            {data ? `Immediate crisis support near ${data.city}, ${data.state}` : 'Search above to find crisis centers in your area'}
+            {data ? `Immediate crisis support near ${data.query.zip}` : 'Search above to find crisis centers in your area'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -381,28 +330,28 @@ export const LocalHelpSearch = () => {
             <Alert className="border-destructive/50">
               <AlertCircle className="h-4 w-4 text-destructive" />
               <AlertDescription>
-                <strong>No local crisis centers found within {data.radius} miles.</strong> Please use our national crisis resources below or dial 988 for immediate support.
+                <strong>No local crisis centers found within {data.query.radius_miles} miles.</strong> Please use our national crisis resources below or dial 988 for immediate support.
               </AlertDescription>
             </Alert>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {data.crisis_centers.map((center) => (
-                <Card key={center.id} className="relative border-destructive/20">
+              {data.crisis_centers.map((center, idx) => (
+                <Card key={idx} className="relative border-destructive/20">
                   <CardContent className="pt-6">
                     <div className="space-y-2">
                       <h4 className="font-semibold leading-tight">
                         {center.name}
                       </h4>
-                      {center.distance && (
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Navigation className="h-3 w-3" />
-                          ~{center.distance.toFixed(1)} mi away
+                      {center.address && (
+                        <p className="text-sm text-muted-foreground">
+                          {center.address}
                         </p>
                       )}
-                      {center.verified && (
-                        <Badge variant="secondary" className="text-xs">
-                          Verified
-                        </Badge>
+                      {center.distance_miles !== undefined && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Navigation className="h-3 w-3" />
+                          ~{center.distance_miles} mi away
+                        </p>
                       )}
                       <div className="flex flex-wrap gap-2 pt-2">
                         {center.phone && (
@@ -418,6 +367,14 @@ export const LocalHelpSearch = () => {
                             <a href={center.website} target="_blank" rel="noopener noreferrer">
                               <Globe className="mr-1 h-3 w-3" />
                               Website
+                            </a>
+                          </Button>
+                        )}
+                        {center.directions_url && (
+                          <Button asChild variant="outline" size="sm">
+                            <a href={center.directions_url} target="_blank" rel="noopener noreferrer">
+                              <MapPin className="mr-1 h-3 w-3" />
+                              Directions
                             </a>
                           </Button>
                         )}
@@ -438,13 +395,51 @@ export const LocalHelpSearch = () => {
             ☎️ National Crisis Hotlines & Resources
           </CardTitle>
           <CardDescription>
-            Available 24/7 anywhere in the United States
+            {data ? `Available 24/7 in ${data.countryCode === "CA" ? "Canada" : "the United States"}` : "Available 24/7"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {nationalResources.length === 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Hardcoded fallback national resources */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {data?.hotlines && data.hotlines.length > 0 ? (
+              data.hotlines.map((hotline, idx) => (
+                <Card key={idx} className="border-primary/20">
+                  <CardContent className="pt-6">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold leading-tight">
+                        {hotline.label}
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant="outline" className="text-xs">24/7</Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {hotline.call && (
+                          <Button asChild variant="default" size="sm">
+                            <a href={`tel:${hotline.call}`}>
+                              <Phone className="mr-1 h-3 w-3" />
+                              {hotline.call}
+                            </a>
+                          </Button>
+                        )}
+                        {hotline.url && (
+                          <Button asChild variant="outline" size="sm">
+                            <a href={hotline.url} target="_blank" rel="noopener noreferrer">
+                              <Globe className="mr-1 h-3 w-3" />
+                              Website
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                      {hotline.text && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {hotline.text}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              // Fallback national resources
               <Card className="border-primary/20">
                 <CardContent className="pt-6">
                   <div className="space-y-2">
@@ -472,112 +467,8 @@ export const LocalHelpSearch = () => {
                   </div>
                 </CardContent>
               </Card>
-              
-              <Card className="border-primary/20">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold leading-tight">
-                      Crisis Text Line
-                    </h4>
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant="outline" className="text-xs">24/7</Badge>
-                      <Badge variant="outline" className="text-xs">Text Support</Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Button asChild variant="default" size="sm">
-                        <a href="sms:741741">
-                          <Phone className="mr-1 h-3 w-3" />
-                          Text 741741
-                        </a>
-                      </Button>
-                      <Button asChild variant="outline" size="sm">
-                        <a href="https://www.crisistextline.org" target="_blank" rel="noopener noreferrer">
-                          <Globe className="mr-1 h-3 w-3" />
-                          Website
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-primary/20">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold leading-tight">
-                      The Trevor Project
-                    </h4>
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant="outline" className="text-xs">24/7</Badge>
-                      <Badge variant="outline" className="text-xs">LGBTQ+ Youth</Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Button asChild variant="default" size="sm">
-                        <a href="tel:1-866-488-7386">
-                          <Phone className="mr-1 h-3 w-3" />
-                          Call
-                        </a>
-                      </Button>
-                      <Button asChild variant="outline" size="sm">
-                        <a href="https://www.thetrevorproject.org" target="_blank" rel="noopener noreferrer">
-                          <Globe className="mr-1 h-3 w-3" />
-                          Website
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {nationalResources.map((resource) => (
-                <Card key={resource.id} className="border-primary/20">
-                  <CardContent className="pt-6">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold leading-tight">
-                        {resource.name}
-                      </h4>
-                      {resource.tags && resource.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {resource.tags.slice(0, 3).map((tag, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {resource.phone && (
-                          <Button asChild variant="default" size="sm">
-                            <a href={`tel:${resource.phone}`}>
-                              <Phone className="mr-1 h-3 w-3" />
-                              Call
-                            </a>
-                          </Button>
-                        )}
-                        {resource.text && (
-                          <Button asChild variant="secondary" size="sm">
-                            <a href={`sms:${resource.text}`}>
-                              Text
-                            </a>
-                          </Button>
-                        )}
-                        {resource.website && (
-                          <Button asChild variant="outline" size="sm">
-                            <a href={resource.website} target="_blank" rel="noopener noreferrer">
-                              <Globe className="mr-1 h-3 w-3" />
-                              Website
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
