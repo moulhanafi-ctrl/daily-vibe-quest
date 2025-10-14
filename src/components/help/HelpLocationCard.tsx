@@ -69,8 +69,18 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
     window.open(`https://maps.google.com/?q=${query}`, "_blank");
   };
 
+  const cardClass = location.website_url 
+    ? "hover:shadow-lg transition-all cursor-pointer hover:border-primary/50" 
+    : "hover:shadow-md transition-shadow";
+
+  const handleCardClick = () => {
+    if (location.website_url) {
+      handleWebsite();
+    }
+  };
+
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className={cardClass} onClick={handleCardClick}>
       <CardContent className="p-4 space-y-3">
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-2">
@@ -138,7 +148,13 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           </p>
         )}
 
-        <div className="flex gap-2 flex-wrap">
+        {!location.website_url && (
+          <p className="text-xs text-muted-foreground italic">
+            No website available
+          </p>
+        )}
+
+        <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
           {location.phone && (
             <Button
               onClick={handleCall}
@@ -154,9 +170,10 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               onClick={handleWebsite}
               size="sm"
               variant={location.type === "therapy" ? "default" : "outline"}
+              className="group"
             >
-              <ExternalLink className="h-4 w-4 mr-1" />
-              Website
+              <ExternalLink className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
+              Visit Website
             </Button>
           )}
           {!location.is_national && (
