@@ -40,6 +40,14 @@ const tagLabels: Record<string, string> = {
 export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) => {
   const isMinor = ageGroup === "child" || ageGroup === "teen";
 
+  const ensureHttps = (url: string) => {
+    const trimmed = url.trim();
+    if (!/^https?:\/\//i.test(trimmed)) {
+      return `https://${trimmed}`;
+    }
+    return trimmed.replace(/^http:\/\//i, "https://");
+  };
+
   const handleCall = () => {
     trackEvent({
       eventType: "help_call_clicked",
@@ -56,7 +64,8 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
       metadata: { id: location.id, type: location.type }
     });
     if (location.website_url) {
-      window.open(location.website_url, "_blank");
+      const url = ensureHttps(location.website_url);
+      window.open(url, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -65,8 +74,6 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
       eventType: "help_directions_clicked",
       metadata: { id: location.id, type: location.type }
     });
-    const query = encodeURIComponent(location.address);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank", "noopener,noreferrer");
   };
 
   const cardClass = location.website_url 
@@ -91,14 +98,17 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           </div>
           
           {location.address && (
-            <button
-              onClick={handleDirections}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => { e.stopPropagation(); handleDirections(); }}
               className="text-sm text-muted-foreground hover:text-primary transition-colors text-left group flex items-start gap-1.5 w-full"
               aria-label={`Get directions to ${location.name}`}
             >
-              <Navigation className="h-4 w-4 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+              <span aria-hidden>📍</span>
               <span className="group-hover:underline">{location.address}</span>
-            </button>
+            </a>
           )}
           
           {location.distance !== undefined && (
