@@ -57,7 +57,11 @@ export type EventType =
   | "security_banner_viewed"
   | "security_banner_mark_done"
   | "health_auth_leaked_pw_check_pass"
-  | "health_auth_leaked_pw_check_fail";
+  | "health_auth_leaked_pw_check_fail"
+  | "help_view_all_therapists_clicked"
+  | "therapist_results_viewed"
+  | "therapist_card_website_clicked"
+  | "therapist_card_directions_clicked";
 
 interface TrackEventParams {
   eventType: EventType;

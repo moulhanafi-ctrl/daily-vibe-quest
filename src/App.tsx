@@ -46,6 +46,7 @@ import StripeAdmin from "./pages/admin/StripeAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
 import NationalHotlines from "./pages/help/NationalHotlines";
 import HelpResources from "./pages/help/HelpResources";
+import TherapistsNearby from "./pages/help/TherapistsNearby";
 import LanguagePicker from "./pages/welcome/LanguagePicker";
 import OpsAdmin from "./pages/admin/OpsAdmin";
 import PublishReadiness from "./pages/admin/PublishReadiness";
@@ -103,6 +104,7 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
           <Route path="/help" element={<HelpNearby />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
+          <Route path="/help/therapists" element={<TherapistsNearby />} />
           <Route path="/help/national" element={<NationalHotlines />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

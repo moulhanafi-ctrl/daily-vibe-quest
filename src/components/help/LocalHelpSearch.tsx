@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Brain, Ambulance, Phone, Navigation, PhoneCall } from "lucide-react";
+import { Loader2, Brain, Ambulance, Phone, Navigation, PhoneCall, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { trackEvent } from "@/lib/analytics";
 const US_ZIP = /^\d{5}(?:-\d{4})?$/;
 const CA_POSTAL = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
@@ -45,6 +47,7 @@ type ApiResponse = {
 };
 
 export default function LocalHelpSearch() {
+  const navigate = useNavigate();
   const [zip, setZip] = useState<string>("");
   const [radius, setRadius] = useState<number>(25);
   const [loading, setLoading] = useState(false);
@@ -175,9 +178,33 @@ export default function LocalHelpSearch() {
         <div className="mt-8 space-y-8">
           {/* Therapists Section */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Brain className="h-6 w-6 text-[#007BFF]" />
-              <h3 className="text-xl font-bold text-foreground">Therapists near me</h3>
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => {
+                  trackEvent({ 
+                    eventType: "help_view_all_therapists_clicked", 
+                    metadata: { zip: resp.query?.zip || zip, radius: resp.query?.radius_miles || radius } 
+                  });
+                  navigate(`/help/therapists?zip=${resp.query?.zip || zip}&radius=${resp.query?.radius_miles || radius}`);
+                }}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                aria-label="View all therapists"
+              >
+                <Brain className="h-6 w-6 text-[#007BFF]" />
+                <h3 className="text-xl font-bold text-foreground">Therapists near me</h3>
+              </button>
+              <button
+                onClick={() => {
+                  trackEvent({ 
+                    eventType: "help_view_all_therapists_clicked", 
+                    metadata: { zip: resp.query?.zip || zip, radius: resp.query?.radius_miles || radius } 
+                  });
+                  navigate(`/help/therapists?zip=${resp.query?.zip || zip}&radius=${resp.query?.radius_miles || radius}`);
+                }}
+                className="text-sm font-medium text-[#007BFF] hover:text-[#0056b3] transition-colors flex items-center gap-1"
+              >
+                View all <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
             {resp.therapists && resp.therapists.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
