@@ -174,6 +174,15 @@ function mergePlaces(arrays: Place[][], center: { lat: number; lng: number }) {
   return all;
 }
 
+async function safeArray<T>(p: Promise<T[]>): Promise<T[]> {
+  try {
+    return await p;
+  } catch (e) {
+    console.warn("[local-help] places fetch error:", (e as Error).message);
+    return [] as T[];
+  }
+}
+
 async function googleNearby(
   center: { lat: number; lng: number },
   radiusMeters: number,
@@ -223,12 +232,16 @@ async function osmSearch(center: { lat: number; lng: number }, radiusMeters: num
 async function findTherapists(center: { lat: number; lng: number }, radiusMeters: number): Promise<Place[]> {
   const therapistKeywords = ["therapist", "counselor", "psychologist", "psychiatrist", "mental health clinic"];
   if (GOOGLE_MAPS_API_KEY) {
-    const arrays = await Promise.all(therapistKeywords.map((k) => googleNearby(center, radiusMeters, k)));
+    const arrays = await Promise.all(
+      therapistKeywords.map((k) => safeArray(googleNearby(center, radiusMeters, k)))
+    );
     const merged = mergePlaces(arrays, center);
     if (merged.length > 0) return merged;
-    // fall back if Google returned nothing (e.g., denied/invalid key)
+    // fall back if Google returned nothing or errored
   }
-  const arrays = await Promise.all(therapistKeywords.map((k) => osmSearch(center, radiusMeters, k)));
+  const arrays = await Promise.all(
+    therapistKeywords.map((k) => safeArray(osmSearch(center, radiusMeters, k)))
+  );
   return mergePlaces(arrays, center);
 }
 
@@ -241,12 +254,16 @@ async function findCrisisCenters(center: { lat: number; lng: number }, radiusMet
     "hospital emergency",
   ];
   if (GOOGLE_MAPS_API_KEY) {
-    const arrays = await Promise.all(crisisKeywords.map((k) => googleNearby(center, radiusMeters, k)));
+    const arrays = await Promise.all(
+      crisisKeywords.map((k) => safeArray(googleNearby(center, radiusMeters, k)))
+    );
     const merged = mergePlaces(arrays, center);
     if (merged.length > 0) return merged;
-    // fall back if Google returned nothing (e.g., denied/invalid key)
+    // fall back if Google returned nothing or errored
   }
-  const arrays = await Promise.all(crisisKeywords.map((k) => osmSearch(center, radiusMeters, k)));
+  const arrays = await Promise.all(
+    crisisKeywords.map((k) => safeArray(osmSearch(center, radiusMeters, k)))
+  );
   return mergePlaces(arrays, center);
 }
 
