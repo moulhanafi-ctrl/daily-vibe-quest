@@ -106,6 +106,7 @@ async function geocode(query: string): Promise<{ lat: number; lng: number; count
         const countryComp = best.address_components.find((c: any) => c.types?.includes("country"));
         const cc = (countryComp?.short_name ?? "US") as "US" | "CA";
         if (cc !== "US" && cc !== "CA") throw new Error("UNSUPPORTED_COUNTRY");
+        console.log("[local-help] geocode provider=google lat,lon:", lat, lng, "country:", cc);
         return { lat, lng, countryCode: cc };
       }
       console.warn("[local-help] Google geocode failed:", json.status, json.error_message);
@@ -126,6 +127,7 @@ async function geocode(query: string): Promise<{ lat: number; lng: number; count
         const [lng, lat] = feat.center;
         const cc = (feat.context?.find((c: any) => c.id?.startsWith("country"))?.short_code ?? "us").toUpperCase();
         const countryCode = (cc === "CA" ? "CA" : "US") as "US" | "CA";
+        console.log("[local-help] geocode provider=mapbox lat,lon:", lat, lng, "country:", countryCode);
         return { lat, lng, countryCode };
       }
       console.warn("[local-help] Mapbox geocode returned no features.");
@@ -135,7 +137,9 @@ async function geocode(query: string): Promise<{ lat: number; lng: number; count
   }
 
   // OSM last resort
-  return await osmGeocode(query);
+  const r = await osmGeocode(query);
+  console.log("[local-help] geocode provider=osm lat,lon:", r.lat, r.lng, "country:", r.countryCode);
+  return r;
 }
 
 // -------- Places Search (Google preferred) --------
