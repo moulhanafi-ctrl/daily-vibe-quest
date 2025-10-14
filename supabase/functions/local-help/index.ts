@@ -12,7 +12,7 @@ const corsHeaders = {
 // -------- Config --------
 // Preferred provider: Google (Places + Geocoding). Fallback: Mapbox (Geocoding only) + simple OSM search.
 // Set at least ONE of: GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN in Project Settings → Functions → Environment Variables.
-const GOOGLE_MAPS_API_KEY = "AIzaSyCGajFYBJTVqlCYbKhJCpz7PbkvUy3FY98"; // Google Maps API Key
+const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") ?? "";
 const MAPBOX_TOKEN = Deno.env.get("MAPBOX_TOKEN") ?? "";
 
 // In-memory cache per function instance (best-effort). TTL: 24 hours.
