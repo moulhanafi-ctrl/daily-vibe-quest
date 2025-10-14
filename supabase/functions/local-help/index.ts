@@ -231,7 +231,15 @@ async function osmSearch(center: { lat: number; lng: number }, radiusMeters: num
 }
 
 async function findTherapists(center: { lat: number; lng: number }, radiusMeters: number): Promise<Place[]> {
-  const therapistKeywords = ["therapist", "counselor", "psychologist", "psychiatrist", "mental health clinic"];
+  const therapistKeywords = [
+    "therapist",
+    "mental health counselor",
+    "psychologist",
+    "counseling center",
+    "behavioral health clinic",
+    "marriage and family therapy",
+    "psychotherapy"
+  ];
   if (GOOGLE_MAPS_API_KEY) {
     const arrays = await Promise.all(therapistKeywords.map((k) => safeArray(googleNearby(center, radiusMeters, k))));
     const merged = mergePlaces(arrays, center);
@@ -283,7 +291,7 @@ serve(async (req) => {
     if (!US_ZIP.test(zip_code) && !CA_POSTAL.test(zip_code)) {
       throw new Error("INVALID_ZIP_OR_POSTAL");
     }
-    if (![15, 20, 25].includes(radius)) radius = 20;
+    if (![25, 50, 75].includes(radius)) radius = 25;
 
     const normalized = normalizePostal(zip_code);
     const cacheKey = `${normalized}|${radius}`;
