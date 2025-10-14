@@ -35,7 +35,7 @@ type ApiResponse = {
 
 export default function LocalHelpSearch() {
   const [zip, setZip] = useState<string>("");
-  const [radius, setRadius] = useState<number>(20);
+  const [radius, setRadius] = useState<number>(25);
   const [loading, setLoading] = useState(false);
   const [resp, setResp] = useState<ApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,8 +96,8 @@ export default function LocalHelpSearch() {
     return (
       <div className="mt-2 text-sm">
         No results within {resp.query?.radius_miles} miles.{" "}
-        <button className="underline" onClick={() => runSearch(resp.query?.zip || zip, 25)}>
-          Try 25 miles
+        <button className="underline" onClick={() => runSearch(resp.query?.zip || zip, 75)}>
+          Try 75 miles
         </button>
       </div>
     );
@@ -121,7 +121,7 @@ export default function LocalHelpSearch() {
 
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium">Radius:</span>
-          {[15, 20, 25].map((r) => (
+          {[25, 50, 75].map((r) => (
             <button
               type="button"
               key={r}
