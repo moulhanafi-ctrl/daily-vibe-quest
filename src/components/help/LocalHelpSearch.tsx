@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 const US_ZIP = /^\d{5}(?:-\d{4})?$/;
 const CA_POSTAL = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
@@ -149,8 +150,16 @@ export default function LocalHelpSearch() {
         )}
       </form>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="mt-8 flex flex-col items-center justify-center py-12 animate-fade-in">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground text-lg">Finding trusted resources near you…</p>
+        </div>
+      )}
+
       {/* Results */}
-      {resp && (
+      {!loading && resp && (
         <div className="mt-6 space-y-4">
           <div className="rounded-2xl border p-4">
             <h3 className="text-lg font-semibold">Therapists near me</h3>
