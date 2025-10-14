@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-const GOOGLE_MAPS_API_KEY = "AIzaSyXXXXXXXXXXXXXXX"; // paste your actual key here
-
 const US_ZIP = /^\d{5}(?:-\d{4})?$/;
 const CA_POSTAL = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
