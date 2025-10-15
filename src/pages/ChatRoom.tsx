@@ -43,11 +43,72 @@ const ChatRoom = () => {
   const [sending, setSending] = useState(false);
   const [mutedUsers, setMutedUsers] = useState<Set<string>>(new Set());
   const [reportingMessage, setReportingMessage] = useState<string | null>(null);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const MAX_MESSAGE_LENGTH = 500;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const createRoomIfNeeded = async (focusArea: string, ageGroup: "adult" | "child" | "elder" | "teen") => {
+    setIsCreatingRoom(true);
+    try {
+      // Try to find existing room
+      const { data: existingRoom } = await supabase
+        .from("chat_rooms")
+        .select("id, name, description")
+        .eq("focus_area", focusArea)
+        .eq("age_group", ageGroup)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingRoom) {
+        return existingRoom;
+      }
+
+      // Room doesn't exist, create it
+      const focusAreaLabels: Record<string, string> = {
+        depression: "Depression Support",
+        anxiety: "Anxiety Support",
+        grief: "Grief & Loss Support",
+        stress: "Stress Management",
+        "self-esteem": "Self-Esteem Building",
+        relationships: "Relationship Support",
+        loneliness: "Overcoming Loneliness",
+        pressure: "School & Work Pressure",
+        family: "Family Support",
+        sleep: "Sleep & Rest Support",
+        motivation: "Motivation & Purpose",
+      };
+
+      const ageLabels: Record<string, string> = {
+        child: "Ages 5-12",
+        teen: "Ages 13-17",
+        adult: "Ages 18-60",
+        elder: "Ages 61+",
+      };
+
+      const roomName = `${focusAreaLabels[focusArea] || "Support Chat"} - ${ageLabels[ageGroup] || "All Ages"}`;
+      const roomDescription = "A safe space to connect and support each other";
+
+      const { data: newRoom, error: createError } = await supabase
+        .from("chat_rooms")
+        .insert([{
+          focus_area: focusArea,
+          age_group: ageGroup,
+          name: roomName,
+          description: roomDescription,
+        }])
+        .select("id, name, description")
+        .single();
+
+      if (createError) throw createError;
+
+      return newRoom;
+    } finally {
+      setIsCreatingRoom(false);
+    }
   };
 
   useEffect(() => {
@@ -70,31 +131,25 @@ const ChatRoom = () => {
         setUsername(profile?.username || "Anonymous");
 
         let activeRoomId = roomId;
+        let roomData = null;
 
-        // If focusArea is provided, find the matching room for user's age group
+        // If focusArea is provided, find or create the matching room for user's age group
         if (focusArea && !roomId) {
-          const { data: matchingRoom, error: roomFindError } = await supabase
-            .from("chat_rooms")
-            .select("id")
-            .eq("focus_area", focusArea)
-            .eq("age_group", profile?.age_group || "adult")
-            .limit(1)
-            .maybeSingle();
-
-          if (roomFindError) throw roomFindError;
+          const room = await createRoomIfNeeded(focusArea, profile?.age_group || "adult");
           
-          if (!matchingRoom) {
+          if (!room) {
             toast({
-              title: "Chat room not found",
-              description: "No chat room found for this focus area",
+              title: "Unable to create chat room",
+              description: "Please try again or contact support",
               variant: "destructive",
             });
             navigate("/chat-rooms");
             return;
           }
 
-          activeRoomId = matchingRoom.id;
-          setResolvedRoomId(matchingRoom.id);
+          activeRoomId = room.id;
+          roomData = room;
+          setResolvedRoomId(room.id);
         }
 
         if (!activeRoomId) {
@@ -102,14 +157,37 @@ const ChatRoom = () => {
           return;
         }
 
-        // Get room details
-        const { data: roomData, error: roomError } = await supabase
-          .from("chat_rooms")
-          .select("*")
-          .eq("id", activeRoomId)
-          .single();
+        // Get room details if not already loaded
+        if (!roomData) {
+          const { data: fetchedRoom, error: roomError } = await supabase
+            .from("chat_rooms")
+            .select("*")
+            .eq("id", activeRoomId)
+            .maybeSingle();
 
-        if (roomError) throw roomError;
+          if (roomError) {
+            console.error("Error fetching room:", roomError);
+            toast({
+              title: "Error loading chat room",
+              description: "The chat room could not be found. Please try selecting your focus area again.",
+              variant: "destructive",
+            });
+            navigate("/chat-rooms");
+            return;
+          }
+
+          if (!fetchedRoom) {
+            toast({
+              title: "Chat room not found",
+              description: "Please select your focus area from settings to join the right chat room.",
+            });
+            navigate("/dashboard");
+            return;
+          }
+
+          roomData = fetchedRoom;
+        }
+
         setRoom(roomData);
 
         // Get messages
@@ -127,9 +205,10 @@ const ChatRoom = () => {
         console.error("Error loading chat room:", error);
         toast({
           title: "Error",
-          description: "Failed to load chat room",
+          description: "Failed to load chat room. Please try again.",
           variant: "destructive",
         });
+        navigate("/chat-rooms");
       } finally {
         setLoading(false);
       }
@@ -282,8 +361,13 @@ const ChatRoom = () => {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col min-h-0 p-3 sm:p-6 pt-0">
-            {loading ? (
-              <ChatMessageSkeleton />
+            {loading || isCreatingRoom ? (
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground animate-pulse">
+                  {isCreatingRoom ? "Setting up your chatroom..." : "Loading messages..."}
+                </p>
+              </div>
             ) : (
               <>
                 <ScrollArea className="flex-1 pr-2 sm:pr-4 mb-4">
