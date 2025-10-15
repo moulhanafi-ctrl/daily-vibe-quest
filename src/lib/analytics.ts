@@ -61,7 +61,10 @@ export type EventType =
   | "help_view_all_therapists_clicked"
   | "therapist_results_viewed"
   | "therapist_card_website_clicked"
-  | "therapist_card_directions_clicked";
+  | "therapist_card_directions_clicked"
+  | "therapist_phone_clicked"
+  | "therapist_website_clicked"
+  | "therapist_directions_clicked";
 
 interface TrackEventParams {
   eventType: EventType;

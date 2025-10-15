@@ -164,13 +164,22 @@ export default function TherapistsNearby() {
     setFilteredTherapists(filtered);
   };
 
+  const formatPhone = (phone?: string) => {
+    if (!phone) return "";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length === 10) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return phone;
+  };
+
   const handleCall = (therapist: Therapist) => {
     if (therapist.phone) {
       const cleanPhone = therapist.phone.replace(/[^\d+]/g, "");
       window.location.href = `tel:${cleanPhone}`;
       trackEvent({
-        eventType: "therapist_card_website_clicked",
-        metadata: { id: therapist.id },
+        eventType: "therapist_phone_clicked",
+        metadata: { id: therapist.id, name: therapist.name },
       });
     }
   };
@@ -198,7 +207,7 @@ export default function TherapistsNearby() {
     try {
       window.open(href, "_blank", "noopener,noreferrer");
       trackEvent({
-        eventType: "therapist_card_website_clicked",
+        eventType: "therapist_website_clicked",
         metadata: { 
           id: therapist.id, 
           name: therapist.name,
@@ -217,8 +226,8 @@ export default function TherapistsNearby() {
       const query = encodeURIComponent(therapist.address);
       window.open(`https://maps.google.com/?q=${query}`, "_blank");
       trackEvent({
-        eventType: "therapist_card_directions_clicked",
-        metadata: { id: therapist.id },
+        eventType: "therapist_directions_clicked",
+        metadata: { id: therapist.id, name: therapist.name },
       });
     }
   };
@@ -378,8 +387,27 @@ export default function TherapistsNearby() {
                 <Card key={therapist.id} className="flex flex-col">
                   <CardHeader>
                     <CardTitle className="text-lg">{therapist.name}</CardTitle>
-                    <CardDescription className="text-sm">
-                      {therapist.address}
+                    <CardDescription className="text-sm space-y-1">
+                      <div className="flex items-start gap-1.5">
+                        <span aria-hidden>📍</span>
+                        <span>{therapist.address || "No address provided"}</span>
+                      </div>
+                      {therapist.phone && (
+                        <div className="flex items-center gap-1.5 text-foreground font-medium">
+                          <Phone className="h-3.5 w-3.5" />
+                          <a 
+                            href={`tel:${therapist.phone.replace(/[^\d+]/g, "")}`}
+                            className="hover:text-primary transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCall(therapist);
+                            }}
+                            aria-label={`Call ${therapist.name}`}
+                          >
+                            {formatPhone(therapist.phone)}
+                          </a>
+                        </div>
+                      )}
                     </CardDescription>
                     {therapist.distance_miles !== undefined && (
                       <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
@@ -410,19 +438,29 @@ export default function TherapistsNearby() {
                         </p>
                       )}
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex gap-2">
-                        {therapist.phone && (
-                          <Button 
-                            onClick={() => handleCall(therapist)}
-                            variant="outline"
-                            className="flex-1"
-                            aria-label={`Call ${therapist.name}`}
-                          >
-                            <Phone className="h-4 w-4 mr-2" />
-                            Call
-                          </Button>
-                        )}
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      {therapist.phone ? (
+                        <Button 
+                          onClick={() => handleCall(therapist)}
+                          variant="outline"
+                          className="flex-1"
+                          aria-label={`Call ${therapist.name}`}
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call
+                        </Button>
+                      ) : (
+                        <Button 
+                          disabled 
+                          variant="outline"
+                          className="flex-1"
+                          aria-label="No phone available"
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          No Phone
+                        </Button>
+                      )}
+                      {therapist.address ? (
                         <Button 
                           onClick={() => handleDirections(therapist)}
                           variant="outline"
@@ -432,31 +470,31 @@ export default function TherapistsNearby() {
                           <Navigation className="h-4 w-4 mr-2" />
                           Directions
                         </Button>
-                      </div>
+                      ) : (
+                        <Button 
+                          disabled 
+                          variant="outline"
+                          className="flex-1"
+                          aria-label="No address available"
+                        >
+                          <Navigation className="h-4 w-4 mr-2" />
+                          No Address
+                        </Button>
+                      )}
                       {therapist.website_url ? (
                         <Button 
                           onClick={() => handleWebsite(therapist)}
-                          className="w-full hover:opacity-90 transition-opacity"
-                          aria-label={`Open ${therapist.name} website in new tab`}
+                          className="flex-1 sm:flex-[1.2] hover:opacity-90 transition-opacity"
+                          aria-label={`Visit ${therapist.name} website`}
                         >
                           <Globe className="h-4 w-4 mr-2" />
-                          Visit Website
-                        </Button>
-                      ) : therapist.phone ? (
-                        <Button 
-                          onClick={() => handleCall(therapist)}
-                          variant="outline"
-                          className="w-full"
-                          aria-label={`Call ${therapist.name} clinic`}
-                        >
-                          <Phone className="h-4 w-4 mr-2" />
-                          Call Clinic
+                          Website
                         </Button>
                       ) : (
                         <Button 
                           disabled 
-                          className="w-full" 
-                          title="Website not provided"
+                          variant="outline"
+                          className="flex-1 sm:flex-[1.2]"
                           aria-label="No website available"
                         >
                           <Globe className="h-4 w-4 mr-2" />

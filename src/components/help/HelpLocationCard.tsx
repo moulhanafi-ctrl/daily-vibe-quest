@@ -57,10 +57,19 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
     return s.length >= 7;
   };
 
+  const formatPhone = (phone?: string) => {
+    if (!phone) return "";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length === 10) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return phone;
+  };
+
   const handleCall = () => {
     trackEvent({
-      eventType: "help_call_clicked",
-      metadata: { id: location.id, type: location.type }
+      eventType: "therapist_phone_clicked",
+      metadata: { id: location.id, type: location.type, name: location.name }
     });
     if (isValidPhone(location.phone)) {
       window.location.href = `tel:${sanitizePhone(location.phone)}`;
@@ -69,8 +78,8 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
 
   const handleWebsite = () => {
     trackEvent({
-      eventType: "help_website_clicked",
-      metadata: { id: location.id, type: location.type }
+      eventType: "therapist_website_clicked",
+      metadata: { id: location.id, type: location.type, name: location.name }
     });
     if (location.website_url) {
       const url = ensureHttps(location.website_url);
@@ -80,9 +89,13 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
 
   const handleDirections = () => {
     trackEvent({
-      eventType: "help_directions_clicked",
-      metadata: { id: location.id, type: location.type }
+      eventType: "therapist_directions_clicked",
+      metadata: { id: location.id, type: location.type, name: location.name }
     });
+    if (location.address) {
+      const query = encodeURIComponent(location.address);
+      window.open(`https://maps.google.com/?q=${query}`, "_blank");
+    }
   };
 
   const cardClass = location.website_url 
@@ -107,17 +120,27 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           </div>
           
           {location.address && (
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => { e.stopPropagation(); handleDirections(); }}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors text-left group flex items-start gap-1.5 w-full"
-              aria-label={`Get directions to ${location.name}`}
-            >
+            <div className="text-sm text-muted-foreground flex items-start gap-1.5">
               <span aria-hidden>📍</span>
-              <span className="group-hover:underline">{location.address}</span>
-            </a>
+              <span>{location.address}</span>
+            </div>
+          )}
+
+          {isValidPhone(location.phone) && (
+            <div className="text-sm text-foreground font-medium flex items-center gap-1.5">
+              <Phone className="h-3.5 w-3.5" />
+              <a 
+                href={`tel:${sanitizePhone(location.phone)}`}
+                className="hover:text-primary transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCall();
+                }}
+                aria-label={`Call ${location.name}`}
+              >
+                {formatPhone(location.phone)}
+              </a>
+            </div>
           )}
           
           {location.distance !== undefined && (
@@ -176,39 +199,81 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           </p>
         )}
 
-        {!location.website_url && (
-          <p className="text-xs text-muted-foreground italic">
-            No website available
-          </p>
-        )}
-
-        <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-          {isValidPhone(location.phone) && (
+        <div className="flex flex-col sm:flex-row gap-2" onClick={(e) => e.stopPropagation()}>
+          {isValidPhone(location.phone) ? (
             <Button
               asChild
               onClick={handleCall}
               size="sm"
               variant={location.type === "crisis" ? "default" : "outline"}
-              className="group"
+              className="flex-1"
             >
               <a
                 href={`tel:${sanitizePhone(location.phone!)}`}
                 aria-label={`Call ${location.name}`}
               >
-                <Phone className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
+                <Phone className="h-4 w-4 mr-2" />
                 Call
               </a>
             </Button>
+          ) : (
+            <Button
+              disabled
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              aria-label="No phone available"
+            >
+              <Phone className="h-4 w-4 mr-2" />
+              No Phone
+            </Button>
           )}
-          {location.website_url && (
+          
+          {location.address ? (
+            <Button
+              onClick={handleDirections}
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              aria-label={`Get directions to ${location.name}`}
+            >
+              <Navigation className="h-4 w-4 mr-2" />
+              Directions
+            </Button>
+          ) : (
+            <Button
+              disabled
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              aria-label="No address available"
+            >
+              <Navigation className="h-4 w-4 mr-2" />
+              No Address
+            </Button>
+          )}
+
+          {location.website_url ? (
             <Button
               onClick={handleWebsite}
               size="sm"
               variant={location.type === "therapy" ? "default" : "outline"}
-              className="group"
+              className="flex-1 sm:flex-[1.2]"
+              aria-label={`Visit ${location.name} website`}
             >
-              <ExternalLink className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
-              Visit Website
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Website
+            </Button>
+          ) : (
+            <Button
+              disabled
+              size="sm"
+              variant="outline"
+              className="flex-1 sm:flex-[1.2]"
+              aria-label="No website available"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              No Website
             </Button>
           )}
         </div>
