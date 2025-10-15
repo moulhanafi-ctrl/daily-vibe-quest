@@ -90,19 +90,7 @@ export function SecurityWarningBanner() {
           </Button>
         </div>
         <div className="flex gap-2 mt-3 ml-7">
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-          >
-            <a
-              href={`https://supabase.com/dashboard/project/${import.meta.env.VITE_SUPABASE_PROJECT_ID}/auth/policies`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open Supabase Studio <ExternalLink className="ml-1 h-3 w-3" />
-            </a>
-          </Button>
+          {/* Removed direct Supabase link - users should use the backend button */}
           <Button
             variant="outline"
             size="sm"
@@ -131,10 +119,11 @@ export function SecurityWarningBanner() {
           </DialogHeader>
           <div className="space-y-4 text-sm">
             <ol className="list-decimal list-inside space-y-3">
-              <li>Open <strong>Authentication</strong> in the left sidebar.</li>
-              <li>Go to <strong>Settings → Email</strong> (or <strong>Providers → Email</strong> in some Studio versions).</li>
-              <li>Scroll to <strong>Password security</strong>.</li>
-              <li>Toggle <strong>Prevent the use of leaked passwords</strong> ON.</li>
+              <li>Click "Open Backend" button above, then navigate to <strong>Authentication</strong> → <strong>Policies</strong> → <strong>Password</strong>.</li>
+              <li>Enable <strong>Leaked Password Protection</strong> → Set to <strong>Block</strong>.</li>
+              <li>Set <strong>Minimum Characters</strong>: 12</li>
+              <li>Enable <strong>Require Numbers</strong> ✓</li>
+              <li>Enable <strong>Require Symbols</strong> ✓</li>
               <li>Click <strong>Save</strong>.</li>
               <li>Return here and click <strong>Mark as Done</strong> to clear this warning.</li>
             </ol>

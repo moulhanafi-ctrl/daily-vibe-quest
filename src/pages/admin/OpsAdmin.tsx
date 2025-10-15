@@ -2,6 +2,8 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackupStatus } from "@/components/admin/BackupStatus";
+import { SecurityAuditSummary } from "@/components/admin/SecurityAuditSummary";
+import { SecurityWarningBanner } from "@/components/admin/SecurityWarningBanner";
 
 const OpsAdmin = () => {
   const navigate = useNavigate();
@@ -26,6 +28,10 @@ const OpsAdmin = () => {
           </div>
         </div>
 
+        <SecurityWarningBanner />
+        
+        <SecurityAuditSummary />
+        
         <BackupStatus />
 
         <div className="prose dark:prose-invert max-w-none">
