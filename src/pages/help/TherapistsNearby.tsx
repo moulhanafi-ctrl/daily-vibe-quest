@@ -458,10 +458,12 @@ export default function TherapistsNearby() {
                     </div>
                     {(therapist.phone || therapist.website_url) && (
                       <div 
-                        className="card-actions relative z-[10] flex flex-wrap gap-3 pt-2"
+                        className="card-actions relative z-[50] flex flex-wrap gap-3 pt-2"
                         onClick={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
                         onTouchStart={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onPointerUp={(e) => e.stopPropagation()}
                       >
                         {therapist.phone && (
                           <a
@@ -478,20 +480,18 @@ export default function TherapistsNearby() {
                         )}
 
                         {therapist.website_url && (
-                          <a
-                            href={getValidWebsiteUrl(therapist.website_url) ?? '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
                             className="inline-flex items-center gap-2 underline pointer-events-auto min-h-[44px] px-2 py-1 text-primary hover:text-primary/80"
                             aria-label={`Open website for ${therapist.name}`}
                             onClick={(e) => {
                               e.stopPropagation();
-                              const valid = getValidWebsiteUrl(therapist.website_url);
-                              if (!valid) {
-                                e.preventDefault();
+                              const url = getValidWebsiteUrl(therapist.website_url);
+                              if (!url) {
                                 toast.error("Sorry, this website link is unavailable.");
                                 return;
                               }
+                              window.open(url, '_blank', 'noopener,noreferrer');
                               trackEvent({
                                 eventType: "therapist_website_clicked",
                                 metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
@@ -499,7 +499,7 @@ export default function TherapistsNearby() {
                             }}
                           >
                             🌐 Website
-                          </a>
+                          </button>
                         )}
                       </div>
                     )}

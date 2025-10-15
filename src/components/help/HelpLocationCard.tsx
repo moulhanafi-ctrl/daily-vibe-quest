@@ -116,19 +116,10 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
     }
   };
 
-  const cardClass = getWebsite() 
-    ? "hover:shadow-lg transition-all cursor-pointer hover:border-primary/50" 
-    : "hover:shadow-md transition-shadow";
-
-  const handleCardClick = () => {
-    const url = getWebsite();
-    if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
-  };
+  const cardClass = "hover:shadow-md transition-shadow";
 
   return (
-    <Card className={cardClass} onClick={handleCardClick} style={{ pointerEvents: 'auto' }}>
+    <Card className={cardClass} style={{ pointerEvents: 'auto' }}>
       <CardContent className="p-4 space-y-3" style={{ pointerEvents: 'auto' }}>
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-2">
@@ -220,10 +211,12 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
 
         {(isValidPhone(location.phone) || getWebsite()) && (
           <div 
-            className="card-actions relative z-[10] flex flex-wrap gap-3 pt-2" 
+            className="card-actions relative z-[50] flex flex-wrap gap-3 pt-2" 
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
           >
             {isValidPhone(location.phone) && (
               <a
@@ -248,7 +241,6 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
                 aria-label={`Open website for ${location.name}`}
                 onClick={(e) => { 
                   e.stopPropagation(); 
-                  handleWebsite(); 
                 }}
               >
                 🌐 Website

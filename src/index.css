@@ -286,11 +286,11 @@ All colors MUST be HSL.
       transform: scale(1.05);
     }
   }
-
-  /* Help card action links - ensure clickability */
+  
+  /* Help card action links - comprehensive clickability fix */
   .card-actions {
     position: relative;
-    z-index: 10;
+    z-index: 50;
     pointer-events: auto;
   }
 
@@ -299,10 +299,24 @@ All colors MUST be HSL.
     pointer-events: auto;
   }
 
+  /* Kill all overlays that intercept taps */
   .card-overlay,
   .skeleton,
   .click-shield {
     pointer-events: none !important;
+  }
+
+  /* Ensure cards accept events */
+  .card,
+  .card-container {
+    pointer-events: auto;
+  }
+
+  /* Prevent stacking-context traps */
+  .help-card,
+  .help-card * {
+    transform: none !important;
+    filter: none !important;
   }
 
 }
