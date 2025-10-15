@@ -119,7 +119,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
   const cardClass = "hover:shadow-md transition-shadow";
 
   return (
-    <Card className={cardClass} style={{ pointerEvents: 'auto' }}>
+    <Card className={`help-card ${cardClass}`} style={{ pointerEvents: 'auto' }}>
       <CardContent className="p-4 space-y-3" style={{ pointerEvents: 'auto' }}>
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-2">

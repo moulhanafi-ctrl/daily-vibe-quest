@@ -402,7 +402,7 @@ export default function TherapistsNearby() {
           <>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mb-8 w-full">
               {paginatedTherapists.map((therapist) => (
-                <Card key={therapist.id} className="flex flex-col">
+                <Card key={therapist.id} className="help-card flex flex-col">
                   <CardHeader>
                     <CardTitle className="text-lg">{therapist.name}</CardTitle>
                     <CardDescription className="text-sm space-y-1">
