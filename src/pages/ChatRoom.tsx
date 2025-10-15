@@ -109,11 +109,27 @@ const ChatRoom = () => {
         // Get username and age_group
         const { data: profile } = await supabase
           .from("profiles")
-          .select("username, age_group")
+          .select("username, age_group, subscription_status, subscription_expires_at")
           .eq("id", user.id)
           .single();
 
         setUsername(profile?.username || "Anonymous");
+
+        // Gate access if no active or trialing subscription
+        const hasActiveSubscription =
+          profile?.subscription_status === "active" ||
+          (profile?.subscription_status === "trialing" &&
+            profile?.subscription_expires_at &&
+            new Date(profile.subscription_expires_at) > new Date());
+
+        if (!hasActiveSubscription) {
+          toast({
+            title: "Chat requires a subscription",
+            description: "Start a free trial to join community rooms.",
+          });
+          navigate("/chat-rooms");
+          return;
+        }
 
         let activeRoomId = roomId;
         let roomData = null;
