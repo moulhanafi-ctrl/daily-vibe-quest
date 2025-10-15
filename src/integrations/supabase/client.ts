@@ -13,5 +13,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+    detectSessionInUrl: true,
+  },
+  // Fix cookie domain for both www and root domain
+  global: {
+    headers: {
+      'x-client-info': 'vibe-check-app',
+    },
+  },
 });

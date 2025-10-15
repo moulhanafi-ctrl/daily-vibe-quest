@@ -46,22 +46,30 @@ const ChatRooms = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Force fresh JWT to pick up role/claims (fixes desktop stale session)
+        await supabase.auth.refreshSession().catch(() => {});
+        
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           navigate("/auth");
           return;
         }
 
-        // Check access via backend helper (admin bypass + subscription)
-        const { data: hasAccess, error: accessError } = await supabase
-          .rpc("has_chat_access", { uid: user.id });
+        // Use server-side view for access check (not cached client flags)
+        const { data: accessData, error: accessError } = await supabase
+          .from("my_chat_access")
+          .select("allowed, role")
+          .single();
 
         if (accessError) {
           console.error("Error checking chat access:", accessError);
         }
 
-        const canAccess = Boolean(hasAccess);
-        console.log(`Chat Access Check - Can Access: ${canAccess}`);
+        const role = (accessData?.role || '').toLowerCase();
+        const isAdmin = ['owner', 'super_admin', 'admin'].includes(role);
+        const canAccess = isAdmin || Boolean(accessData?.allowed);
+        
+        console.log(`Chat Access Check - Role: ${role}, Is Admin: ${isAdmin}, Can Access: ${canAccess}`);
         setHasActiveSubscription(canAccess);
 
         // Get user's focus areas (needed for room filtering)
@@ -94,7 +102,7 @@ const ChatRooms = () => {
         console.error("Error loading data:", error);
         toast({
           title: "Error",
-          description: "Failed to load chat rooms",
+          description: "Failed to load chat rooms. Please refresh and try again.",
           variant: "destructive",
         });
         setRooms([]);
@@ -147,7 +155,7 @@ const ChatRooms = () => {
             <div>
               <h1 className="text-4xl font-bold mb-2">Support Chat Rooms</h1>
               <p className="text-muted-foreground">
-                Connect with others who share your focus areas
+                Verifying access and loading chat rooms...
               </p>
             </div>
             <ChatRoomSkeleton />
