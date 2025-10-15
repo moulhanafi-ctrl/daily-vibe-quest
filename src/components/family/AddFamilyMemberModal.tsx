@@ -1,0 +1,249 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Loader2, Mail } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+
+const formSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().email("Please enter a valid email address").max(255),
+  relationship: z.enum(["parent", "sibling", "child", "partner", "friend", "other"], {
+    required_error: "Please select a relationship",
+  }),
+});
+
+interface AddFamilyMemberModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export const AddFamilyMemberModal = ({ open, onClose, onSuccess }: AddFamilyMemberModalProps) => {
+  const [loading, setLoading] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      relationship: undefined,
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Get or create family group
+      let { data: familyGroup } = await supabase
+        .from("family_groups")
+        .select("id")
+        .eq("created_by", user.id)
+        .single();
+
+      if (!familyGroup) {
+        const { data: newGroup, error: groupError } = await supabase
+          .from("family_groups")
+          .insert({
+            name: "My Family",
+            created_by: user.id,
+            invite_code: Math.random().toString(36).substring(2, 10).toUpperCase(),
+          })
+          .select()
+          .single();
+
+        if (groupError) throw groupError;
+        familyGroup = newGroup;
+      }
+
+      // Check if invite already exists for this email
+      const { data: existingInvite } = await supabase
+        .from("family_invites")
+        .select("id")
+        .eq("parent_id", user.id)
+        .eq("invitee_email", values.email)
+        .single();
+
+      if (existingInvite) {
+        toast({
+          title: "Invitation already sent",
+          description: "An invitation has already been sent to this email address",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Create invite code
+      const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+      // Insert invitation
+      const { error: inviteError } = await supabase
+        .from("family_invites")
+        .insert({
+          parent_id: user.id,
+          invite_code: inviteCode,
+          invitee_email: values.email,
+          invitee_name: values.name,
+          relationship: values.relationship,
+          status: "pending",
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+
+      if (inviteError) throw inviteError;
+
+      // Send invitation email
+      const { error: emailError } = await supabase.functions.invoke("send-family-invite", {
+        body: {
+          inviteeEmail: values.email,
+          inviteeName: values.name,
+          relationship: values.relationship,
+          inviteCode: inviteCode,
+        },
+      });
+
+      if (emailError) {
+        console.error("Email send error:", emailError);
+        toast({
+          title: "Invitation created",
+          description: "The invitation was created but email notification failed. Share the invite code manually: " + inviteCode,
+        });
+      } else {
+        toast({
+          title: "Invitation sent! 📧",
+          description: `We've sent an invitation to ${values.email}. We'll notify you when they join.`,
+        });
+      }
+
+      form.reset();
+      onSuccess();
+    } catch (error: any) {
+      console.error("Error creating invitation:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invitation",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Mail className="w-5 h-5 text-primary" />
+            Add Family Member
+          </DialogTitle>
+          <DialogDescription>
+            Invite a loved one to join your family space. They'll receive an email with a link to connect.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Sarah Johnson" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address *</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="e.g., sarah@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="relationship"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Relationship *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select relationship" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-card z-50">
+                      <SelectItem value="parent">Parent</SelectItem>
+                      <SelectItem value="sibling">Sibling</SelectItem>
+                      <SelectItem value="child">Child</SelectItem>
+                      <SelectItem value="partner">Partner</SelectItem>
+                      <SelectItem value="friend">Friend</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Invitation"
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};

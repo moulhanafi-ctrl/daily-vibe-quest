@@ -693,24 +693,36 @@ export type Database = {
           expires_at: string | null
           id: string
           invite_code: string
+          invitee_email: string | null
+          invitee_name: string | null
           is_used: boolean | null
           parent_id: string
+          relationship: string | null
+          status: string | null
         }
         Insert: {
           created_at?: string | null
           expires_at?: string | null
           id?: string
           invite_code: string
+          invitee_email?: string | null
+          invitee_name?: string | null
           is_used?: boolean | null
           parent_id: string
+          relationship?: string | null
+          status?: string | null
         }
         Update: {
           created_at?: string | null
           expires_at?: string | null
           id?: string
           invite_code?: string
+          invitee_email?: string | null
+          invitee_name?: string | null
           is_used?: boolean | null
           parent_id?: string
+          relationship?: string | null
+          status?: string | null
         }
         Relationships: [
           {
@@ -2394,6 +2406,43 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      family_members_view: {
+        Row: {
+          age_group: Database["public"]["Enums"]["age_group"] | null
+          family_id: string | null
+          id: string | null
+          invitee_email: string | null
+          joined_at: string | null
+          member_name: string | null
+          relationship: string | null
+          role: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "active_subscriptions_v1"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "family_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       guardian_verification_status_view: {
         Row: {

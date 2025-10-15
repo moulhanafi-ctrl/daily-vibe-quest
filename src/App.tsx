@@ -41,6 +41,7 @@ import HelpLocationsAdmin from "./pages/admin/HelpLocationsAdmin";
 import ZipToolsAdmin from "./pages/admin/ZipToolsAdmin";
 import HealthDashboard from "./pages/admin/HealthDashboard";
 import FamilyChat from "./pages/FamilyChat";
+import FamilyMembers from "./pages/FamilyMembers";
 import FeatureFlags from "./pages/admin/FeatureFlags";
 import StripeAdmin from "./pages/admin/StripeAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
@@ -98,6 +99,7 @@ const App = () => (
           <Route path="/admin/zip-tools" element={<ZipToolsAdmin />} />
           <Route path="/admin/health" element={<HealthDashboard />} />
           <Route path="/family/chat" element={<FamilyChat />} />
+          <Route path="/family/members" element={<FamilyMembers />} />
           <Route path="/admin/legal" element={<LegalAdmin />} />
           <Route path="/admin/trivia" element={<TriviaAdmin />} />
           <Route path="/admin/flags" element={<FeatureFlags />} />
