@@ -8,6 +8,7 @@ import { TrustSignals } from "@/components/TrustSignals";
 import { FamilyMode } from "@/components/FamilyMode";
 import { Testimonials } from "@/components/Testimonials";
 import { Pricing } from "@/components/Pricing";
+import { AppDownload } from "@/components/AppDownload";
 import { Footer } from "@/components/Footer";
 import { InclusionBanner } from "@/components/InclusionBanner";
 import { Loader2 } from "lucide-react";
@@ -78,6 +79,7 @@ const Index = () => {
       <FamilyMode />
       <Testimonials />
       <Pricing />
+      <AppDownload />
       <Footer />
     </div>
   );
