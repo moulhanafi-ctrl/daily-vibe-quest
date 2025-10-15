@@ -175,23 +175,40 @@ export default function TherapistsNearby() {
     }
   };
 
+  const getValidWebsiteUrl = (url?: string) => {
+    if (!url) return null;
+    let u = url.trim();
+    if (!/^https?:\/\//i.test(u)) {
+      u = `https://${u}`;
+    }
+    try {
+      const parsed = new URL(u);
+      return parsed.href;
+    } catch {
+      return null;
+    }
+  };
+
   const handleWebsite = (therapist: Therapist) => {
-    if (therapist.website_url) {
-      try {
-        window.open(therapist.website_url, "_blank");
-        trackEvent({
-          eventType: "therapist_card_website_clicked",
-          metadata: { 
-            id: therapist.id, 
-            name: therapist.name,
-            zip: zipCode,
-            radius: parseInt(radius)
-          },
-        });
-      } catch (error) {
-        toast.error("Sorry, this website link is unavailable.");
-        console.error("Failed to open website:", error);
-      }
+    const href = getValidWebsiteUrl(therapist.website_url);
+    if (!href) {
+      toast.error("Sorry, this website link is unavailable.");
+      return;
+    }
+    try {
+      window.open(href, "_blank", "noopener,noreferrer");
+      trackEvent({
+        eventType: "therapist_card_website_clicked",
+        metadata: { 
+          id: therapist.id, 
+          name: therapist.name,
+          zip: zipCode,
+          radius: parseInt(radius)
+        },
+      });
+    } catch (error) {
+      toast.error("Sorry, this website link is unavailable.");
+      console.error("Failed to open website:", error);
     }
   };
 
