@@ -92,22 +92,33 @@ const ChatRooms = () => {
         const { data: chatRooms, error } = await supabase
           .rpc("list_rooms_for_me");
 
-        if (error) throw error;
-        setRooms(chatRooms || []);
+        if (error) {
+          console.error("Error loading chat rooms:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load chat rooms. Please try refreshing the page.",
+            variant: "destructive",
+          });
+          setRooms([]);
+        } else {
+          setRooms(chatRooms || []);
+          console.log(`Loaded ${chatRooms?.length || 0} chat rooms. Admin: ${isAdmin}`);
+        }
       } catch (error) {
-        console.error("Error loading chat rooms:", error);
+        console.error("Error loading data:", error);
         toast({
           title: "Error",
           description: "Failed to load chat rooms",
           variant: "destructive",
         });
+        setRooms([]);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleUpgrade = async (planType: "individual" | "family") => {
     setCheckoutLoading(true);
