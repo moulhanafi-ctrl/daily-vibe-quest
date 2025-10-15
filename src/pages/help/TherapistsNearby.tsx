@@ -177,11 +177,21 @@ export default function TherapistsNearby() {
 
   const handleWebsite = (therapist: Therapist) => {
     if (therapist.website_url) {
-      window.open(therapist.website_url, "_blank");
-      trackEvent({
-        eventType: "therapist_card_website_clicked",
-        metadata: { id: therapist.id },
-      });
+      try {
+        window.open(therapist.website_url, "_blank", "noopener,noreferrer");
+        trackEvent({
+          eventType: "therapist_card_website_clicked",
+          metadata: { 
+            id: therapist.id, 
+            name: therapist.name,
+            zip: zipCode,
+            radius: parseInt(radius)
+          },
+        });
+      } catch (error) {
+        toast.error("Sorry, this website link is unavailable.");
+        console.error("Failed to open website:", error);
+      }
     }
   };
 
@@ -409,13 +419,29 @@ export default function TherapistsNearby() {
                       {therapist.website_url ? (
                         <Button 
                           onClick={() => handleWebsite(therapist)}
-                          className="w-full"
+                          className="w-full hover:opacity-90 transition-opacity"
+                          aria-label={`Open ${therapist.name} website in new tab`}
                         >
                           <Globe className="h-4 w-4 mr-2" />
                           Visit Website
                         </Button>
+                      ) : therapist.phone ? (
+                        <Button 
+                          onClick={() => handleCall(therapist)}
+                          variant="outline"
+                          className="w-full"
+                          aria-label={`Call ${therapist.name} clinic`}
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call Clinic
+                        </Button>
                       ) : (
-                        <Button disabled className="w-full" title="No website provided">
+                        <Button 
+                          disabled 
+                          className="w-full" 
+                          title="Website not provided"
+                          aria-label="No website available"
+                        >
                           <Globe className="h-4 w-4 mr-2" />
                           No Website
                         </Button>
