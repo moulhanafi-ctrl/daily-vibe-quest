@@ -178,7 +178,7 @@ export default function TherapistsNearby() {
   const handleWebsite = (therapist: Therapist) => {
     if (therapist.website_url) {
       try {
-        window.open(therapist.website_url, "_blank", "noopener,noreferrer");
+        window.open(therapist.website_url, "_blank");
         trackEvent({
           eventType: "therapist_card_website_clicked",
           metadata: { 
