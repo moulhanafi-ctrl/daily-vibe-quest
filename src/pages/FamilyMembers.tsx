@@ -227,6 +227,15 @@ const FamilyMembers = () => {
                   </Button>
                 </div>
               </CardHeader>
+              <CardContent>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate("/family/journals")}
+                  className="w-full"
+                >
+                  📖 View Children's Journals
+                </Button>
+              </CardContent>
             </Card>
 
             {members.length === 0 ? (

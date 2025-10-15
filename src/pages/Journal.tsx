@@ -7,6 +7,8 @@ import { JournalList } from "@/components/journal/JournalList";
 import { JournalPrompts } from "@/components/journal/JournalPrompts";
 import { JournalProgress } from "@/components/journal/JournalProgress";
 import { StreakBadge } from "@/components/journal/StreakBadge";
+import { PrivacyNotice } from "@/components/journal/PrivacyNotice";
+import { supabase } from "@/integrations/supabase/client";
 import { Plus, BookOpen, Lightbulb, TrendingUp } from "lucide-react";
 
 export default function Journal() {
@@ -14,6 +16,11 @@ export default function Journal() {
   const [showComposer, setShowComposer] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [promptText, setPromptText] = useState("");
+  const [isMinor, setIsMinor] = useState(false);
+
+  useEffect(() => {
+    checkIfMinor();
+  }, []);
 
   useEffect(() => {
     // Auto-open composer for first entry
@@ -23,6 +30,19 @@ export default function Journal() {
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
+
+  const checkIfMinor = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("age_group")
+      .eq("id", user.id)
+      .single();
+    
+    setIsMinor(profile?.age_group === "child" || profile?.age_group === "teen");
+  };
 
   const handleSelectEntry = (entry: any) => {
     setSelectedEntry(entry);
@@ -55,6 +75,8 @@ export default function Journal() {
           </Button>
         )}
       </div>
+
+      <PrivacyNotice isMinor={isMinor} />
 
       {showComposer ? (
         <div className="space-y-6">

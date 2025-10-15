@@ -74,6 +74,7 @@ export const JournalComposer = ({ moodId, mood, onSave, onCancel, editEntry }: J
         transcript: transcript || null,
         tags: tags,
         shared_with_parent: sharedWithParent,
+        visibility: 'private', // Always private for minors
       };
 
       if (editEntry) {

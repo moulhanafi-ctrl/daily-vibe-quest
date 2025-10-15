@@ -42,6 +42,7 @@ import ZipToolsAdmin from "./pages/admin/ZipToolsAdmin";
 import HealthDashboard from "./pages/admin/HealthDashboard";
 import FamilyChat from "./pages/FamilyChat";
 import FamilyMembers from "./pages/FamilyMembers";
+import ParentJournalViewer from "./pages/family/ParentJournalViewer";
 import FeatureFlags from "./pages/admin/FeatureFlags";
 import StripeAdmin from "./pages/admin/StripeAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
@@ -106,6 +107,7 @@ const App = () => (
           <Route path="/admin/health" element={<HealthDashboard />} />
           <Route path="/family/chat" element={<FamilyChat />} />
           <Route path="/family/members" element={<FamilyMembers />} />
+          <Route path="/family/journals" element={<ParentJournalViewer />} />
           <Route path="/admin/legal" element={<LegalAdmin />} />
           <Route path="/admin/trivia" element={<TriviaAdmin />} />
           <Route path="/admin/flags" element={<FeatureFlags />} />
