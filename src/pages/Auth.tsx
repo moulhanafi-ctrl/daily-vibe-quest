@@ -244,10 +244,10 @@ const Auth = () => {
                 {isLogin && (
                   <button
                     type="button"
-                    onClick={() => setIsForgotPassword(true)}
+                    onClick={() => navigate('/auth/recovery')}
                     className="text-sm text-primary hover:underline min-h-[44px] touch-manipulation inline-flex items-center"
                   >
-                    Forgot password?
+                    Forgot your password?
                   </button>
                 )}
               </div>

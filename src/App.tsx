@@ -51,6 +51,9 @@ import TherapistsNearby from "./pages/help/TherapistsNearby";
 import LanguagePicker from "./pages/welcome/LanguagePicker";
 import OpsAdmin from "./pages/admin/OpsAdmin";
 import PublishReadiness from "./pages/admin/PublishReadiness";
+import Recovery from "./pages/auth/Recovery";
+import VerifyCode from "./pages/auth/VerifyCode";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +70,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/welcome/language" element={<LanguagePicker />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/recovery" element={<Recovery />} />
+          <Route path="/auth/verify-code" element={<VerifyCode />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/parent-verification" element={<ParentVerificationGate />} />
           <Route path="/dashboard" element={<Dashboard />} />
