@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { X, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { trackEvent } from "@/lib/analytics";
 
 const FOCUS_AREAS = [
   { id: "depression", label: "Depression", emoji: "😔" },
@@ -71,40 +72,33 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
 
     setLoading(true);
     try {
-      // Get user's age group
-      const { data: profile, error: profileError } = await supabase
+      // Update user's selected focus areas
+      const { error: updateError } = await supabase
         .from("profiles")
         .update({ selected_focus_areas: [selected] })
-        .eq("id", userId)
-        .select("age_group")
-        .single();
+        .eq("id", userId);
 
-      if (profileError) throw profileError;
+      if (updateError) throw updateError;
 
-      // Find matching chat room
-      const { data: chatRoom, error: roomError } = await supabase
-        .from("chat_rooms")
-        .select("id")
-        .eq("focus_area", selected)
-        .eq("age_group", profile.age_group)
-        .limit(1)
-        .maybeSingle();
-
-      if (roomError) throw roomError;
+      const selectedArea = FOCUS_AREAS.find(a => a.id === selected);
+      
+      // Track the event
+      trackEvent({ 
+        eventType: "focus_area_changed", 
+        metadata: { 
+          new_focus_area: selected
+        } 
+      });
 
       toast({ 
         title: "Joining your support chat...",
-        description: "Taking you to your community"
+        description: `Taking you to ${selectedArea?.label}`
       });
       
       onClose();
       
-      // Redirect to chat room
-      if (chatRoom) {
-        navigate(`/chat/${chatRoom.id}`);
-      } else {
-        navigate("/chat");
-      }
+      // Navigate to the chat room using focus area key
+      navigate(`/chat/focus/${selected}`);
     } catch (error: any) {
       toast({
         title: "Error",

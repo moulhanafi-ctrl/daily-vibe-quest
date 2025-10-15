@@ -71,6 +71,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chat-rooms" element={<ChatRooms />} />
           <Route path="/chat/:roomId" element={<ChatRoom />} />
+          <Route path="/chat/focus/:focusArea" element={<ChatRoom />} />
           <Route path="/store" element={<Store />} />
           <Route path="/store/:ageGroup" element={<AgeGroupStore />} />
           <Route path="/store/product/:productId" element={<ProductDetail />} />

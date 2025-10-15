@@ -30,10 +30,11 @@ interface Room {
 }
 
 const ChatRoom = () => {
-  const { roomId } = useParams();
+  const { roomId, focusArea } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [room, setRoom] = useState<Room | null>(null);
+  const [resolvedRoomId, setResolvedRoomId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string>("");
@@ -59,20 +60,53 @@ const ChatRoom = () => {
         }
         setCurrentUserId(user.id);
 
-        // Get username
+        // Get username and age_group
         const { data: profile } = await supabase
           .from("profiles")
-          .select("username")
+          .select("username, age_group")
           .eq("id", user.id)
           .single();
 
         setUsername(profile?.username || "Anonymous");
 
+        let activeRoomId = roomId;
+
+        // If focusArea is provided, find the matching room for user's age group
+        if (focusArea && !roomId) {
+          const { data: matchingRoom, error: roomFindError } = await supabase
+            .from("chat_rooms")
+            .select("id")
+            .eq("focus_area", focusArea)
+            .eq("age_group", profile?.age_group || "adult")
+            .limit(1)
+            .maybeSingle();
+
+          if (roomFindError) throw roomFindError;
+          
+          if (!matchingRoom) {
+            toast({
+              title: "Chat room not found",
+              description: "No chat room found for this focus area",
+              variant: "destructive",
+            });
+            navigate("/chat-rooms");
+            return;
+          }
+
+          activeRoomId = matchingRoom.id;
+          setResolvedRoomId(matchingRoom.id);
+        }
+
+        if (!activeRoomId) {
+          navigate("/chat-rooms");
+          return;
+        }
+
         // Get room details
         const { data: roomData, error: roomError } = await supabase
           .from("chat_rooms")
           .select("*")
-          .eq("id", roomId)
+          .eq("id", activeRoomId)
           .single();
 
         if (roomError) throw roomError;
@@ -82,7 +116,7 @@ const ChatRoom = () => {
         const { data: messagesData, error: messagesError } = await supabase
           .from("chat_messages")
           .select("*")
-          .eq("room_id", roomId)
+          .eq("room_id", activeRoomId)
           .order("created_at", { ascending: true });
 
         if (messagesError) throw messagesError;
@@ -102,10 +136,11 @@ const ChatRoom = () => {
     };
 
     loadData();
-  }, [roomId, navigate]);
+  }, [roomId, focusArea, navigate]);
 
   useEffect(() => {
-    if (!roomId) return;
+    const activeRoomId = resolvedRoomId || roomId;
+    if (!activeRoomId) return;
 
     // Subscribe to new messages
     const channel = supabase
@@ -116,7 +151,7 @@ const ChatRoom = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'chat_messages',
-          filter: `room_id=eq.${roomId}`
+          filter: `room_id=eq.${activeRoomId}`
         },
         (payload) => {
           setMessages((current) => [...current, payload.new as Message]);
@@ -128,18 +163,19 @@ const ChatRoom = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId]);
+  }, [roomId, resolvedRoomId]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !roomId || sending) return;
+    const activeRoomId = resolvedRoomId || roomId;
+    if (!newMessage.trim() || !activeRoomId || sending) return;
 
     setSending(true);
     try {
       const { error } = await supabase
         .from("chat_messages")
         .insert({
-          room_id: roomId,
+          room_id: activeRoomId,
           user_id: currentUserId,
           username: username,
           message: newMessage.trim(),
@@ -186,9 +222,10 @@ const ChatRoom = () => {
 
   const handleReportMessage = async (messageId: string) => {
     setReportingMessage(null);
+    const activeRoomId = resolvedRoomId || roomId;
     try {
       const { error } = await supabase.from("incidents").insert({
-        room_id: roomId,
+        room_id: activeRoomId,
         message_id: messageId,
         user_id: currentUserId,
         category: "inappropriate_content",
@@ -199,7 +236,7 @@ const ChatRoom = () => {
 
       if (error) throw error;
 
-      trackEvent({ eventType: "room_report", metadata: { room_id: roomId, message_id: messageId } });
+      trackEvent({ eventType: "room_report", metadata: { room_id: activeRoomId, message_id: messageId } });
       toast({ title: "Report submitted", description: "Thank you. Our moderation team will review this." });
     } catch (error) {
       console.error("Error reporting message:", error);

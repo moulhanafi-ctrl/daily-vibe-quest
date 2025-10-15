@@ -34,7 +34,8 @@ export const FocusAreaStep = ({ onNext, onBack }: FocusAreaStepProps) => {
   const handleSubmit = async () => {
     if (selected) {
       setIsLoading(true);
-      onNext([selected]); // Pass as array for compatibility
+      // Save focus area to profile and pass to next step
+      onNext([selected]);
     }
   };
 

@@ -11,6 +11,7 @@ export type EventType =
   | "notification_clicked"
   | "room_report"
   | "room_mute"
+  | "focus_area_changed"
   | "legal_consent_accepted"
   | "legal_reconsent_required"
   | "legal_reconsent_accepted"
