@@ -134,8 +134,7 @@ const Onboarding = () => {
       if (ageGroupData === 'child' || ageGroupData === 'teen') {
         navigate("/parent-verification");
       } else if (data.focusAreas && data.focusAreas.length > 0) {
-// Redirect to their focus area chat room using focus area slug
-        import { slugForId } from "@/lib/focusAreas"; // local import within module scope
+        // Redirect to their focus area chat room using focus area slug
         navigate(`/chat-rooms/${slugForId(data.focusAreas[0])}`);
       } else {
         navigate("/dashboard?first_checkin=true");

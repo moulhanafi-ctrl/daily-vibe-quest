@@ -55,7 +55,7 @@ const ChatRoom = () => {
   const createRoomIfNeeded = async (focusArea: string, ageGroup: "adult" | "child" | "elder" | "teen", focusAreaSlug?: string) => {
     setIsCreatingRoom(true);
     try {
-// Try to find existing room via RPC that can also create if missing (secured)
+      // Try to find existing room via RPC that can also create if missing (secured)
       const focusAreaLabels: Record<string, string> = {
         depression: "Depression Recovery",
         anxiety: "Anxiety Support",
@@ -90,45 +90,7 @@ const ChatRoom = () => {
       });
 
       if (ensureErr) throw ensureErr;
-      if (ensuredRoom) return ensuredRoom;
-      const focusAreaLabels: Record<string, string> = {
-        depression: "Depression Support",
-        anxiety: "Anxiety Support",
-        grief: "Grief & Loss Support",
-        stress: "Stress Management",
-        "self-esteem": "Self-Esteem Building",
-        relationships: "Relationship Support",
-        loneliness: "Overcoming Loneliness",
-        pressure: "School & Work Pressure",
-        family: "Family Support",
-        sleep: "Sleep & Rest Support",
-        motivation: "Motivation & Purpose",
-      };
-
-      const ageLabels: Record<string, string> = {
-        child: "Ages 5-12",
-        teen: "Ages 13-17",
-        adult: "Ages 18-60",
-        elder: "Ages 61+",
-      };
-
-      const roomName = `${focusAreaLabels[focusArea] || "Support Chat"} - ${ageLabels[ageGroup] || "All Ages"}`;
-      const roomDescription = "A safe space to connect and support each other";
-
-      const { data: newRoom, error: createError } = await supabase
-        .from("chat_rooms")
-        .insert([{
-          focus_area: focusArea,
-          age_group: ageGroup,
-          name: roomName,
-          description: roomDescription,
-        }])
-        .select("id, name, description")
-        .single();
-
-      if (createError) throw createError;
-
-      return newRoom;
+      return ensuredRoom;
     } finally {
       setIsCreatingRoom(false);
     }

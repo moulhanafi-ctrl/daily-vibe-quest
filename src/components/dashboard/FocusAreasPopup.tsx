@@ -98,8 +98,7 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
       
       onClose();
       
-// Navigate to the chat room using focus area slug
-      import { slugForId } from "@/lib/focusAreas"; // keep import local for treeshaking
+      // Navigate to the chat room using focus area slug
       navigate(`/chat-rooms/${slugForId(selected)}`);
     } catch (error: any) {
       toast({
