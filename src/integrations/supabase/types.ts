@@ -2678,6 +2678,14 @@ export type Database = {
         }
         Relationships: []
       }
+      my_subscription_status: {
+        Row: {
+          is_active: boolean | null
+          role: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       assign_age_group: {
@@ -2713,6 +2721,10 @@ export type Database = {
       generate_invite_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      has_active_subscription: {
+        Args: { uid: string }
+        Returns: boolean
       }
       has_admin_role: {
         Args: {

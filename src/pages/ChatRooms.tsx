@@ -67,24 +67,39 @@ const ChatRooms = () => {
 
         console.log(`Chat Rooms - Admin Status: ${isAdmin}`, { role: userRole?.role, admin_role: userRole?.admin_role });
 
-        // Get user's profile with subscription info
+        // CRITICAL: Admins bypass subscription check entirely
+        if (isAdmin) {
+          console.log('Admin detected - bypassing subscription check');
+          setHasActiveSubscription(true);
+        } else {
+          // Regular users need active subscription
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("subscription_status, subscription_expires_at")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          const isActive = profile?.subscription_status === 'active' || 
+            (profile?.subscription_status === 'trialing' && 
+             profile?.subscription_expires_at && 
+             new Date(profile.subscription_expires_at) > new Date());
+          
+          setHasActiveSubscription(isActive);
+          console.log(`Regular user subscription status: ${isActive}`, { 
+            status: profile?.subscription_status, 
+            expires: profile?.subscription_expires_at 
+          });
+        }
+
+        // Get user's focus areas (needed for room filtering)
         const { data: profile } = await supabase
           .from("profiles")
-          .select("selected_focus_areas, subscription_status, subscription_expires_at")
+          .select("selected_focus_areas")
           .eq("id", user.id)
           .maybeSingle();
 
         const focusAreas = profile?.selected_focus_areas || [];
         setUserFocusAreas(focusAreas);
-
-        // Admins ALWAYS have access, regular users need subscription
-        const isActive = isAdmin || 
-          profile?.subscription_status === 'active' || 
-          (profile?.subscription_status === 'trialing' && 
-           profile?.subscription_expires_at && 
-           new Date(profile.subscription_expires_at) > new Date());
-        
-        setHasActiveSubscription(isActive);
 
         // Get chat rooms using safe RPC that works for admins and regular users
         // This bypasses any JWT/RLS issues by using SECURITY DEFINER
