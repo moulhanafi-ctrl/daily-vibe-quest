@@ -256,9 +256,9 @@ export default function TherapistsNearby() {
   const paginatedTherapists = filteredTherapists.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <CrisisBanner />
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl pb-8 overflow-x-hidden">
         {/* Breadcrumb */}
         <nav className="mb-6 text-sm text-muted-foreground">
           <button 
@@ -400,7 +400,7 @@ export default function TherapistsNearby() {
           </Card>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mb-8 w-full">
               {paginatedTherapists.map((therapist) => (
                 <Card key={therapist.id} className="flex flex-col">
                   <CardHeader>

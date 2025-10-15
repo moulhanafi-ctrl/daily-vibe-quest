@@ -175,7 +175,7 @@ export default function LocalHelpSearch() {
 
       {/* Results */}
       {!loading && resp && (
-        <div className="mt-8 space-y-8">
+        <div className="mt-8 space-y-8 pb-8 w-full overflow-x-hidden">
           {/* Therapists Section */}
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -207,7 +207,7 @@ export default function LocalHelpSearch() {
               </button>
             </div>
             {resp.therapists && resp.therapists.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                 {resp.therapists.map((t, i) => (
                   <div
                     key={i}
@@ -272,7 +272,7 @@ export default function LocalHelpSearch() {
               <h3 className="text-xl font-bold text-foreground">Crisis centers near me</h3>
             </div>
             {resp.crisis_centers && resp.crisis_centers.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                 {resp.crisis_centers.map((c, i) => (
                   <div
                     key={i}
@@ -336,7 +336,7 @@ export default function LocalHelpSearch() {
               <Phone className="h-6 w-6 text-[#FFC107]" />
               <h3 className="text-xl font-bold text-foreground">National hotlines</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
               {(resp.hotlines ?? []).map((h, i) => (
                 <div
                   key={i}

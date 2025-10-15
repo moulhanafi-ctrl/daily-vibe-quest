@@ -7,9 +7,9 @@ export default function HelpNearby() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <CrisisBanner />
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl pb-8 overflow-x-hidden">
         <div className="mb-6">
           <Button variant="ghost" onClick={() => navigate(-1)} className="mb-2">
             ← Back
