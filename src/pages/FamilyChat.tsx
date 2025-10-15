@@ -14,7 +14,7 @@ export default function FamilyChat() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl overflow-x-hidden">
+      <div className="container mx-auto px-4 md:px-8 py-6 md:py-8 max-w-6xl">
         <div className="mb-8">
           <Button 
             variant="ghost" 
@@ -25,7 +25,7 @@ export default function FamilyChat() {
             Back to Dashboard
           </Button>
           <h1 className="text-4xl md:text-5xl font-bold mb-2">Family Connection</h1>
-          <p className="text-muted-foreground text-base">
+          <p className="text-muted-foreground text-sm">
             Share moments and stay connected with your loved ones
           </p>
         </div>
@@ -42,30 +42,33 @@ export default function FamilyChat() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="chat" className="space-y-4">
-            <Card className="rounded-2xl border border-border bg-card shadow-sm p-8 md:p-12">
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                  <MessageSquare className="h-10 w-10 text-primary" />
+          <TabsContent value="chat">
+            <div className="mx-auto w-full max-w-3xl">
+              <Card className="rounded-2xl border border-border bg-card shadow-sm p-6 md:p-10">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <MessageSquare className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">Family Chat Coming Soon</h3>
+                    <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                      Connect with your family through secure, private messaging. We're working hard to bring this feature to you.
+                    </p>
+                  </div>
+                  <Button 
+                    type="button"
+                    onClick={() => setShowNotifyModal(true)}
+                    className="mt-4 rounded-xl px-5 h-11"
+                    size="lg"
+                  >
+                    Notify Me When It Launches
+                  </Button>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Family Chat Coming Soon</h3>
-                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                    Connect with your family through secure, private messaging. We're working hard to bring this feature to you.
-                  </p>
-                </div>
-                <Button 
-                  onClick={() => setShowNotifyModal(true)}
-                  className="mt-2 rounded-xl px-6 h-11"
-                  size="lg"
-                >
-                  Notify Me When It Launches
-                </Button>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </TabsContent>
 
-          <TabsContent value="stories" className="space-y-4">
+          <TabsContent value="stories">
             <FamilyStories />
           </TabsContent>
         </Tabs>

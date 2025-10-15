@@ -1479,6 +1479,27 @@ export type Database = {
         }
         Relationships: []
       }
+      notify_waitlist: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          page: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          page: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          page?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null

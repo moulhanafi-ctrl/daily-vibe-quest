@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { Mail } from "lucide-react";
 
 interface Props {
@@ -30,16 +31,30 @@ export default function ChatComingSoonModal({ open, onOpenChange }: Props) {
 
     setIsSubmitting(true);
 
-    // Simulate submission (add actual backend logic here)
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const { error } = await supabase
+      .from("notify_waitlist")
+      .insert({
+        email,
+        page: "family-chat"
+      });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     toast({
       title: "Thanks for your interest!",
-      description: "We'll notify you when family chat launches.",
+      description: "We'll email you when chat is ready.",
     });
 
     setEmail("");
-    setIsSubmitting(false);
     onOpenChange(false);
   };
 
