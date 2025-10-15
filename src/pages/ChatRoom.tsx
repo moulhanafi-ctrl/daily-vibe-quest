@@ -106,17 +106,17 @@ const ChatRoom = () => {
         }
         setCurrentUserId(user.id);
 
-        // Use backend view to check chat access (includes admin bypass)
-        const { data: accessCheck } = await supabase
-          .from("my_chat_access")
-          .select("allowed, role")
-          .maybeSingle();
+        // Check access via backend helper (admin bypass + subscription)
+        const { data: hasAccess, error: accessError } = await supabase
+          .rpc("has_chat_access", { uid: user.id });
 
-        const role = (accessCheck?.role || '').toLowerCase();
-        const isAdmin = ['owner', 'super_admin', 'admin'].includes(role);
-        const canAccess = accessCheck?.allowed ?? false;
+        if (accessError) {
+          console.error("Error checking chat access:", accessError);
+        }
 
-        console.log(`Chat Room Access - Role: ${role}, Is Admin: ${isAdmin}, Can Access: ${canAccess}`);
+        const canAccess = Boolean(hasAccess);
+        console.log(`Chat Room Access - Can Access: ${canAccess}`);
+
 
         // Get username and age_group
         const { data: profile } = await supabase
@@ -137,9 +137,6 @@ const ChatRoom = () => {
           return;
         }
 
-        if (isAdmin) {
-          console.log("Admin access granted - full chat room access");
-        }
 
         let activeRoomId = roomId;
         let roomData = null;

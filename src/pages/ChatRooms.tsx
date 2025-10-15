@@ -52,22 +52,16 @@ const ChatRooms = () => {
           return;
         }
 
-        // Use backend view to check chat access (includes admin bypass)
-        const { data: accessCheck, error: accessError } = await supabase
-          .from("my_chat_access")
-          .select("allowed, role")
-          .maybeSingle();
+        // Check access via backend helper (admin bypass + subscription)
+        const { data: hasAccess, error: accessError } = await supabase
+          .rpc("has_chat_access", { uid: user.id });
 
         if (accessError) {
           console.error("Error checking chat access:", accessError);
         }
 
-        const role = (accessCheck?.role || '').toLowerCase();
-        const isAdmin = ['owner', 'super_admin', 'admin'].includes(role);
-        const canAccess = accessCheck?.allowed ?? false;
-
-        console.log(`Chat Access Check - Role: ${role}, Is Admin: ${isAdmin}, Can Access: ${canAccess}`);
-        
+        const canAccess = Boolean(hasAccess);
+        console.log(`Chat Access Check - Can Access: ${canAccess}`);
         setHasActiveSubscription(canAccess);
 
         // Get user's focus areas (needed for room filtering)
