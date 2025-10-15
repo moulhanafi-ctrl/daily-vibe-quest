@@ -106,6 +106,15 @@ const ChatRoom = () => {
         }
         setCurrentUserId(user.id);
 
+        // Check if user is admin
+        const { data: userRole } = await supabase
+          .from("user_roles")
+          .select("role, admin_role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        const isAdmin = userRole?.role === 'admin' || userRole?.admin_role === 'owner';
+
         // Get username and age_group
         const { data: profile } = await supabase
           .from("profiles")
@@ -115,8 +124,8 @@ const ChatRoom = () => {
 
         setUsername(profile?.username || "Anonymous");
 
-        // Gate access if no active or trialing subscription
-        const hasActiveSubscription =
+        // Gate access if no active or trialing subscription (admins bypass)
+        const hasActiveSubscription = isAdmin ||
           profile?.subscription_status === "active" ||
           (profile?.subscription_status === "trialing" &&
             profile?.subscription_expires_at &&

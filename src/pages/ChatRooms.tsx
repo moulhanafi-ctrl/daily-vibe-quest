@@ -52,6 +52,15 @@ const ChatRooms = () => {
           return;
         }
 
+        // Check if user is admin
+        const { data: userRole } = await supabase
+          .from("user_roles")
+          .select("role, admin_role")
+          .eq("user_id", user.id)
+          .single();
+
+        const isAdmin = userRole?.role === 'admin' || userRole?.admin_role === 'owner';
+
         // Get user's profile with subscription info
         const { data: profile } = await supabase
           .from("profiles")
@@ -62,19 +71,24 @@ const ChatRooms = () => {
         const focusAreas = profile?.selected_focus_areas || [];
         setUserFocusAreas(focusAreas);
 
-        // Check subscription status
-        const isActive = profile?.subscription_status === 'active' || 
+        // Check subscription status (admins always have access)
+        const isActive = isAdmin || profile?.subscription_status === 'active' || 
           (profile?.subscription_status === 'trialing' && 
            profile?.subscription_expires_at && 
            new Date(profile.subscription_expires_at) > new Date());
         
         setHasActiveSubscription(isActive);
 
-        // Get chat rooms for user's focus areas
-        const { data: chatRooms, error } = await supabase
+        // Get chat rooms - admins see all rooms, regular users see their focus areas
+        let query = supabase
           .from("chat_rooms")
-          .select("*")
-          .in("focus_area", focusAreas);
+          .select("*");
+        
+        if (!isAdmin && focusAreas.length > 0) {
+          query = query.in("focus_area", focusAreas);
+        }
+
+        const { data: chatRooms, error } = await query;
 
         if (error) throw error;
         setRooms(chatRooms || []);
