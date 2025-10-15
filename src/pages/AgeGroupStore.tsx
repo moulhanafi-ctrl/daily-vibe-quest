@@ -17,26 +17,30 @@ interface Product {
   download_link: string | null;
 }
 
-const AGE_GROUP_INFO: Record<string, { title: string; banner: string; emoji: string }> = {
+const AGE_GROUP_INFO: Record<string, { title: string; banner: string; emoji: string; dbValue: string }> = {
   kids: {
     title: "Kids Collection (5-12)",
     banner: "Small vibes make big change 🌈",
     emoji: "🧒",
+    dbValue: "child",
   },
   teens: {
     title: "Teen Collection (13-17)",
     banner: "Your journey, your way 🚀",
     emoji: "🧑‍🎓",
+    dbValue: "teen",
   },
   adults: {
     title: "Adult Collection (18-60)",
     banner: "Invest in your wellbeing 💫",
     emoji: "🧍‍♂️",
+    dbValue: "adult",
   },
   elders: {
     title: "Elder Collection (61+)",
     banner: "Wisdom meets wellness 🌸",
     emoji: "👵",
+    dbValue: "elder",
   },
 };
 
@@ -55,14 +59,14 @@ const AgeGroupStore = () => {
   }, [ageGroup]);
 
   const loadProducts = async () => {
-    if (!ageGroup) return;
+    if (!ageGroup || !info) return;
     
     try {
       const { data, error } = await supabase
-        .from("products" as any)
-        .select("*, product_images(url, is_cover)")
-        .eq("category", ageGroup)
-        .eq("is_active", true)
+        .from("products")
+        .select("*")
+        .eq("age_group", info.dbValue as any)
+        .eq("active", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -70,12 +74,12 @@ const AgeGroupStore = () => {
       // Transform data to match expected format
       const transformedProducts = (data || []).map((p: any) => ({
         id: p.id,
-        name: p.title,
+        name: p.name,
         description: p.description || '',
-        price: p.price_cents / 100,
-        image_url: p.product_images?.find((img: any) => img.is_cover)?.url || p.product_images?.[0]?.url || null,
-        product_type: p.type,
-        download_link: null,
+        price: Number(p.price),
+        image_url: p.images?.[0] || p.image_url || null,
+        product_type: p.product_type,
+        download_link: p.download_link || null,
       }));
       
       setProducts(transformedProducts);
