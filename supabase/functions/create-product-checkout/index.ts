@@ -42,6 +42,32 @@ serve(async (req) => {
 
     console.log(`[CHECKOUT] User: ${user.email}, Items: ${cartItems.length}`);
 
+    // Get user's age_group for age restriction validation
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("age_group")
+      .eq("id", user.id)
+      .single();
+
+    const userAgeGroup = profile?.age_group || 'adult';
+    const ageGroupOrder = { child: 0, teen: 1, adult: 2, elder: 3 };
+    const restrictionOrder = { all: 0, teen: 1, adult: 2, elder: 3 };
+    
+    // Validate age restrictions for all cart items
+    for (const item of cartItems) {
+      const product = item.products;
+      if (!product) continue;
+      
+      const restriction = product.age_restriction || 'all';
+      const userLevel = ageGroupOrder[userAgeGroup as keyof typeof ageGroupOrder] || 0;
+      const requiredLevel = restrictionOrder[restriction as keyof typeof restrictionOrder] || 0;
+      
+      if (userLevel < requiredLevel) {
+        console.log(`[CHECKOUT] Age restriction failed for product: ${product.name}`);
+        throw new Error(`Age restriction: Product "${product.name}" requires ${restriction}+ age group.`);
+      }
+    }
+
     // Initialize Stripe with proper config
     const config = getStripeConfig();
     const stripe = createStripeClient();

@@ -1840,6 +1840,7 @@ export type Database = {
         Row: {
           active: boolean | null
           age_group: Database["public"]["Enums"]["age_group"]
+          age_restriction: string | null
           created_at: string | null
           description: string
           download_link: string | null
@@ -1857,6 +1858,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           age_group: Database["public"]["Enums"]["age_group"]
+          age_restriction?: string | null
           created_at?: string | null
           description: string
           download_link?: string | null
@@ -1874,6 +1876,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           age_group?: Database["public"]["Enums"]["age_group"]
+          age_restriction?: string | null
           created_at?: string | null
           description?: string
           download_link?: string | null

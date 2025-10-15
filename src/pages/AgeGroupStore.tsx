@@ -62,6 +62,22 @@ const AgeGroupStore = () => {
     if (!ageGroup || !info) return;
     
     try {
+      // Get current user's age_group for filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      let userAgeGroup = info.dbValue;
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("age_group")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile) {
+          userAgeGroup = profile.age_group;
+        }
+      }
+
       const { data, error } = await supabase
         .from("products")
         .select("*")
@@ -71,8 +87,23 @@ const AgeGroupStore = () => {
 
       if (error) throw error;
       
+      // Filter products based on age restrictions
+      const filteredData = (data || []).filter((p: any) => {
+        const restriction = p.age_restriction || 'all';
+        if (restriction === 'all') return true;
+        
+        // Map age_group to numeric comparison
+        const ageGroupOrder = { child: 0, teen: 1, adult: 2, elder: 3 };
+        const restrictionOrder = { teen: 1, adult: 2, elder: 3 };
+        
+        const userLevel = ageGroupOrder[userAgeGroup as keyof typeof ageGroupOrder] || 0;
+        const requiredLevel = restrictionOrder[restriction as keyof typeof restrictionOrder] || 0;
+        
+        return userLevel >= requiredLevel;
+      });
+      
       // Transform data to match expected format
-      const transformedProducts = (data || []).map((p: any) => ({
+      const transformedProducts = filteredData.map((p: any) => ({
         id: p.id,
         name: p.name,
         description: p.description || '',

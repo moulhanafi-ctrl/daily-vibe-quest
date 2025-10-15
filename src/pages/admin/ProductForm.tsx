@@ -455,6 +455,27 @@ export default function ProductForm() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="age_restriction">Age Restriction</Label>
+                <Select
+                  value={(formData as any).age_restriction || 'all'}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, age_restriction: value } as any))}
+                >
+                  <SelectTrigger id="age_restriction">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Ages</SelectItem>
+                    <SelectItem value="teen">Teen+ (13+)</SelectItem>
+                    <SelectItem value="adult">Adult Only (18+)</SelectItem>
+                    <SelectItem value="elder">Elder (60+)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Restrict who can view and purchase this product
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">Price (cents) *</Label>
