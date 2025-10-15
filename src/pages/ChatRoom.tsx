@@ -106,14 +106,20 @@ const ChatRoom = () => {
         }
         setCurrentUserId(user.id);
 
-        // Check if user is admin
+        // Check if user is admin using comprehensive role check
         const { data: userRole } = await supabase
           .from("user_roles")
           .select("role, admin_role")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        const isAdmin = userRole?.role === 'admin' || userRole?.admin_role === 'owner';
+        // Check admin status with multiple conditions for security
+        const isAdmin = userRole?.role === 'admin' || 
+                       userRole?.admin_role === 'owner' || 
+                       userRole?.admin_role === 'moderator' ||
+                       userRole?.admin_role === 'support';
+
+        console.log(`Chat Room - Admin Status: ${isAdmin}`, { role: userRole?.role, admin_role: userRole?.admin_role });
 
         // Get username and age_group
         const { data: profile } = await supabase
@@ -124,7 +130,7 @@ const ChatRoom = () => {
 
         setUsername(profile?.username || "Anonymous");
 
-        // Gate access if no active or trialing subscription (admins bypass)
+        // Admins ALWAYS have access, regular users need subscription
         const hasActiveSubscription = isAdmin ||
           profile?.subscription_status === "active" ||
           (profile?.subscription_status === "trialing" &&
@@ -134,10 +140,14 @@ const ChatRoom = () => {
         if (!hasActiveSubscription) {
           toast({
             title: "Chat requires a subscription",
-            description: "Start a free trial to join community rooms.",
+            description: isAdmin ? "Error loading admin access" : "Start a free trial to join community rooms.",
           });
           navigate("/chat-rooms");
           return;
+        }
+
+        if (isAdmin) {
+          console.log("Admin access granted - full chat room access");
         }
 
         let activeRoomId = roomId;

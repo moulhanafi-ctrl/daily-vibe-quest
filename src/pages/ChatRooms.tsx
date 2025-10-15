@@ -52,14 +52,20 @@ const ChatRooms = () => {
           return;
         }
 
-        // Check if user is admin
+        // Check if user is admin using comprehensive role check
         const { data: userRole } = await supabase
           .from("user_roles")
           .select("role, admin_role")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
-        const isAdmin = userRole?.role === 'admin' || userRole?.admin_role === 'owner';
+        // Check admin status with multiple conditions for security
+        const isAdmin = userRole?.role === 'admin' || 
+                       userRole?.admin_role === 'owner' || 
+                       userRole?.admin_role === 'moderator' ||
+                       userRole?.admin_role === 'support';
+
+        console.log(`Chat Rooms - Admin Status: ${isAdmin}`, { role: userRole?.role, admin_role: userRole?.admin_role });
 
         // Get user's profile with subscription info
         const { data: profile } = await supabase
@@ -71,24 +77,22 @@ const ChatRooms = () => {
         const focusAreas = profile?.selected_focus_areas || [];
         setUserFocusAreas(focusAreas);
 
-        // Check subscription status (admins always have access)
-        const isActive = isAdmin || profile?.subscription_status === 'active' || 
+        // Admins ALWAYS have access, regular users need subscription
+        const isActive = isAdmin || 
+          profile?.subscription_status === 'active' || 
           (profile?.subscription_status === 'trialing' && 
            profile?.subscription_expires_at && 
            new Date(profile.subscription_expires_at) > new Date());
         
         setHasActiveSubscription(isActive);
 
-        // Get chat rooms - admins see all rooms, regular users see their focus areas
-        let query = supabase
+        // Get chat rooms - RLS policies now handle filtering
+        // Admins will see ALL rooms automatically via RLS
+        // Regular users will see only their rooms via RLS
+        const { data: chatRooms, error } = await supabase
           .from("chat_rooms")
-          .select("*");
-        
-        if (!isAdmin && focusAreas.length > 0) {
-          query = query.in("focus_area", focusAreas);
-        }
-
-        const { data: chatRooms, error } = await query;
+          .select("*")
+          .order("created_at", { ascending: false });
 
         if (error) throw error;
         setRooms(chatRooms || []);
