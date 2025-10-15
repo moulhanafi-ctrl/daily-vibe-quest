@@ -606,6 +606,89 @@ export type Database = {
         }
         Relationships: []
       }
+      digital_assets: {
+        Row: {
+          created_at: string | null
+          file_path: string
+          file_size_bytes: number | null
+          file_type: string | null
+          id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_path: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          id?: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_assets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      digital_downloads: {
+        Row: {
+          created_at: string | null
+          digital_asset_id: string
+          download_count: number
+          expires_at: string
+          id: string
+          max_downloads: number
+          order_item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          digital_asset_id: string
+          download_count?: number
+          expires_at?: string
+          id?: string
+          max_downloads?: number
+          order_item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          digital_asset_id?: string
+          download_count?: number
+          expires_at?: string
+          id?: string
+          max_downloads?: number
+          order_item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_downloads_digital_asset_id_fkey"
+            columns: ["digital_asset_id"]
+            isOneToOne: false
+            referencedRelation: "digital_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digital_downloads_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entitlements: {
         Row: {
           created_at: string | null
@@ -1675,6 +1758,44 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string | null
+          display_order: number
+          id: string
+          image_url: string
+          product_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          image_url: string
+          product_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string
+          product_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
