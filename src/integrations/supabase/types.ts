@@ -2678,6 +2678,14 @@ export type Database = {
         }
         Relationships: []
       }
+      my_chat_access: {
+        Row: {
+          allowed: boolean | null
+          role: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       my_subscription_status: {
         Row: {
           is_active: boolean | null
@@ -2731,6 +2739,10 @@ export type Database = {
           _admin_role: Database["public"]["Enums"]["admin_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_chat_access: {
+        Args: { uid: string }
         Returns: boolean
       }
       has_role: {

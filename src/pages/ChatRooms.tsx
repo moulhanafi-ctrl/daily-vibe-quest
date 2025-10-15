@@ -52,44 +52,23 @@ const ChatRooms = () => {
           return;
         }
 
-        // Check if user is admin using comprehensive role check
-        const { data: userRole } = await supabase
-          .from("user_roles")
-          .select("role, admin_role")
-          .eq("user_id", user.id)
+        // Use backend view to check chat access (includes admin bypass)
+        const { data: accessCheck, error: accessError } = await supabase
+          .from("my_chat_access")
+          .select("allowed, role")
           .maybeSingle();
 
-        // Check admin status with multiple conditions for security
-        const isAdmin = userRole?.role === 'admin' || 
-                       userRole?.admin_role === 'owner' || 
-                       userRole?.admin_role === 'moderator' ||
-                       userRole?.admin_role === 'support';
-
-        console.log(`Chat Rooms - Admin Status: ${isAdmin}`, { role: userRole?.role, admin_role: userRole?.admin_role });
-
-        // CRITICAL: Admins bypass subscription check entirely
-        if (isAdmin) {
-          console.log('Admin detected - bypassing subscription check');
-          setHasActiveSubscription(true);
-        } else {
-          // Regular users need active subscription
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("subscription_status, subscription_expires_at")
-            .eq("id", user.id)
-            .maybeSingle();
-
-          const isActive = profile?.subscription_status === 'active' || 
-            (profile?.subscription_status === 'trialing' && 
-             profile?.subscription_expires_at && 
-             new Date(profile.subscription_expires_at) > new Date());
-          
-          setHasActiveSubscription(isActive);
-          console.log(`Regular user subscription status: ${isActive}`, { 
-            status: profile?.subscription_status, 
-            expires: profile?.subscription_expires_at 
-          });
+        if (accessError) {
+          console.error("Error checking chat access:", accessError);
         }
+
+        const role = (accessCheck?.role || '').toLowerCase();
+        const isAdmin = ['owner', 'super_admin', 'admin'].includes(role);
+        const canAccess = accessCheck?.allowed ?? false;
+
+        console.log(`Chat Access Check - Role: ${role}, Is Admin: ${isAdmin}, Can Access: ${canAccess}`);
+        
+        setHasActiveSubscription(canAccess);
 
         // Get user's focus areas (needed for room filtering)
         const { data: profile } = await supabase
@@ -102,8 +81,6 @@ const ChatRooms = () => {
         setUserFocusAreas(focusAreas);
 
         // Get chat rooms using safe RPC that works for admins and regular users
-        // This bypasses any JWT/RLS issues by using SECURITY DEFINER
-        // JWT refresh happens on login in Auth.tsx to ensure role claim is present
         const { data: chatRooms, error } = await supabase
           .rpc("list_rooms_for_me");
 
@@ -117,7 +94,7 @@ const ChatRooms = () => {
           setRooms([]);
         } else {
           setRooms(chatRooms || []);
-          console.log(`Loaded ${chatRooms?.length || 0} chat rooms. Admin: ${isAdmin}`);
+          console.log(`Loaded ${chatRooms?.length || 0} chat rooms`);
         }
       } catch (error) {
         console.error("Error loading data:", error);
@@ -133,7 +110,7 @@ const ChatRooms = () => {
     };
 
     loadData();
-  }, [navigate, toast]);
+  }, [navigate]);
 
   const handleUpgrade = async (planType: "individual" | "family") => {
     setCheckoutLoading(true);

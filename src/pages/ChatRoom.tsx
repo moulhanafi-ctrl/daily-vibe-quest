@@ -106,41 +106,32 @@ const ChatRoom = () => {
         }
         setCurrentUserId(user.id);
 
-        // Check if user is admin using comprehensive role check
-        const { data: userRole } = await supabase
-          .from("user_roles")
-          .select("role, admin_role")
-          .eq("user_id", user.id)
+        // Use backend view to check chat access (includes admin bypass)
+        const { data: accessCheck } = await supabase
+          .from("my_chat_access")
+          .select("allowed, role")
           .maybeSingle();
 
-        // Check admin status with multiple conditions for security
-        const isAdmin = userRole?.role === 'admin' || 
-                       userRole?.admin_role === 'owner' || 
-                       userRole?.admin_role === 'moderator' ||
-                       userRole?.admin_role === 'support';
+        const role = (accessCheck?.role || '').toLowerCase();
+        const isAdmin = ['owner', 'super_admin', 'admin'].includes(role);
+        const canAccess = accessCheck?.allowed ?? false;
 
-        console.log(`Chat Room - Admin Status: ${isAdmin}`, { role: userRole?.role, admin_role: userRole?.admin_role });
+        console.log(`Chat Room Access - Role: ${role}, Is Admin: ${isAdmin}, Can Access: ${canAccess}`);
 
         // Get username and age_group
         const { data: profile } = await supabase
           .from("profiles")
-          .select("username, age_group, subscription_status, subscription_expires_at")
+          .select("username, age_group")
           .eq("id", user.id)
           .maybeSingle();
 
         setUsername(profile?.username || "Anonymous");
 
-        // Admins ALWAYS have access, regular users need subscription
-        const hasActiveSubscription = isAdmin ||
-          profile?.subscription_status === "active" ||
-          (profile?.subscription_status === "trialing" &&
-            profile?.subscription_expires_at &&
-            new Date(profile.subscription_expires_at) > new Date());
-
-        if (!hasActiveSubscription) {
+        // Check access via backend function
+        if (!canAccess) {
           toast({
             title: "Chat requires a subscription",
-            description: isAdmin ? "Error loading admin access" : "Start a free trial to join community rooms.",
+            description: "Start a free trial to join community rooms.",
           });
           navigate("/chat-rooms");
           return;
