@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SkipToContent } from "@/components/layout/SkipToContent";
 import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
 import { ParentVerificationGate } from "@/components/family/ParentVerificationGate";
@@ -69,6 +69,7 @@ const App = () => (
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/parent-verification" element={<ParentVerificationGate />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/chat" element={<Navigate to="/chat-rooms" replace />} />
           <Route path="/chat-rooms" element={<ChatRooms />} />
           <Route path="/chat/:roomId" element={<ChatRoom />} />
           <Route path="/chat/focus/:focusArea" element={<ChatRoom />} />
