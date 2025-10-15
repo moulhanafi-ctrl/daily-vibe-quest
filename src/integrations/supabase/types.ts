@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_role_audit: {
+        Row: {
+          action: string
+          id: string
+          new_admin_role: Database["public"]["Enums"]["admin_role"] | null
+          new_role: Database["public"]["Enums"]["app_role"] | null
+          old_admin_role: Database["public"]["Enums"]["admin_role"] | null
+          old_role: Database["public"]["Enums"]["app_role"] | null
+          performed_at: string | null
+          performed_by: string
+          target_user_id: string
+        }
+        Insert: {
+          action: string
+          id?: string
+          new_admin_role?: Database["public"]["Enums"]["admin_role"] | null
+          new_role?: Database["public"]["Enums"]["app_role"] | null
+          old_admin_role?: Database["public"]["Enums"]["admin_role"] | null
+          old_role?: Database["public"]["Enums"]["app_role"] | null
+          performed_at?: string | null
+          performed_by: string
+          target_user_id: string
+        }
+        Update: {
+          action?: string
+          id?: string
+          new_admin_role?: Database["public"]["Enums"]["admin_role"] | null
+          new_role?: Database["public"]["Enums"]["app_role"] | null
+          old_admin_role?: Database["public"]["Enums"]["admin_role"] | null
+          old_role?: Database["public"]["Enums"]["app_role"] | null
+          performed_at?: string | null
+          performed_by?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       ai_audit: {
         Row: {
           action: string
@@ -2695,6 +2731,10 @@ export type Database = {
       }
       is_parent_of: {
         Args: { _child_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: { _user_id: string }
         Returns: boolean
       }
     }
