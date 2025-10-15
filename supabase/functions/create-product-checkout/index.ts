@@ -52,7 +52,7 @@ serve(async (req) => {
     let totalCents = 0;
 
     for (const item of cartItems) {
-      // Get product with Stripe price
+      // Get product details
       const { data: product } = await supabaseClient
         .from("products")
         .select("*")
@@ -61,28 +61,22 @@ serve(async (req) => {
 
       if (!product) continue;
 
-      const priceCents = product.price_cents * item.quantity;
-      totalCents += priceCents;
+      const priceInCents = Math.round(product.price * 100);
+      const itemTotal = priceInCents * item.quantity;
+      totalCents += itemTotal;
 
-      // Use existing Stripe price if available, otherwise use price_data
-      if (product.stripe_price_id) {
-        lineItems.push({
-          price: product.stripe_price_id,
-          quantity: item.quantity,
-        });
-      } else {
-        lineItems.push({
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: product.title,
-              description: product.subtitle || undefined,
-            },
-            unit_amount: product.price_cents,
+      // Create line items using price_data
+      lineItems.push({
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: product.name,
+            description: product.description || undefined,
           },
-          quantity: item.quantity,
-        });
-      }
+          unit_amount: priceInCents,
+        },
+        quantity: item.quantity,
+      });
     }
 
     // Create Stripe checkout session
@@ -103,22 +97,33 @@ serve(async (req) => {
       .from("orders")
       .insert({
         user_id: user.id,
-        total_cents: totalCents,
+        total_amount: totalCents / 100, // Store as dollars
         status: "pending",
-        stripe_payment_intent_id: session.payment_intent as string,
+        stripe_payment_id: session.payment_intent as string,
+        stripe_session_id: session.id,
       })
       .select()
       .single();
 
     // Create order items
     if (order) {
-      const orderItems = cartItems.map((item: any) => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price_cents: item.price_cents,
-      }));
+      // Fetch product prices for order items
+      const orderItemsPromises = cartItems.map(async (item: any) => {
+        const { data: product } = await supabaseClient
+          .from("products")
+          .select("price")
+          .eq("id", item.product_id)
+          .single();
+        
+        return {
+          order_id: order.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price_at_purchase: product?.price || 0,
+        };
+      });
 
+      const orderItems = await Promise.all(orderItemsPromises);
       await supabaseClient.from("order_items").insert(orderItems);
 
       // Clear cart
