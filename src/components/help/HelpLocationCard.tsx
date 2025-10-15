@@ -77,6 +77,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
   };
 
   const handleCall = () => {
+    console.log("Clicked phone for", location.name, "Phone:", location.phone);
     trackEvent({
       eventType: "therapist_phone_clicked",
       metadata: { id: location.id, type: location.type, name: location.name, zip, radius },
@@ -87,7 +88,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
   };
 
   const handleWebsite = () => {
-    console.log("HelpLocationCard - handleWebsite clicked for:", location.name, "URL:", getWebsite());
+    console.log("Clicked website for", location.name, "URL:", getWebsite());
     trackEvent({
       eventType: "therapist_website_clicked",
       metadata: { id: location.id, type: location.type, name: location.name, zip, radius },
@@ -104,6 +105,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
   };
 
   const handleDirections = () => {
+    console.log("Clicked directions for", location.name, "Address:", location.address);
     trackEvent({
       eventType: "therapist_directions_clicked",
       metadata: { id: location.id, type: location.type, name: location.name, zip, radius },
@@ -126,8 +128,8 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
   };
 
   return (
-    <Card className={cardClass} onClick={handleCardClick}>
-      <CardContent className="p-4 space-y-3">
+    <Card className={cardClass} onClick={handleCardClick} style={{ pointerEvents: 'auto' }}>
+      <CardContent className="p-4 space-y-3" style={{ pointerEvents: 'auto' }}>
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-lg">{location.name}</h3>
@@ -216,7 +218,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           </p>
         )}
 
-        <div className="relative z-10 flex flex-col sm:flex-row gap-2">
+        <div className="relative z-[5] flex flex-col sm:flex-row gap-2" style={{ pointerEvents: 'auto', position: 'relative' }}>
           {isValidPhone(location.phone) ? (
             <a
               data-testid="provider-phone-link"
@@ -224,7 +226,8 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Call ${location.name}`}
-              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              style={{ pointerEvents: 'auto' }}
               onClick={(e) => { e.stopPropagation(); handleCall(); }}
             >
               📞 Call
@@ -232,7 +235,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           ) : (
             <button
               disabled
-              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
+              className="btn btn-sm btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
               aria-label="No phone available"
             >
               📞 No Phone
@@ -246,7 +249,8 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Get directions to ${location.name}`}
-              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent"
+              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
+              style={{ pointerEvents: 'auto' }}
               onClick={(e) => { e.stopPropagation(); handleDirections(); }}
             >
               🗺️ Directions
@@ -254,7 +258,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           ) : (
             <button
               disabled
-              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
+              className="btn btn-sm btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
               aria-label="No address available"
             >
               🗺️ No Address
@@ -268,7 +272,8 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Visit ${location.name} website`}
-              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              style={{ pointerEvents: 'auto' }}
               onClick={(e) => { e.stopPropagation(); handleWebsite(); }}
             >
               🌐 Website
@@ -276,7 +281,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           ) : (
             <button
               disabled
-              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
+              className="btn btn-sm btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
               aria-label="No website available"
             >
               🌐 No Website

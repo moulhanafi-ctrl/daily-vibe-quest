@@ -456,7 +456,7 @@ export default function TherapistsNearby() {
                         </p>
                       )}
                     </div>
-                    <div className="relative z-10 flex flex-col sm:flex-row gap-2">
+                    <div className="relative z-[5] flex flex-col sm:flex-row gap-2" style={{ pointerEvents: 'auto', position: 'relative' }}>
                       {therapist.phone ? (
                         <a
                           data-testid="provider-phone-link"
@@ -464,15 +464,20 @@ export default function TherapistsNearby() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Call ${therapist.name}`}
-                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent"
-                          onClick={(e) => { e.stopPropagation(); handleCall(therapist); }}
+                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
+                          style={{ pointerEvents: 'auto' }}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            console.log("Clicked phone for", therapist.name);
+                            handleCall(therapist); 
+                          }}
                         >
                           📞 Call
                         </a>
                       ) : (
                         <button 
                           disabled 
-                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
+                          className="btn btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
                           aria-label="No phone available"
                         >
                           📞 No Phone
@@ -484,9 +489,11 @@ export default function TherapistsNearby() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={`Get directions to ${therapist.name}`}
-                        className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent"
+                        className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
+                        style={{ pointerEvents: 'auto' }}
                         onClick={(e) => {
                           e.stopPropagation();
+                          console.log("Clicked directions for", therapist.name);
                           trackEvent({
                             eventType: "therapist_directions_clicked",
                             metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
@@ -502,9 +509,11 @@ export default function TherapistsNearby() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Visit ${therapist.name} website`}
-                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                          style={{ pointerEvents: 'auto' }}
                           onClick={(e) => {
                             e.stopPropagation();
+                            console.log("Clicked website for", therapist.name);
                             const valid = getValidWebsiteUrl(therapist.website_url);
                             if (!valid) {
                               e.preventDefault();
@@ -522,7 +531,7 @@ export default function TherapistsNearby() {
                       ) : (
                         <button 
                           disabled 
-                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
+                          className="btn btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
                           aria-label="No website available"
                         >
                           🌐 No Website
