@@ -39,6 +39,8 @@ import Analytics from "./pages/admin/Analytics";
 import HelpAdmin from "./pages/admin/HelpAdmin";
 import HelpLocationsAdmin from "./pages/admin/HelpLocationsAdmin";
 import ZipToolsAdmin from "./pages/admin/ZipToolsAdmin";
+import ProductsAdmin from "./pages/admin/ProductsAdmin";
+import ProductForm from "./pages/admin/ProductForm";
 import HealthDashboard from "./pages/admin/HealthDashboard";
 import FamilyChat from "./pages/FamilyChat";
 import FamilyMembers from "./pages/FamilyMembers";
@@ -104,6 +106,9 @@ const App = () => (
           <Route path="/admin/help" element={<HelpAdmin />} />
           <Route path="/admin/help-locations" element={<HelpLocationsAdmin />} />
           <Route path="/admin/zip-tools" element={<ZipToolsAdmin />} />
+          <Route path="/admin/products" element={<ProductsAdmin />} />
+          <Route path="/admin/products/new" element={<ProductForm />} />
+          <Route path="/admin/products/:id" element={<ProductForm />} />
           <Route path="/admin/health" element={<HealthDashboard />} />
           <Route path="/family/chat" element={<FamilyChat />} />
           <Route path="/family/members" element={<FamilyMembers />} />
