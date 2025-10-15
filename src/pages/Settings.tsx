@@ -15,6 +15,7 @@ import { TestContact } from "@/components/family/TestContact";
 import { FocusAreasPopup } from "@/components/dashboard/FocusAreasPopup";
 import { MFASettings } from "@/components/settings/MFASettings";
 import { StripeLiveModeVerification } from "@/components/admin/StripeLiveModeVerification";
+import { ProductionReadinessChecklist } from "@/components/admin/ProductionReadinessChecklist";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -131,6 +132,7 @@ const Settings = () => {
 
           {isAdmin && (
             <TabsContent value="security" className="space-y-4">
+              <ProductionReadinessChecklist />
               <MFASettings />
               <StripeLiveModeVerification />
             </TabsContent>

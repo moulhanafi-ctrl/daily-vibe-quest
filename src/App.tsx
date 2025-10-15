@@ -54,6 +54,7 @@ import TherapistsNearby from "./pages/help/TherapistsNearby";
 import LanguagePicker from "./pages/welcome/LanguagePicker";
 import OpsAdmin from "./pages/admin/OpsAdmin";
 import PublishReadiness from "./pages/admin/PublishReadiness";
+import ProductionDashboard from "./pages/admin/ProductionDashboard";
 import Recovery from "./pages/auth/Recovery";
 import VerifyCode from "./pages/auth/VerifyCode";
 import ResetPassword from "./pages/auth/ResetPassword";
@@ -119,6 +120,7 @@ const App = () => (
           <Route path="/admin/stripe" element={<StripeAdmin />} />
           <Route path="/admin/ops" element={<OpsAdmin />} />
           <Route path="/admin/publish" element={<PublishReadiness />} />
+          <Route path="/admin/production" element={<ProductionDashboard />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help" element={<HelpNearby />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
