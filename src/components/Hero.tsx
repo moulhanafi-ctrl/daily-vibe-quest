@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Sparkles, Settings } from "lucide-react";
 import heroBackground from "@/assets/hero-background.jpg";
 import vibeCheckLogo from "@/assets/vibe-check-logo.png";
-import { supabase } from "@/integrations/supabase/client";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 const moods = [
   { emoji: "😊", label: "Great", color: "mint" },
@@ -17,23 +17,7 @@ const moods = [
 export const Hero = () => {
   const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .eq("role", "admin")
-          .single();
-        setIsAdmin(!!data);
-      }
-    };
-    checkAdminStatus();
-  }, []);
+  const { isAdmin } = useAdminCheck();
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">

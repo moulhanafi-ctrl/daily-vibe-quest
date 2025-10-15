@@ -1,75 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { VibeOpsChat } from "@/components/admin/VibeOpsChat";
 import { ActionPanel } from "@/components/admin/ActionPanel";
 import { AdminGuide } from "@/components/admin/AdminGuide";
+import { AdminGuard } from "@/components/admin/AdminGuard";
 
 export default function AdminAI() {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
   const [pendingAction, setPendingAction] = useState<any>(null);
 
-  useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  const checkAdminAccess = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-
-      // Check if user has admin role
-      const { data: roles, error } = await supabase
-        .from("user_roles")
-        .select("role, admin_role")
-        .eq("user_id", session.user.id)
-        .single();
-
-      if (error || (!roles?.role && !roles?.admin_role)) {
-        toast({
-          title: "Access Denied",
-          description: "You need admin privileges to access this page.",
-          variant: "destructive",
-        });
-        navigate("/dashboard");
-        return;
-      }
-
-      setHasAccess(true);
-    } catch (error) {
-      console.error("Access check error:", error);
-      navigate("/dashboard");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6">
+    <AdminGuard requireMFA={false}>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
@@ -151,7 +97,8 @@ export default function AdminAI() {
             <AdminGuide />
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </AdminGuard>
   );
 }

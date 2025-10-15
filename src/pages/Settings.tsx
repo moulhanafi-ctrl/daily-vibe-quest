@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,33 +16,30 @@ import { FocusAreasPopup } from "@/components/dashboard/FocusAreasPopup";
 import { MFASettings } from "@/components/settings/MFASettings";
 import { StripeLiveModeVerification } from "@/components/admin/StripeLiveModeVerification";
 import { ProductionReadinessChecklist } from "@/components/admin/ProductionReadinessChecklist";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { t } = useTranslation("common");
+  const [searchParams] = useSearchParams();
   const [userId, setUserId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showFocusPopup, setShowFocusPopup] = useState(false);
+  const { isAdmin } = useAdminCheck(false, false);
+  
+  // Check for MFA requirement
+  const mfaReason = searchParams.get("reason");
+  const defaultTab = searchParams.get("tab") || "language";
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const getUserId = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUserId(session.user.id);
-        
-        // Check if user is admin
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .eq("role", "admin")
-          .single();
-        
-        setIsAdmin(!!roles);
       }
     };
     
-    checkAdminStatus();
+    getUserId();
   }, []);
 
   return (
@@ -59,7 +56,16 @@ const Settings = () => {
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <h1 className="text-4xl font-bold mb-8">{t("settings", "Settings")}</h1>
 
-        <Tabs defaultValue="language" className="space-y-6">
+        {mfaReason === "enable-mfa" && (
+          <Alert className="mb-6">
+            <Shield className="h-4 w-4" />
+            <AlertDescription>
+              Multi-factor authentication is required for admin access. Please enable it below.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />

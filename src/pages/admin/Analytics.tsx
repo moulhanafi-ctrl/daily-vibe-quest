@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, ArrowLeft, Download, Filter } from "lucide-react";
 import { format } from "date-fns";
+import { AdminGuard } from "@/components/admin/AdminGuard";
 
 interface AnalyticsEvent {
   id: string;
@@ -22,60 +23,18 @@ interface AnalyticsEvent {
 export default function Analytics() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<AnalyticsEvent[]>([]);
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    checkAdminAccess();
+    loadEvents();
   }, []);
-
-  useEffect(() => {
-    if (hasAccess) {
-      loadEvents();
-    }
-  }, [hasAccess]);
 
   useEffect(() => {
     filterEvents();
   }, [events, eventTypeFilter, searchQuery]);
-
-  const checkAdminAccess = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-
-      const { data: roles, error } = await supabase
-        .from("user_roles")
-        .select("role, admin_role")
-        .eq("user_id", session.user.id)
-        .single();
-
-      if (error || (!roles?.role && !roles?.admin_role)) {
-        toast({
-          title: "Access Denied",
-          description: "You need admin privileges to access this page.",
-          variant: "destructive",
-        });
-        navigate("/dashboard");
-        return;
-      }
-
-      setHasAccess(true);
-    } catch (error) {
-      console.error("Access check error:", error);
-      navigate("/dashboard");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const loadEvents = async () => {
     try {
@@ -140,21 +99,10 @@ export default function Analytics() {
 
   const uniqueEventTypes = Array.from(new Set(events.map(e => e.event_type))).sort();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6">
+    <AdminGuard requireMFA={false}>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6">
         <Button
           variant="ghost"
           onClick={() => navigate("/admin/ai")}
@@ -235,5 +183,6 @@ export default function Analytics() {
         </Card>
       </div>
     </div>
+    </AdminGuard>
   );
 }
