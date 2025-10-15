@@ -218,78 +218,44 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           </p>
         )}
 
-        <div 
-          className="card-actions relative z-[10] flex flex-col sm:flex-row gap-2" 
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-        >
-          {isValidPhone(location.phone) ? (
-            <a
-              data-testid="provider-phone-link"
-              href={`tel:${sanitizePhone(location.phone!)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Call ${location.name}`}
-              className="pointer-events-auto btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); handleCall(); }}
-            >
-              📞 Call
-            </a>
-          ) : (
-            <button
-              disabled
-              className="btn btn-sm btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
-              aria-label="No phone available"
-            >
-              📞 No Phone
-            </button>
-          )}
-          
-          {location.address ? (
-            <a
-              data-testid="provider-directions-link"
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Get directions to ${location.name}`}
-              className="pointer-events-auto btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); handleDirections(); }}
-            >
-              🗺️ Directions
-            </a>
-          ) : (
-            <button
-              disabled
-              className="btn btn-sm btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
-              aria-label="No address available"
-            >
-              🗺️ No Address
-            </button>
-          )}
+        {(isValidPhone(location.phone) || getWebsite()) && (
+          <div 
+            className="card-actions relative z-[10] flex flex-wrap gap-3 pt-2" 
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            {isValidPhone(location.phone) && (
+              <a
+                href={`tel:${sanitizePhone(location.phone!)}`}
+                className="inline-flex items-center gap-2 text-primary hover:text-primary/80 underline pointer-events-auto min-h-[44px] px-2 py-1"
+                aria-label={`Call ${location.name}`}
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  handleCall(); 
+                }}
+              >
+                📞 Phone
+              </a>
+            )}
 
-          {getWebsite() ? (
-            <a
-              data-testid="provider-website-link"
-              href={getWebsite()!}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Visit ${location.name} website`}
-              className="pointer-events-auto btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); handleWebsite(); }}
-            >
-              🌐 Website
-            </a>
-          ) : (
-            <button
-              disabled
-              className="btn btn-sm btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
-              aria-label="No website available"
-            >
-              🌐 No Website
-            </button>
-          )}
-        </div>
+            {getWebsite() && (
+              <a
+                href={getWebsite()!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-primary hover:text-primary/80 underline pointer-events-auto min-h-[44px] px-2 py-1"
+                aria-label={`Open website for ${location.name}`}
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  handleWebsite(); 
+                }}
+              >
+                🌐 Website
+              </a>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
