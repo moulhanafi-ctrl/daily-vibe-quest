@@ -145,24 +145,28 @@ export default function NationalHotlines() {
 
                 <div className="flex flex-col gap-2">
                   {hotline.phone && (
-                    <Button 
+                    <a
+                      href={`tel:${hotline.phone.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={() => handleCall(hotline)}
-                      className="w-full"
-                      size="lg"
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-11 px-8 w-full bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       <Phone className="h-4 w-4 mr-2" />
                       Call {hotline.phone}
-                    </Button>
+                    </a>
                   )}
                   {hotline.website_url && (
-                    <Button 
+                    <a
+                      href={hotline.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={() => handleWebsite(hotline)}
-                      variant="outline"
-                      className="w-full"
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 w-full border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                     >
                       <Globe className="h-4 w-4 mr-2" />
                       Visit Website
-                    </Button>
+                    </a>
                   )}
                 </div>
               </CardContent>

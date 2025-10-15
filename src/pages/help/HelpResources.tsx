@@ -279,33 +279,48 @@ export default function HelpResources() {
                       </div>
                       <div className="flex flex-col gap-2">
                         {therapist.website_url && (
-                          <Button 
+                          <a
+                            href={therapist.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             onClick={() => handleWebsite(therapist)}
-                            className="w-full"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 w-full bg-primary text-primary-foreground hover:bg-primary/90"
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
                             View Profile
-                          </Button>
+                          </a>
                         )}
                         <div className="flex gap-2">
-                          {therapist.phone && (
-                            <Button 
+                          {therapist.phone ? (
+                            <a
+                              href={`tel:${therapist.phone.replace(/\D/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               onClick={() => handleCall(therapist)}
-                              variant="outline"
-                              className="flex-1"
+                              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                             >
                               <Phone className="h-4 w-4 mr-2" />
                               Call
-                            </Button>
+                            </a>
+                          ) : (
+                            <button 
+                              disabled
+                              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 flex-1 border border-input bg-background opacity-50 cursor-not-allowed"
+                            >
+                              <Phone className="h-4 w-4 mr-2" />
+                              No Phone
+                            </button>
                           )}
-                          <Button 
+                          <a
+                            href={`https://maps.google.com/?q=${encodeURIComponent(therapist.address)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             onClick={() => handleDirections(therapist)}
-                            variant="outline"
-                            className="flex-1"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                           >
                             <Navigation className="h-4 w-4 mr-2" />
                             Directions
-                          </Button>
+                          </a>
                         </div>
                       </div>
                     </CardContent>
@@ -375,34 +390,40 @@ export default function HelpResources() {
                       </div>
                       <div className="flex flex-col gap-2">
                         {center.phone && (
-                          <Button 
+                          <a
+                            href={`tel:${center.phone.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             onClick={() => handleCall(center)}
-                            className="w-full"
-                            size="lg"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-11 px-8 w-full bg-primary text-primary-foreground hover:bg-primary/90"
                           >
                             <Phone className="h-4 w-4 mr-2" />
                             Call Now
-                          </Button>
+                          </a>
                         )}
                         <div className="flex gap-2">
                           {center.website_url && (
-                            <Button 
+                            <a
+                              href={center.website_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               onClick={() => handleWebsite(center)}
-                              variant="outline"
-                              className="flex-1"
+                              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                             >
                               <Globe className="h-4 w-4 mr-2" />
                               Website
-                            </Button>
+                            </a>
                           )}
-                          <Button 
+                          <a
+                            href={`https://maps.google.com/?q=${encodeURIComponent(center.address)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             onClick={() => handleDirections(center)}
-                            variant="outline"
-                            className="flex-1"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                           >
                             <Navigation className="h-4 w-4 mr-2" />
                             Directions
-                          </Button>
+                          </a>
                         </div>
                       </div>
                     </CardContent>
@@ -443,24 +464,28 @@ export default function HelpResources() {
                   </div>
                   <div className="flex flex-col gap-2">
                     {hotline.phone && (
-                      <Button 
+                      <a
+                        href={`tel:${hotline.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         onClick={() => handleCall(hotline, true)}
-                        className="w-full"
-                        size="lg"
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-11 px-8 w-full bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         <Phone className="h-4 w-4 mr-2" />
                         Call {hotline.phone}
-                      </Button>
+                      </a>
                     )}
                     {hotline.website_url && (
-                      <Button 
+                      <a
+                        href={hotline.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         onClick={() => handleWebsite(hotline, true)}
-                        variant="outline"
-                        className="w-full"
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 w-full border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                       >
                         <Globe className="h-4 w-4 mr-2" />
                         Visit Website
-                      </Button>
+                      </a>
                     )}
                   </div>
                 </CardContent>
