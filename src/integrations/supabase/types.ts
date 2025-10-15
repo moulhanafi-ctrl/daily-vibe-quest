@@ -1164,6 +1164,38 @@ export type Database = {
           },
         ]
       }
+      journal_access_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          journal_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          journal_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          journal_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_access_logs_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           audio_url: string | null
@@ -1179,6 +1211,7 @@ export type Database = {
           transcript: string | null
           updated_at: string | null
           user_id: string
+          visibility: string | null
         }
         Insert: {
           audio_url?: string | null
@@ -1194,6 +1227,7 @@ export type Database = {
           transcript?: string | null
           updated_at?: string | null
           user_id: string
+          visibility?: string | null
         }
         Update: {
           audio_url?: string | null
@@ -1209,6 +1243,7 @@ export type Database = {
           transcript?: string | null
           updated_at?: string | null
           user_id?: string
+          visibility?: string | null
         }
         Relationships: [
           {
