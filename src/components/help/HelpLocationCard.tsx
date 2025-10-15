@@ -218,7 +218,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           </p>
         )}
 
-        <div className="relative z-[5] flex flex-col sm:flex-row gap-2" style={{ pointerEvents: 'auto', position: 'relative' }}>
+        <div className="card-actions relative z-[10] flex flex-col sm:flex-row gap-2" style={{ pointerEvents: 'auto', position: 'relative' }}>
           {isValidPhone(location.phone) ? (
             <a
               data-testid="provider-phone-link"

@@ -456,7 +456,7 @@ export default function TherapistsNearby() {
                         </p>
                       )}
                     </div>
-                    <div className="relative z-[5] flex flex-col sm:flex-row gap-2" style={{ pointerEvents: 'auto', position: 'relative' }}>
+                    <div className="card-actions relative z-[10] flex flex-col sm:flex-row gap-2" style={{ pointerEvents: 'auto', position: 'relative' }}>
                       {therapist.phone ? (
                         <a
                           data-testid="provider-phone-link"
