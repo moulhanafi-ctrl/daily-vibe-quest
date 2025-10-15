@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { trackEvent } from "@/lib/analytics";
+import { getBySlug, titleForId } from "@/lib/focusAreas";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useTranslation } from "react-i18next";
 
@@ -30,7 +31,7 @@ interface Room {
 }
 
 const ChatRoom = () => {
-  const { roomId, focusArea } = useParams();
+  const { roomId, focusArea, focusAreaKey } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [room, setRoom] = useState<Room | null>(null);
@@ -51,23 +52,45 @@ const ChatRoom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const createRoomIfNeeded = async (focusArea: string, ageGroup: "adult" | "child" | "elder" | "teen") => {
+  const createRoomIfNeeded = async (focusArea: string, ageGroup: "adult" | "child" | "elder" | "teen", focusAreaSlug?: string) => {
     setIsCreatingRoom(true);
     try {
-      // Try to find existing room
-      const { data: existingRoom } = await supabase
-        .from("chat_rooms")
-        .select("id, name, description")
-        .eq("focus_area", focusArea)
-        .eq("age_group", ageGroup)
-        .limit(1)
-        .maybeSingle();
+// Try to find existing room via RPC that can also create if missing (secured)
+      const focusAreaLabels: Record<string, string> = {
+        depression: "Depression Recovery",
+        anxiety: "Anxiety Support",
+        grief: "Grief & Loss",
+        stress: "Stress Management",
+        "self-esteem": "Self-Esteem",
+        relationships: "Relationship Guidance",
+        loneliness: "Loneliness",
+        pressure: "School & Work Pressure",
+        family: "Parenting",
+        sleep: "Sleep & Rest",
+        motivation: "Motivation & Purpose",
+        addiction: "Addiction Recovery",
+      };
 
-      if (existingRoom) {
-        return existingRoom;
-      }
+      const ageLabels: Record<string, string> = {
+        child: "Ages 5-12",
+        teen: "Ages 13-17",
+        adult: "Ages 18-60",
+        elder: "Ages 61+",
+      };
 
-      // Room doesn't exist, create it
+      const roomName = `${focusAreaLabels[focusArea] || "Support Chat"} - ${ageLabels[ageGroup] || "All Ages"}`;
+      const roomDescription = "A safe space to connect and support each other";
+
+      const { data: ensuredRoom, error: ensureErr } = await supabase.rpc("ensure_chat_room", {
+        p_focus_area: focusArea,
+        p_age_group: ageGroup,
+        p_focus_area_key: focusAreaSlug || getBySlug(focusAreaSlug || "")?.slug || focusArea,
+        p_name: roomName,
+        p_description: roomDescription,
+      });
+
+      if (ensureErr) throw ensureErr;
+      if (ensuredRoom) return ensuredRoom;
       const focusAreaLabels: Record<string, string> = {
         depression: "Depression Support",
         anxiety: "Anxiety Support",

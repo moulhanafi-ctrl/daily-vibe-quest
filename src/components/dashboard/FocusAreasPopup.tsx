@@ -8,6 +8,7 @@ import { X, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { trackEvent } from "@/lib/analytics";
+import { slugForId } from "@/lib/focusAreas";
 
 const FOCUS_AREAS = [
   { id: "depression", label: "Depression", emoji: "😔" },
@@ -97,8 +98,9 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
       
       onClose();
       
-      // Navigate to the chat room using focus area key
-      navigate(`/chat/focus/${selected}`);
+// Navigate to the chat room using focus area slug
+      import { slugForId } from "@/lib/focusAreas"; // keep import local for treeshaking
+      navigate(`/chat-rooms/${slugForId(selected)}`);
     } catch (error: any) {
       toast({
         title: "Error",

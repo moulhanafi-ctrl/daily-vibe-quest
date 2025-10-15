@@ -9,6 +9,7 @@ import { FocusAreaStep } from "@/components/onboarding/FocusAreaStep";
 import { DeepDiveStep } from "@/components/onboarding/DeepDiveStep";
 import { ConfirmationScreen } from "@/components/onboarding/ConfirmationScreen";
 import { trackEvent } from "@/lib/analytics";
+import { slugForId } from "@/lib/focusAreas";
 
 type OnboardingStep = "overview" | "welcome" | "basic-info" | "focus-area" | "deep-dive" | "confirmation";
 
@@ -133,8 +134,9 @@ const Onboarding = () => {
       if (ageGroupData === 'child' || ageGroupData === 'teen') {
         navigate("/parent-verification");
       } else if (data.focusAreas && data.focusAreas.length > 0) {
-        // Redirect to their focus area chat room using focus area key
-        navigate(`/chat/focus/${data.focusAreas[0]}`);
+// Redirect to their focus area chat room using focus area slug
+        import { slugForId } from "@/lib/focusAreas"; // local import within module scope
+        navigate(`/chat-rooms/${slugForId(data.focusAreas[0])}`);
       } else {
         navigate("/dashboard?first_checkin=true");
       }

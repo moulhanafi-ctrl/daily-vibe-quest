@@ -71,6 +71,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chat" element={<Navigate to="/chat-rooms" replace />} />
           <Route path="/chat-rooms" element={<ChatRooms />} />
+          <Route path="/chat-rooms/:focusAreaKey" element={<ChatRoom />} />
           <Route path="/chat/:roomId" element={<ChatRoom />} />
           <Route path="/chat/focus/:focusArea" element={<ChatRoom />} />
           <Route path="/store" element={<Store />} />

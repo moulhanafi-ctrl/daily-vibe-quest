@@ -17,6 +17,7 @@ interface ChatRoom {
   focus_area: string;
   name: string;
   description: string;
+  focus_area_key?: string | null;
 }
 
 interface Profile {
@@ -257,13 +258,13 @@ const ChatRooms = () => {
                 <Card
                   key={room.id}
                   className="cursor-pointer hover:shadow-lg transition-smooth focus-within:ring-2 focus-within:ring-primary"
-                  onClick={() => navigate(`/chat/${room.id}`)}
+                  onClick={() => navigate(room.focus_area_key ? `/chat-rooms/${room.focus_area_key}` : `/chat/${room.id}`)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      navigate(`/chat/${room.id}`);
+                      navigate(room.focus_area_key ? `/chat-rooms/${room.focus_area_key}` : `/chat/${room.id}`);
                     }
                   }}
                   aria-label={`Join ${room.name} chat room`}

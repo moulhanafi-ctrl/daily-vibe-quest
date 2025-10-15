@@ -429,6 +429,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           focus_area: string
+          focus_area_key: string | null
           id: string
           name: string
         }
@@ -437,6 +438,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           focus_area: string
+          focus_area_key?: string | null
           id?: string
           name: string
         }
@@ -445,6 +447,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           focus_area?: string
+          focus_area_key?: string | null
           id?: string
           name?: string
         }
@@ -2440,6 +2443,24 @@ export type Database = {
       can_view_profile: {
         Args: { _profile_id: string; _viewer_id: string }
         Returns: boolean
+      }
+      ensure_chat_room: {
+        Args: {
+          p_age_group: Database["public"]["Enums"]["age_group"]
+          p_description: string
+          p_focus_area: string
+          p_focus_area_key: string
+          p_name: string
+        }
+        Returns: {
+          age_group: Database["public"]["Enums"]["age_group"]
+          created_at: string | null
+          description: string | null
+          focus_area: string
+          focus_area_key: string | null
+          id: string
+          name: string
+        }
       }
       generate_family_invite_code: {
         Args: Record<PropertyKey, never>
