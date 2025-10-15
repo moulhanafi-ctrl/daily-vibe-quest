@@ -13,19 +13,35 @@ import { ParentNotificationSettings } from "@/components/family/ParentNotificati
 import { PushNotificationSettings } from "@/components/settings/PushNotificationSettings";
 import { TestContact } from "@/components/family/TestContact";
 import { FocusAreasPopup } from "@/components/dashboard/FocusAreasPopup";
+import { MFASettings } from "@/components/settings/MFASettings";
+import { StripeLiveModeVerification } from "@/components/admin/StripeLiveModeVerification";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { t } = useTranslation("common");
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showFocusPopup, setShowFocusPopup] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkAdminStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUserId(session.user.id);
+        
+        // Check if user is admin
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .single();
+        
+        setIsAdmin(!!roles);
       }
-    });
+    };
+    
+    checkAdminStatus();
   }, []);
 
   return (
@@ -43,7 +59,7 @@ const Settings = () => {
         <h1 className="text-4xl font-bold mb-8">{t("settings", "Settings")}</h1>
 
         <Tabs defaultValue="language" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               {t("profile", "Profile")}
@@ -63,6 +79,12 @@ const Settings = () => {
             <TabsTrigger value="arthur" className="gap-2">
               ✨ Arthur
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="security" className="gap-2">
+                <Shield className="h-4 w-4" />
+                Security
+              </TabsTrigger>
+            )}
             <TabsTrigger value="developer" className="gap-2">
               🔧 QA
             </TabsTrigger>
@@ -106,6 +128,13 @@ const Settings = () => {
           <TabsContent value="arthur">
             <ArthurSettings />
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="security" className="space-y-4">
+              <MFASettings />
+              <StripeLiveModeVerification />
+            </TabsContent>
+          )}
 
           <TabsContent value="developer">
             <TestContact />
