@@ -179,7 +179,7 @@ export default function TherapistsNearby() {
       window.location.href = `tel:${cleanPhone}`;
       trackEvent({
         eventType: "therapist_phone_clicked",
-        metadata: { id: therapist.id, name: therapist.name },
+        metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
       });
     }
   };
@@ -454,13 +454,25 @@ export default function TherapistsNearby() {
                     <div className="flex flex-col sm:flex-row gap-2">
                       {therapist.phone ? (
                         <Button 
-                          onClick={() => handleCall(therapist)}
+                          asChild
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 cursor-pointer"
                           aria-label={`Call ${therapist.name}`}
                         >
-                          <Phone className="h-4 w-4 mr-2" />
-                          Call
+                          <a 
+                            href={`tel:${therapist.phone.replace(/[^\d+]/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() =>
+                              trackEvent({
+                                eventType: "therapist_phone_clicked",
+                                metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
+                              })
+                            }
+                          >
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call
+                          </a>
                         </Button>
                       ) : (
                         <Button 
@@ -475,13 +487,25 @@ export default function TherapistsNearby() {
                       )}
                       {therapist.address ? (
                         <Button 
-                          onClick={() => handleDirections(therapist)}
+                          asChild
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 cursor-pointer"
                           aria-label={`Get directions to ${therapist.name}`}
                         >
-                          <Navigation className="h-4 w-4 mr-2" />
-                          Directions
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(therapist.address)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() =>
+                              trackEvent({
+                                eventType: "therapist_directions_clicked",
+                                metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
+                              })
+                            }
+                          >
+                            <Navigation className="h-4 w-4 mr-2" />
+                            Directions
+                          </a>
                         </Button>
                       ) : (
                         <Button 
@@ -496,12 +520,30 @@ export default function TherapistsNearby() {
                       )}
                       {therapist.website_url ? (
                         <Button 
-                          onClick={() => handleWebsite(therapist)}
-                          className="flex-1 sm:flex-[1.2] hover:opacity-90 transition-opacity"
+                          asChild
+                          className="flex-1 sm:flex-[1.2] hover:opacity-90 transition-opacity cursor-pointer"
                           aria-label={`Visit ${therapist.name} website`}
                         >
-                          <Globe className="h-4 w-4 mr-2" />
-                          Website
+                          <a
+                            href={getValidWebsiteUrl(therapist.website_url) ?? "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => {
+                              const valid = getValidWebsiteUrl(therapist.website_url);
+                              if (!valid) {
+                                e.preventDefault();
+                                toast.error("Sorry, this website link is unavailable.");
+                                return;
+                              }
+                              trackEvent({
+                                eventType: "therapist_website_clicked",
+                                metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
+                              });
+                            }}
+                          >
+                            <Globe className="h-4 w-4 mr-2" />
+                            Website
+                          </a>
                         </Button>
                       ) : (
                         <Button 

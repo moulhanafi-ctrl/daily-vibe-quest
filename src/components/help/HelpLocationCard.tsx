@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Phone, ExternalLink, Navigation, Flag, Clock } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
-
+import { useSearchParams } from "react-router-dom";
 interface HelpLocation {
   id: string;
   type: "crisis" | "therapy";
@@ -39,6 +39,10 @@ const tagLabels: Record<string, string> = {
 
 export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) => {
   const isMinor = ageGroup === "child" || ageGroup === "teen";
+  const [searchParams] = useSearchParams();
+  const zip = searchParams.get("zip") || undefined;
+  const radiusParam = searchParams.get("radius");
+  const radius = radiusParam ? parseInt(radiusParam) : undefined;
 
   const ensureHttps = (url: string) => {
     const trimmed = url.trim();
@@ -69,7 +73,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
   const handleCall = () => {
     trackEvent({
       eventType: "therapist_phone_clicked",
-      metadata: { id: location.id, type: location.type, name: location.name }
+      metadata: { id: location.id, type: location.type, name: location.name, zip, radius },
     });
     if (isValidPhone(location.phone)) {
       window.location.href = `tel:${sanitizePhone(location.phone)}`;
@@ -80,7 +84,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
     console.log("HelpLocationCard - handleWebsite clicked for:", location.name, "URL:", location.website_url);
     trackEvent({
       eventType: "therapist_website_clicked",
-      metadata: { id: location.id, type: location.type, name: location.name }
+      metadata: { id: location.id, type: location.type, name: location.name, zip, radius },
     });
     if (location.website_url) {
       const url = ensureHttps(location.website_url);
@@ -96,7 +100,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
   const handleDirections = () => {
     trackEvent({
       eventType: "therapist_directions_clicked",
-      metadata: { id: location.id, type: location.type, name: location.name }
+      metadata: { id: location.id, type: location.type, name: location.name, zip, radius },
     });
     if (location.address) {
       const query = encodeURIComponent(location.address);
@@ -237,14 +241,21 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           
           {location.address ? (
             <Button
-              onClick={handleDirections}
+              asChild
               size="sm"
               variant="outline"
-              className="flex-1"
+              className="flex-1 cursor-pointer"
               aria-label={`Get directions to ${location.name}`}
             >
-              <Navigation className="h-4 w-4 mr-2" />
-              Directions
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => { e.stopPropagation(); handleDirections(); }}
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                Directions
+              </a>
             </Button>
           ) : (
             <Button
@@ -261,14 +272,21 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
 
           {location.website_url ? (
             <Button
-              onClick={handleWebsite}
+              asChild
               size="sm"
               variant={location.type === "therapy" ? "default" : "outline"}
-              className="flex-1 sm:flex-[1.2]"
+              className="flex-1 sm:flex-[1.2] cursor-pointer"
               aria-label={`Visit ${location.name} website`}
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Website
+              <a
+                href={ensureHttps(location.website_url!)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => { e.stopPropagation(); handleWebsite(); }}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Website
+              </a>
             </Button>
           ) : (
             <Button
