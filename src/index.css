@@ -177,10 +177,19 @@ All colors MUST be HSL.
 }
 
 @layer components {
-  .card-actions { position: relative; z-index: 10; }
-  .card-actions a, .card-actions button { pointer-events: auto !important; cursor: pointer; }
+  .card-actions { 
+    position: relative; 
+    z-index: 10; 
+  }
+  .card-actions a, 
+  .card-actions button { 
+    pointer-events: auto !important; 
+    cursor: pointer;
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+  }
   .card-actions button[disabled] { cursor: not-allowed; }
   .card-overlay, .skeleton, .click-shield { pointer-events: none !important; }
+  .card, .card-container { pointer-events: auto; }
 }
 
 @layer utilities {

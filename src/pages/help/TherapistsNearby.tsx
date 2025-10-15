@@ -456,7 +456,12 @@ export default function TherapistsNearby() {
                         </p>
                       )}
                     </div>
-                    <div className="card-actions relative z-[10] flex flex-col sm:flex-row gap-2" style={{ pointerEvents: 'auto', position: 'relative' }}>
+                    <div 
+                      className="card-actions relative z-[10] flex flex-col sm:flex-row gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                    >
                       {therapist.phone ? (
                         <a
                           data-testid="provider-phone-link"
@@ -464,8 +469,7 @@ export default function TherapistsNearby() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Call ${therapist.name}`}
-                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
-                          style={{ pointerEvents: 'auto' }}
+                          className="pointer-events-auto btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
                           onClick={(e) => { 
                             e.stopPropagation(); 
                             console.log("Clicked phone for", therapist.name);
@@ -489,8 +493,7 @@ export default function TherapistsNearby() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={`Get directions to ${therapist.name}`}
-                        className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
-                        style={{ pointerEvents: 'auto' }}
+                        className="pointer-events-auto btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
                           console.log("Clicked directions for", therapist.name);
@@ -509,8 +512,7 @@ export default function TherapistsNearby() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Visit ${therapist.name} website`}
-                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                          style={{ pointerEvents: 'auto' }}
+                          className="pointer-events-auto btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             console.log("Clicked website for", therapist.name);
