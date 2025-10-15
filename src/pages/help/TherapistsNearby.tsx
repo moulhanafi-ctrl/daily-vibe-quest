@@ -461,8 +461,6 @@ export default function TherapistsNearby() {
                         >
                           <a 
                             href={`tel:${therapist.phone.replace(/[^\d+]/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             onClick={() =>
                               trackEvent({
                                 eventType: "therapist_phone_clicked",
