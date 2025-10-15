@@ -464,51 +464,37 @@ export default function TherapistsNearby() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Call ${therapist.name}`}
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent"
                           onClick={(e) => { e.stopPropagation(); handleCall(therapist); }}
                         >
-                          <Phone className="h-4 w-4 mr-2" />
-                          Call
+                          📞 Call
                         </a>
                       ) : (
                         <button 
                           disabled 
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background opacity-50 cursor-not-allowed"
+                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
                           aria-label="No phone available"
                         >
-                          <Phone className="h-4 w-4 mr-2" />
-                          No Phone
+                          📞 No Phone
                         </button>
                       )}
-                      {therapist.address ? (
-                        <a
-                          data-testid="provider-directions-link"
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(therapist.address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Get directions to ${therapist.name}`}
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            trackEvent({
-                              eventType: "therapist_directions_clicked",
-                              metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
-                            });
-                          }}
-                        >
-                          <Navigation className="h-4 w-4 mr-2" />
-                          Directions
-                        </a>
-                      ) : (
-                        <button 
-                          disabled 
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background opacity-50 cursor-not-allowed"
-                          aria-label="No address available"
-                        >
-                          <Navigation className="h-4 w-4 mr-2" />
-                          No Address
-                        </button>
-                      )}
+                      <a
+                        data-testid="provider-directions-link"
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(therapist.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Get directions to ${therapist.name}`}
+                        className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          trackEvent({
+                            eventType: "therapist_directions_clicked",
+                            metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
+                          });
+                        }}
+                      >
+                        🗺️ Directions
+                      </a>
                       {therapist.website_url ? (
                         <a
                           data-testid="provider-website-link"
@@ -516,7 +502,7 @@ export default function TherapistsNearby() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Visit ${therapist.name} website`}
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 sm:flex-[1.2] bg-primary text-primary-foreground hover:bg-primary/90"
+                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                           onClick={(e) => {
                             e.stopPropagation();
                             const valid = getValidWebsiteUrl(therapist.website_url);
@@ -531,17 +517,15 @@ export default function TherapistsNearby() {
                             });
                           }}
                         >
-                          <Globe className="h-4 w-4 mr-2" />
-                          Website
+                          🌐 Website
                         </a>
                       ) : (
                         <button 
                           disabled 
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 sm:flex-[1.2] border border-input bg-background opacity-50 cursor-not-allowed"
+                          className="btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
                           aria-label="No website available"
                         >
-                          <Globe className="h-4 w-4 mr-2" />
-                          No Website
+                          🌐 No Website
                         </button>
                       )}
                     </div>

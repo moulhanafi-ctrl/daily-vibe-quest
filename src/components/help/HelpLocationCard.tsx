@@ -224,20 +224,18 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Call ${location.name}`}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={(e) => { e.stopPropagation(); handleCall(); }}
             >
-              <Phone className="h-4 w-4 mr-2" />
-              Call
+              📞 Call
             </a>
           ) : (
             <button
               disabled
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background opacity-50 cursor-not-allowed"
+              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
               aria-label="No phone available"
             >
-              <Phone className="h-4 w-4 mr-2" />
-              No Phone
+              📞 No Phone
             </button>
           )}
           
@@ -248,20 +246,18 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Get directions to ${location.name}`}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent"
               onClick={(e) => { e.stopPropagation(); handleDirections(); }}
             >
-              <Navigation className="h-4 w-4 mr-2" />
-              Directions
+              🗺️ Directions
             </a>
           ) : (
             <button
               disabled
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background opacity-50 cursor-not-allowed"
+              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
               aria-label="No address available"
             >
-              <Navigation className="h-4 w-4 mr-2" />
-              No Address
+              🗺️ No Address
             </button>
           )}
 
@@ -272,20 +268,18 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Visit ${location.name} website`}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 sm:flex-[1.2] bg-primary text-primary-foreground hover:bg-primary/90"
+              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={(e) => { e.stopPropagation(); handleWebsite(); }}
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Website
+              🌐 Website
             </a>
           ) : (
             <button
               disabled
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 sm:flex-[1.2] border border-input bg-background opacity-50 cursor-not-allowed"
+              className="btn btn-sm inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border"
               aria-label="No website available"
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              No Website
+              🌐 No Website
             </button>
           )}
         </div>
