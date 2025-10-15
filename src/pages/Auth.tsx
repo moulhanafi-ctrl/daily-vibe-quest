@@ -66,7 +66,7 @@ const Auth = () => {
           .from('profiles')
           .select('language, selected_focus_areas, username')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
 
         if (!profile?.language) {
           navigate('/welcome/language');
@@ -116,13 +116,16 @@ const Auth = () => {
         });
         if (error) throw error;
         
+        // Force JWT refresh to ensure role is included in claims
+        await supabase.auth.refreshSession();
+        
         // Fetch user profile for welcome message
         if (data.user) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('username')
             .eq('id', data.user.id)
-            .single();
+            .maybeSingle();
           
           toast({ 
             title: `Welcome back, ${profile?.username || 'friend'}!`,

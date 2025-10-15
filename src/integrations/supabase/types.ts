@@ -2740,6 +2740,22 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      jwt_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      list_rooms_for_me: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          age_group: Database["public"]["Enums"]["age_group"]
+          created_at: string | null
+          description: string | null
+          focus_area: string
+          focus_area_key: string | null
+          id: string
+          name: string
+        }[]
+      }
     }
     Enums: {
       admin_role:

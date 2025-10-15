@@ -72,7 +72,7 @@ const ChatRooms = () => {
           .from("profiles")
           .select("selected_focus_areas, subscription_status, subscription_expires_at")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         const focusAreas = profile?.selected_focus_areas || [];
         setUserFocusAreas(focusAreas);
@@ -86,13 +86,11 @@ const ChatRooms = () => {
         
         setHasActiveSubscription(isActive);
 
-        // Get chat rooms - RLS policies now handle filtering
-        // Admins will see ALL rooms automatically via RLS
-        // Regular users will see only their rooms via RLS
+        // Get chat rooms using safe RPC that works for admins and regular users
+        // This bypasses any JWT/RLS issues by using SECURITY DEFINER
+        // JWT refresh happens on login in Auth.tsx to ensure role claim is present
         const { data: chatRooms, error } = await supabase
-          .from("chat_rooms")
-          .select("*")
-          .order("created_at", { ascending: false });
+          .rpc("list_rooms_for_me");
 
         if (error) throw error;
         setRooms(chatRooms || []);

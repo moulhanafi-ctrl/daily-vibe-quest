@@ -126,7 +126,7 @@ const ChatRoom = () => {
           .from("profiles")
           .select("username, age_group, subscription_status, subscription_expires_at")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         setUsername(profile?.username || "Anonymous");
 
