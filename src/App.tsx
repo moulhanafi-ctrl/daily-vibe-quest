@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SkipToContent } from "@/components/layout/SkipToContent";
 import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
 import { ParentVerificationGate } from "@/components/family/ParentVerificationGate";
+import { MobileKeyboardHandler } from "@/components/MobileKeyboardHandler";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -68,6 +69,7 @@ const App = () => (
         <SkipToContent />
         <Toaster />
       <Sonner />
+      <MobileKeyboardHandler />
       <ArthurNotifications />
       <BrowserRouter>
         <Routes>
