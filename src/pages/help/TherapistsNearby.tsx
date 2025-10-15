@@ -185,27 +185,40 @@ export default function TherapistsNearby() {
   };
 
   const getValidWebsiteUrl = (url?: string) => {
-    if (!url) return null;
+    console.log("getValidWebsiteUrl called with:", url);
+    if (!url) {
+      console.log("No URL provided");
+      return null;
+    }
     let u = url.trim();
     if (!/^https?:\/\//i.test(u)) {
       u = `https://${u}`;
     }
     try {
       const parsed = new URL(u);
+      console.log("Valid URL created:", parsed.href);
       return parsed.href;
-    } catch {
+    } catch (e) {
+      console.error("Invalid URL:", e);
       return null;
     }
   };
 
   const handleWebsite = (therapist: Therapist) => {
+    console.log("handleWebsite clicked for:", therapist.name, "URL:", therapist.website_url);
     const href = getValidWebsiteUrl(therapist.website_url);
+    console.log("Validated href:", href);
     if (!href) {
       toast.error("Sorry, this website link is unavailable.");
       return;
     }
     try {
-      window.open(href, "_blank", "noopener,noreferrer");
+      const opened = window.open(href, "_blank");
+      console.log("window.open result:", opened);
+      if (!opened) {
+        toast.error("Please allow popups for this site");
+        console.log("Popup was blocked");
+      }
       trackEvent({
         eventType: "therapist_website_clicked",
         metadata: { 

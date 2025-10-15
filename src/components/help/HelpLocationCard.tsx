@@ -77,13 +77,19 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
   };
 
   const handleWebsite = () => {
+    console.log("HelpLocationCard - handleWebsite clicked for:", location.name, "URL:", location.website_url);
     trackEvent({
       eventType: "therapist_website_clicked",
       metadata: { id: location.id, type: location.type, name: location.name }
     });
     if (location.website_url) {
       const url = ensureHttps(location.website_url);
-      window.open(url, "_blank", "noopener,noreferrer");
+      console.log("Opening URL:", url);
+      const opened = window.open(url, "_blank");
+      console.log("window.open result:", opened);
+      if (!opened) {
+        console.log("Popup was blocked");
+      }
     }
   };
 
