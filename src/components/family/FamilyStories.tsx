@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Heart, Smile, Eye, X } from "lucide-react";
+import { Heart, Smile, Eye, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import FamilyStoriesGrid from "./FamilyStoriesGrid";
 
 interface Story {
   id: string;
@@ -20,16 +19,25 @@ interface Story {
   expires_at: string;
   username?: string;
   first_name?: string;
+  mp4_url?: string;
+  hls_url?: string;
+  title?: string;
 }
 
 export const FamilyStories = () => {
   const [stories, setStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    const initUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+    };
+    
+    initUser();
     loadStories();
 
     // Subscribe to new stories
@@ -157,8 +165,31 @@ export const FamilyStories = () => {
   const handleUploadClick = () => {
     toast({
       title: "Story Upload",
-      description: "Video recording feature coming soon. Max 45 seconds.",
+      description: "Video recording feature coming soon. Max 45 seconds, 100MB limit.",
     });
+  };
+
+  const handleDeleteStory = async (storyId: string) => {
+    try {
+      const { error } = await supabase
+        .from("family_stories")
+        .delete()
+        .eq("id", storyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Story deleted",
+        description: "Your story has been removed.",
+      });
+    } catch (error: any) {
+      console.error("Error deleting story:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete story. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getTimeAgo = (timestamp: string) => {
@@ -170,58 +201,29 @@ export const FamilyStories = () => {
   };
 
   if (isLoading) {
-    return <div className="p-4 text-center text-muted-foreground">Loading stories...</div>;
+    return (
+      <div className="p-8 text-center">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-muted rounded w-32 mx-auto"></div>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="aspect-video bg-muted rounded-2xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Story Rail */}
-      <div className="flex gap-3 overflow-x-auto pb-2">
-        {/* Add Story Button */}
-        <button
-          onClick={handleUploadClick}
-          className="flex flex-col items-center gap-2 min-w-[80px]"
-        >
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-            <Plus className="h-8 w-8 text-white" />
-          </div>
-          <span className="text-xs font-medium">Your Story</span>
-        </button>
-
-        {/* Story Avatars */}
-        {stories.map((story) => (
-          <button
-            key={story.id}
-            onClick={() => handleStoryClick(story)}
-            className="flex flex-col items-center gap-2 min-w-[80px]"
-          >
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 p-0.5">
-              <Avatar className="w-full h-full border-2 border-background">
-                <AvatarFallback>
-                  {(story.first_name?.[0] || story.username?.[0] || "U").toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div className="text-center">
-              <p className="text-xs font-medium truncate max-w-[80px]">
-                {story.first_name || story.username}
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                {getTimeAgo(story.created_at)}
-              </p>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {stories.length === 0 && (
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground mb-4">No family stories yet</p>
-          <p className="text-sm text-muted-foreground">
-            Share a moment with your family. Stories disappear after 24 hours.
-          </p>
-        </Card>
-      )}
+    <div className="space-y-6">
+      <FamilyStoriesGrid
+        stories={stories}
+        currentUserId={currentUserId || undefined}
+        onStoryClick={handleStoryClick}
+        onUploadClick={handleUploadClick}
+        onDeleteStory={handleDeleteStory}
+      />
 
       {/* Story Viewer Dialog */}
       <Dialog open={!!selectedStory} onOpenChange={() => setSelectedStory(null)}>
@@ -260,10 +262,12 @@ export const FamilyStories = () => {
               {/* Video */}
               <div className="flex-1 flex items-center justify-center">
                 <video
-                  src={selectedStory.video_url}
+                  src={selectedStory.mp4_url || selectedStory.video_url}
+                  poster={selectedStory.thumbnail_url}
                   className="max-h-full max-w-full"
                   controls
                   autoPlay
+                  playsInline
                 />
               </div>
 
