@@ -65,3 +65,9 @@ verify_jwt = false
 
 [functions.local-help]
 verify_jwt = false
+
+[functions.create-product-stripe]
+verify_jwt = true
+
+[functions.create-product-checkout]
+verify_jwt = true

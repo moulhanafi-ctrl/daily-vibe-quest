@@ -232,29 +232,89 @@ export default function ProductForm() {
     }
   };
 
+  const createOrUpdateStripeProduct = async (productId: string, existingStripeProductId?: string, existingStripePriceId?: string) => {
+    try {
+      // Call edge function to handle Stripe operations
+      const { data, error } = await supabase.functions.invoke("create-product-stripe", {
+        body: {
+          productId,
+          title: formData.title,
+          description: formData.description,
+          price_cents: formData.price_cents,
+          category: formData.category,
+          existingStripeProductId,
+          existingStripePriceId,
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Error with Stripe:", error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       let productId = id;
+      let existingStripeProductId = null;
+      let existingStripePriceId = null;
 
       if (id) {
+        // Get existing Stripe IDs before update
+        const { data: existingProduct } = await supabase
+          .from("products" as any)
+          .select("stripe_product_id, stripe_price_id")
+          .eq("id", id)
+          .single();
+
+        existingStripeProductId = (existingProduct as any)?.stripe_product_id;
+        existingStripePriceId = (existingProduct as any)?.stripe_price_id;
+
         const { error } = await supabase
           .from("products" as any)
-          .update(formData)
+          .update(formData as any)
           .eq("id", id);
 
         if (error) throw error;
       } else {
         const { data, error } = await supabase
           .from("products" as any)
-          .insert([formData])
+          .insert([formData as any])
           .select()
           .single();
 
         if (error) throw error;
         productId = (data as any).id;
+      }
+
+      // Create/update Stripe product and price if publishing
+      if (formData.is_active && productId) {
+        try {
+          const stripeData = await createOrUpdateStripeProduct(
+            productId,
+            existingStripeProductId,
+            existingStripePriceId
+          );
+
+          // Update product with Stripe IDs
+          await supabase
+            .from("products" as any)
+            .update({
+              stripe_product_id: stripeData.productId,
+              stripe_price_id: stripeData.priceId,
+            } as any)
+            .eq("id", productId);
+
+          toast.success("Stripe product created/updated");
+        } catch (stripeError) {
+          console.error("Stripe error:", stripeError);
+          toast.error("Product saved but Stripe integration failed");
+        }
       }
 
       // Save images
@@ -277,7 +337,7 @@ export default function ProductForm() {
                 url: img.url,
                 is_cover: img.is_cover,
                 sort_order: idx,
-              }))
+              })) as any
             );
         }
 
@@ -297,7 +357,7 @@ export default function ProductForm() {
                 product_id: productId,
                 file_path: file.file_path,
                 file_name: file.file_name,
-              }))
+              })) as any
             );
         }
       }

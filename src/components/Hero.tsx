@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Settings } from "lucide-react";
 import heroBackground from "@/assets/hero-background.jpg";
 import vibeCheckLogo from "@/assets/vibe-check-logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 const moods = [
   { emoji: "😊", label: "Great", color: "mint" },
@@ -16,11 +17,43 @@ const moods = [
 export const Hero = () => {
   const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .single();
+        setIsAdmin(!!data);
+      }
+    };
+    checkAdminStatus();
+  }, []);
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      {/* Admin Link */}
+      {isAdmin && (
+        <div className="absolute top-4 right-4 z-20">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/admin/products")}
+            className="gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Admin
+          </Button>
+        </div>
+      )}
+      
       {/* Background Image with Overlay */}
-      <div 
+      <div
         className="absolute inset-0 z-0"
         style={{
           backgroundImage: `url(${heroBackground})`,
