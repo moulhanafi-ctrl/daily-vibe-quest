@@ -52,6 +52,12 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
     return trimmed.replace(/^http:\/\//i, "https://");
   };
 
+  const getWebsite = () => {
+    const anyLoc: any = location as any;
+    const raw = location.website_url || anyLoc.website || anyLoc.url || anyLoc.link || anyLoc.homepage;
+    return raw ? ensureHttps(String(raw)) : undefined;
+  };
+
   const sanitizePhone = (phone?: string) => {
     return phone ? phone.replace(/[^\d+]/g, "") : "";
   };
@@ -81,15 +87,15 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
   };
 
   const handleWebsite = () => {
-    console.log("HelpLocationCard - handleWebsite clicked for:", location.name, "URL:", location.website_url);
+    console.log("HelpLocationCard - handleWebsite clicked for:", location.name, "URL:", getWebsite());
     trackEvent({
       eventType: "therapist_website_clicked",
       metadata: { id: location.id, type: location.type, name: location.name, zip, radius },
     });
-    if (location.website_url) {
-      const url = ensureHttps(location.website_url);
+    const url = getWebsite();
+    if (url) {
       console.log("Opening URL:", url);
-      const opened = window.open(url, "_blank");
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
       console.log("window.open result:", opened);
       if (!opened) {
         console.log("Popup was blocked");
@@ -108,13 +114,14 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
     }
   };
 
-  const cardClass = location.website_url 
+  const cardClass = getWebsite() 
     ? "hover:shadow-lg transition-all cursor-pointer hover:border-primary/50" 
     : "hover:shadow-md transition-shadow";
 
   const handleCardClick = () => {
-    if (location.website_url) {
-      handleWebsite();
+    const url = getWebsite();
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -209,7 +216,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           </p>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="relative z-[1] flex flex-col sm:flex-row gap-2" onClick={(e) => e.stopPropagation()}>
           {isValidPhone(location.phone) ? (
             <Button
               asChild
@@ -220,7 +227,11 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
             >
               <a
                 href={`tel:${sanitizePhone(location.phone!)}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label={`Call ${location.name}`}
+                data-testid="provider-phone-link"
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pointer-events-auto"
               >
                 <Phone className="h-4 w-4 mr-2" />
                 Call
@@ -270,7 +281,7 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
             </Button>
           )}
 
-          {location.website_url ? (
+          {getWebsite() ? (
             <Button
               asChild
               size="sm"
@@ -279,10 +290,12 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
               aria-label={`Visit ${location.name} website`}
             >
               <a
-                href={ensureHttps(location.website_url!)}
+                href={getWebsite()!}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => { e.stopPropagation(); handleWebsite(); }}
+                data-testid="provider-website-link"
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pointer-events-auto"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Website

@@ -184,6 +184,11 @@ export default function TherapistsNearby() {
     }
   };
 
+  const getRawWebsite = (t: Therapist) => {
+    const anyT: any = t as any;
+    return t.website_url || anyT.website || anyT.url || anyT.link || anyT.homepage;
+  };
+
   const getValidWebsiteUrl = (url?: string) => {
     console.log("getValidWebsiteUrl called with:", url);
     if (!url) {
@@ -451,7 +456,7 @@ export default function TherapistsNearby() {
                         </p>
                       )}
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative z-[1] flex flex-col sm:flex-row gap-2">
                       {therapist.phone ? (
                         <Button 
                           asChild
