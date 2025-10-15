@@ -287,5 +287,24 @@ All colors MUST be HSL.
     }
   }
 
+  /* Help card action links - ensure clickability */
+  .card-actions {
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+  }
+
+  .card-actions a,
+  .card-actions button {
+    pointer-events: auto;
+  }
+
+  .card-overlay,
+  .skeleton,
+  .click-shield {
+    pointer-events: none !important;
+  }
+
 }
+
 

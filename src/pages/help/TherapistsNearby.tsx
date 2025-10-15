@@ -456,90 +456,53 @@ export default function TherapistsNearby() {
                         </p>
                       )}
                     </div>
-                    <div 
-                      className="card-actions relative z-[10] flex flex-col sm:flex-row gap-2"
-                      onClick={(e) => e.stopPropagation()}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onTouchStart={(e) => e.stopPropagation()}
-                    >
-                      {therapist.phone ? (
-                        <a
-                          data-testid="provider-phone-link"
-                          href={`tel:${therapist.phone.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Call ${therapist.name}`}
-                          className="pointer-events-auto btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            console.log("Clicked phone for", therapist.name);
-                            handleCall(therapist); 
-                          }}
-                        >
-                          📞 Call
-                        </a>
-                      ) : (
-                        <button 
-                          disabled 
-                          className="btn btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
-                          aria-label="No phone available"
-                        >
-                          📞 No Phone
-                        </button>
-                      )}
-                      <a
-                        data-testid="provider-directions-link"
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(therapist.address)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Get directions to ${therapist.name}`}
-                        className="pointer-events-auto btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 border hover:bg-accent cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          console.log("Clicked directions for", therapist.name);
-                          trackEvent({
-                            eventType: "therapist_directions_clicked",
-                            metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
-                          });
-                        }}
+                    {(therapist.phone || therapist.website_url) && (
+                      <div 
+                        className="card-actions relative z-[10] flex flex-wrap gap-3 pt-2"
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
                       >
-                        🗺️ Directions
-                      </a>
-                      {therapist.website_url ? (
-                        <a
-                          data-testid="provider-website-link"
-                          href={getValidWebsiteUrl(therapist.website_url) ?? "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Visit ${therapist.name} website`}
-                          className="pointer-events-auto btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log("Clicked website for", therapist.name);
-                            const valid = getValidWebsiteUrl(therapist.website_url);
-                            if (!valid) {
-                              e.preventDefault();
-                              toast.error("Sorry, this website link is unavailable.");
-                              return;
-                            }
-                            trackEvent({
-                              eventType: "therapist_website_clicked",
-                              metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
-                            });
-                          }}
-                        >
-                          🌐 Website
-                        </a>
-                      ) : (
-                        <button 
-                          disabled 
-                          className="btn btn-disabled inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium flex-1 opacity-50 cursor-not-allowed border bg-gray-100"
-                          aria-label="No website available"
-                        >
-                          🌐 No Website
-                        </button>
-                      )}
-                    </div>
+                        {therapist.phone && (
+                          <a
+                            href={`tel:${therapist.phone.replace(/\D/g, '')}`}
+                            className="inline-flex items-center gap-2 underline pointer-events-auto min-h-[44px] px-2 py-1 text-primary hover:text-primary/80"
+                            aria-label={`Call ${therapist.name}`}
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              handleCall(therapist); 
+                            }}
+                          >
+                            📞 Phone
+                          </a>
+                        )}
+
+                        {therapist.website_url && (
+                          <a
+                            href={getValidWebsiteUrl(therapist.website_url) ?? '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 underline pointer-events-auto min-h-[44px] px-2 py-1 text-primary hover:text-primary/80"
+                            aria-label={`Open website for ${therapist.name}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const valid = getValidWebsiteUrl(therapist.website_url);
+                              if (!valid) {
+                                e.preventDefault();
+                                toast.error("Sorry, this website link is unavailable.");
+                                return;
+                              }
+                              trackEvent({
+                                eventType: "therapist_website_clicked",
+                                metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
+                              });
+                            }}
+                          >
+                            🌐 Website
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
