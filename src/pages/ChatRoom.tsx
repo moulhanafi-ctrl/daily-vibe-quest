@@ -118,9 +118,16 @@ const ChatRoom = () => {
         let activeRoomId = roomId;
         let roomData = null;
 
-        // If focusArea is provided, find or create the matching room for user's age group
-        if (focusArea && !roomId) {
-          const room = await createRoomIfNeeded(focusArea, profile?.age_group || "adult");
+        // If focus area is provided (by legacy id) or via slug, find or create the matching room for user's age group
+        const focusAreaIdFromSlug = focusAreaKey ? getBySlug(focusAreaKey)?.id : undefined;
+        const selectedFocusArea = focusArea || focusAreaIdFromSlug;
+
+        if (selectedFocusArea && !roomId) {
+          const room = await createRoomIfNeeded(
+            selectedFocusArea as any,
+            (profile?.age_group as any) || "adult",
+            focusAreaKey
+          );
           
           if (!room) {
             toast({
