@@ -216,102 +216,77 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
           </p>
         )}
 
-        <div className="relative z-[1] flex flex-col sm:flex-row gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="relative z-10 flex flex-col sm:flex-row gap-2">
           {isValidPhone(location.phone) ? (
-            <Button
-              asChild
-              onClick={handleCall}
-              size="sm"
-              variant={location.type === "crisis" ? "default" : "outline"}
-              className="flex-1"
+            <a
+              data-testid="provider-phone-link"
+              href={`tel:${sanitizePhone(location.phone!)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Call ${location.name}`}
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={(e) => { e.stopPropagation(); handleCall(); }}
             >
-              <a
-                href={`tel:${sanitizePhone(location.phone!)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Call ${location.name}`}
-                data-testid="provider-phone-link"
-                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pointer-events-auto"
-              >
-                <Phone className="h-4 w-4 mr-2" />
-                Call
-              </a>
-            </Button>
+              <Phone className="h-4 w-4 mr-2" />
+              Call
+            </a>
           ) : (
-            <Button
+            <button
               disabled
-              size="sm"
-              variant="outline"
-              className="flex-1"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background opacity-50 cursor-not-allowed"
               aria-label="No phone available"
             >
               <Phone className="h-4 w-4 mr-2" />
               No Phone
-            </Button>
+            </button>
           )}
           
           {location.address ? (
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="flex-1 cursor-pointer"
+            <a
+              data-testid="provider-directions-link"
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label={`Get directions to ${location.name}`}
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              onClick={(e) => { e.stopPropagation(); handleDirections(); }}
             >
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => { e.stopPropagation(); handleDirections(); }}
-              >
-                <Navigation className="h-4 w-4 mr-2" />
-                Directions
-              </a>
-            </Button>
+              <Navigation className="h-4 w-4 mr-2" />
+              Directions
+            </a>
           ) : (
-            <Button
+            <button
               disabled
-              size="sm"
-              variant="outline"
-              className="flex-1"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background opacity-50 cursor-not-allowed"
               aria-label="No address available"
             >
               <Navigation className="h-4 w-4 mr-2" />
               No Address
-            </Button>
+            </button>
           )}
 
           {getWebsite() ? (
-            <Button
-              asChild
-              size="sm"
-              variant={location.type === "therapy" ? "default" : "outline"}
-              className="flex-1 sm:flex-[1.2] cursor-pointer"
+            <a
+              data-testid="provider-website-link"
+              href={getWebsite()!}
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label={`Visit ${location.name} website`}
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 sm:flex-[1.2] bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={(e) => { e.stopPropagation(); handleWebsite(); }}
             >
-              <a
-                href={getWebsite()!}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => { e.stopPropagation(); handleWebsite(); }}
-                data-testid="provider-website-link"
-                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pointer-events-auto"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Website
-              </a>
-            </Button>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Website
+            </a>
           ) : (
-            <Button
+            <button
               disabled
-              size="sm"
-              variant="outline"
-              className="flex-1 sm:flex-[1.2]"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 sm:flex-[1.2] border border-input bg-background opacity-50 cursor-not-allowed"
               aria-label="No website available"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               No Website
-            </Button>
+            </button>
           )}
         </div>
       </CardContent>

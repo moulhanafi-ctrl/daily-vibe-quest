@@ -456,108 +456,93 @@ export default function TherapistsNearby() {
                         </p>
                       )}
                     </div>
-                    <div className="relative z-[1] flex flex-col sm:flex-row gap-2">
+                    <div className="relative z-10 flex flex-col sm:flex-row gap-2">
                       {therapist.phone ? (
-                        <Button 
-                          asChild
-                          variant="outline"
-                          className="flex-1 cursor-pointer"
+                        <a
+                          data-testid="provider-phone-link"
+                          href={`tel:${therapist.phone.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           aria-label={`Call ${therapist.name}`}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                          onClick={(e) => { e.stopPropagation(); handleCall(therapist); }}
                         >
-                          <a 
-                            href={`tel:${therapist.phone.replace(/[^\d+]/g, "")}`}
-                            onClick={() =>
-                              trackEvent({
-                                eventType: "therapist_phone_clicked",
-                                metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
-                              })
-                            }
-                          >
-                            <Phone className="h-4 w-4 mr-2" />
-                            Call
-                          </a>
-                        </Button>
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call
+                        </a>
                       ) : (
-                        <Button 
+                        <button 
                           disabled 
-                          variant="outline"
-                          className="flex-1"
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background opacity-50 cursor-not-allowed"
                           aria-label="No phone available"
                         >
                           <Phone className="h-4 w-4 mr-2" />
                           No Phone
-                        </Button>
+                        </button>
                       )}
                       {therapist.address ? (
-                        <Button 
-                          asChild
-                          variant="outline"
-                          className="flex-1 cursor-pointer"
+                        <a
+                          data-testid="provider-directions-link"
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(therapist.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           aria-label={`Get directions to ${therapist.name}`}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackEvent({
+                              eventType: "therapist_directions_clicked",
+                              metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
+                            });
+                          }}
                         >
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(therapist.address)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() =>
-                              trackEvent({
-                                eventType: "therapist_directions_clicked",
-                                metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
-                              })
-                            }
-                          >
-                            <Navigation className="h-4 w-4 mr-2" />
-                            Directions
-                          </a>
-                        </Button>
+                          <Navigation className="h-4 w-4 mr-2" />
+                          Directions
+                        </a>
                       ) : (
-                        <Button 
+                        <button 
                           disabled 
-                          variant="outline"
-                          className="flex-1"
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 border border-input bg-background opacity-50 cursor-not-allowed"
                           aria-label="No address available"
                         >
                           <Navigation className="h-4 w-4 mr-2" />
                           No Address
-                        </Button>
+                        </button>
                       )}
                       {therapist.website_url ? (
-                        <Button 
-                          asChild
-                          className="flex-1 sm:flex-[1.2] hover:opacity-90 transition-opacity cursor-pointer"
+                        <a
+                          data-testid="provider-website-link"
+                          href={getValidWebsiteUrl(therapist.website_url) ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           aria-label={`Visit ${therapist.name} website`}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 sm:flex-[1.2] bg-primary text-primary-foreground hover:bg-primary/90"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const valid = getValidWebsiteUrl(therapist.website_url);
+                            if (!valid) {
+                              e.preventDefault();
+                              toast.error("Sorry, this website link is unavailable.");
+                              return;
+                            }
+                            trackEvent({
+                              eventType: "therapist_website_clicked",
+                              metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
+                            });
+                          }}
                         >
-                          <a
-                            href={getValidWebsiteUrl(therapist.website_url) ?? "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => {
-                              const valid = getValidWebsiteUrl(therapist.website_url);
-                              if (!valid) {
-                                e.preventDefault();
-                                toast.error("Sorry, this website link is unavailable.");
-                                return;
-                              }
-                              trackEvent({
-                                eventType: "therapist_website_clicked",
-                                metadata: { id: therapist.id, name: therapist.name, zip: zipCode, radius: parseInt(radius) },
-                              });
-                            }}
-                          >
-                            <Globe className="h-4 w-4 mr-2" />
-                            Website
-                          </a>
-                        </Button>
+                          <Globe className="h-4 w-4 mr-2" />
+                          Website
+                        </a>
                       ) : (
-                        <Button 
+                        <button 
                           disabled 
-                          variant="outline"
-                          className="flex-1 sm:flex-[1.2]"
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3 flex-1 sm:flex-[1.2] border border-input bg-background opacity-50 cursor-not-allowed"
                           aria-label="No website available"
                         >
                           <Globe className="h-4 w-4 mr-2" />
                           No Website
-                        </Button>
+                        </button>
                       )}
                     </div>
                   </CardContent>
