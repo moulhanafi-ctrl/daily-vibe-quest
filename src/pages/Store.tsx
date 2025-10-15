@@ -8,28 +8,28 @@ const Store = () => {
 
   const ageGroups = [
     {
-      id: "child",
+      id: "kids",
       title: "🧒 Kids (5–12)",
       description: "Playful tools to explore feelings and build confidence",
       gradient: "from-yellow-400/20 via-orange-400/20 to-pink-400/20",
       borderColor: "border-yellow-500/30",
     },
     {
-      id: "teen",
+      id: "teens",
       title: "🧑‍🎓 Teens (13–17)",
       description: "Cool resources for self-discovery and empowerment",
       gradient: "from-purple-400/20 via-blue-400/20 to-cyan-400/20",
       borderColor: "border-purple-500/30",
     },
     {
-      id: "adult",
+      id: "adults",
       title: "🧍‍♂️ Adults (18–60)",
       description: "Practical tools for balance, growth, and connection",
       gradient: "from-blue-400/20 via-green-400/20 to-emerald-400/20",
       borderColor: "border-blue-500/30",
     },
     {
-      id: "elder",
+      id: "elders",
       title: "👵 Elders (61+)",
       description: "Meaningful resources for reflection and legacy",
       gradient: "from-green-400/20 via-teal-400/20 to-blue-400/20",

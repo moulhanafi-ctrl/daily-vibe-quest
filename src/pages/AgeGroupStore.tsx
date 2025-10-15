@@ -18,22 +18,22 @@ interface Product {
 }
 
 const AGE_GROUP_INFO: Record<string, { title: string; banner: string; emoji: string }> = {
-  child: {
+  kids: {
     title: "Kids Collection (5-12)",
     banner: "Small vibes make big change 🌈",
     emoji: "🧒",
   },
-  teen: {
+  teens: {
     title: "Teen Collection (13-17)",
     banner: "Your journey, your way 🚀",
     emoji: "🧑‍🎓",
   },
-  adult: {
+  adults: {
     title: "Adult Collection (18-60)",
     banner: "Invest in your wellbeing 💫",
     emoji: "🧍‍♂️",
   },
-  elder: {
+  elders: {
     title: "Elder Collection (61+)",
     banner: "Wisdom meets wellness 🌸",
     emoji: "👵",
@@ -59,14 +59,26 @@ const AgeGroupStore = () => {
     
     try {
       const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("age_group", ageGroup as "child" | "teen" | "adult" | "elder")
-        .eq("active", true)
+        .from("products" as any)
+        .select("*, product_images(url, is_cover)")
+        .eq("category", ageGroup)
+        .eq("is_active", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Transform data to match expected format
+      const transformedProducts = (data || []).map((p: any) => ({
+        id: p.id,
+        name: p.title,
+        description: p.description || '',
+        price: p.price_cents / 100,
+        image_url: p.product_images?.find((img: any) => img.is_cover)?.url || p.product_images?.[0]?.url || null,
+        product_type: p.type,
+        download_link: null,
+      }));
+      
+      setProducts(transformedProducts);
     } catch (error: any) {
       toast.error(`Error loading products: ${error.message}`);
     } finally {
