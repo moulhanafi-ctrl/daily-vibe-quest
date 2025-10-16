@@ -267,6 +267,8 @@ WHERE proname IN ('archive_old_trivia_sessions', 'run_trivia_health_check');
 SELECT cron.unschedule('trivia-generate-sessions-weekly') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'trivia-generate-sessions-weekly');
 SELECT cron.unschedule('trivia-publish-sessions-saturday') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'trivia-publish-sessions-saturday');
 SELECT cron.unschedule('fetch-youtube-wellness-shorts-weekly') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'fetch-youtube-wellness-shorts-weekly');
+SELECT cron.unschedule('send-trivia-reminder-saturday') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'send-trivia-reminder-saturday');
+SELECT cron.unschedule('send-trivia-start-saturday') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'send-trivia-start-saturday');
 SELECT cron.unschedule('trivia-health-check') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'trivia-health-check');
 SELECT cron.unschedule('archive-old-trivia') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'archive-old-trivia');
 
@@ -310,12 +312,30 @@ SELECT cron.schedule(
   $$
 );
 
--- JOB 3: Publish sessions (Saturday 11:00 PM UTC ≈ 7:00 PM EDT, 6:00 PM EST)
--- Note: This timing is optimized for EDT. During EST, it publishes 1 hour early (6 PM).
--- For exact 7:00 PM year-round, use edge function with timezone logic instead.
+-- JOB 3: Send reminder notification (Saturday 6:50 PM EDT ≈ 22:50 UTC)
+SELECT cron.schedule(
+  'send-trivia-reminder-saturday',
+  '50 22 * * SAT',  -- Saturday at 22:50 UTC (6:50 PM EDT)
+  $$
+  SELECT net.http_post(
+    url := 'https://hssrytzedacchvkrxgnq.supabase.co/functions/v1/send-trivia-notifications',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key'),
+      'x-webhook-signature', encode(
+        hmac('{"type": "reminder"}', current_setting('app.settings.cron_webhook_secret'), 'sha256'),
+        'hex'
+      )
+    ),
+    body := '{"type": "reminder"}'::jsonb
+  ) as request_id;
+  $$
+);
+
+-- JOB 4: Publish sessions + Send start notification (Saturday 7:00 PM EDT ≈ 23:00 UTC)
 SELECT cron.schedule(
   'trivia-publish-sessions-saturday',
-  '0 23 * * SAT',  -- Saturday at 23:00 UTC
+  '0 23 * * SAT',  -- Saturday at 23:00 UTC (7:00 PM EDT)
   $$
   SELECT net.http_post(
     url := 'https://hssrytzedacchvkrxgnq.supabase.co/functions/v1/trivia-publish-weekly-sessions',
@@ -332,17 +352,37 @@ SELECT cron.schedule(
   $$
 );
 
--- JOB 4: Health check (Saturday morning 8:00 AM UTC ≈ 3-4 AM Detroit)
+-- JOB 5: Send start notification (Saturday 7:00 PM EDT ≈ 23:00 UTC)
+SELECT cron.schedule(
+  'send-trivia-start-saturday',
+  '0 23 * * SAT',  -- Saturday at 23:00 UTC (7:00 PM EDT)
+  $$
+  SELECT net.http_post(
+    url := 'https://hssrytzedacchvkrxgnq.supabase.co/functions/v1/send-trivia-notifications',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key'),
+      'x-webhook-signature', encode(
+        hmac('{"type": "start"}', current_setting('app.settings.cron_webhook_secret'), 'sha256'),
+        'hex'
+      )
+    ),
+    body := '{"type": "start"}'::jsonb
+  ) as request_id;
+  $$
+);
+
+-- JOB 6: Health check (Saturday morning 8:00 AM EDT ≈ 12:00 UTC)
 SELECT cron.schedule(
   'trivia-health-check',
-  '0 8 * * SAT',
+  '0 12 * * SAT',
   'SELECT * FROM run_trivia_health_check();'
 );
 
--- JOB 5: Cleanup old data (Sunday 2:00 AM UTC ≈ 9-10 PM Detroit Saturday night)
+-- JOB 7: Cleanup old data (Sunday 2:00 AM EDT ≈ 6:00 UTC)
 SELECT cron.schedule(
   'archive-old-trivia',
-  '0 2 * * SUN',
+  '0 6 * * SUN',
   'SELECT * FROM archive_old_trivia_sessions();'
 );
 
@@ -357,12 +397,14 @@ FROM cron.job
 WHERE jobname LIKE '%trivia%' OR jobname LIKE '%wellness%'
 ORDER BY jobname;
 
--- Expected output: 5 active jobs
--- 1. trivia-generate-sessions-weekly (0 18 * * FRI)
--- 2. fetch-youtube-wellness-shorts-weekly (0 18 * * FRI)
--- 3. trivia-publish-sessions-saturday (0 23 * * SAT)
--- 4. trivia-health-check (0 8 * * SAT)
--- 5. archive-old-trivia (0 2 * * SUN)
+-- Expected output: 7 active jobs
+-- 1. trivia-generate-sessions-weekly (0 18 * * FRI) - Friday 6:00 PM
+-- 2. fetch-youtube-wellness-shorts-weekly (0 18 * * FRI) - Friday 6:00 PM
+-- 3. send-trivia-reminder-saturday (50 22 * * SAT) - Saturday 6:50 PM
+-- 4. trivia-publish-sessions-saturday (0 23 * * SAT) - Saturday 7:00 PM
+-- 5. send-trivia-start-saturday (0 23 * * SAT) - Saturday 7:00 PM
+-- 6. trivia-health-check (0 12 * * SAT) - Saturday 8:00 AM
+-- 7. archive-old-trivia (0 6 * * SUN) - Sunday 2:00 AM
 
 
 -- ===============================================
