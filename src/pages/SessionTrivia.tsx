@@ -47,24 +47,29 @@ export default function SessionTrivia() {
   const [currentBreak, setCurrentBreak] = useState<BreakVideo | null>(null);
 
   useEffect(() => {
+    console.log('[SessionTrivia] Component mounted, isDemoMode:', isDemoMode);
     loadTriviaSession();
-  }, []);
+  }, [isDemoMode]);
 
   const loadTriviaSession = async () => {
     try {
       // Demo mode: Use hardcoded demo data
       if (isDemoMode) {
+        console.log('[SessionTrivia] Loading demo data');
         setCurrentSession(DEMO_TRIVIA_DATA.session);
         setBreakVideos(DEMO_TRIVIA_DATA.breakVideos);
         setLoading(false);
+        console.log('[SessionTrivia] Demo data loaded:', DEMO_TRIVIA_DATA.session);
         return;
       }
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.log('[SessionTrivia] No user found, redirecting to auth');
         navigate('/auth');
         return;
       }
+      console.log('[SessionTrivia] User authenticated:', user.id);
 
       // Get current week's Saturday
       const now = new Date();
@@ -238,7 +243,10 @@ export default function SessionTrivia() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Loading Saturday Trivia...</div>
+        <div className="text-muted-foreground">
+          Loading Saturday Trivia...
+          {isDemoMode && <span className="block text-xs mt-2">(Demo Mode)</span>}
+        </div>
       </div>
     );
   }
