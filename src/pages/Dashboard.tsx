@@ -176,7 +176,7 @@ const Dashboard = () => {
               <span className="hidden sm:inline">Journal</span>
             </Button>
             {triviaEnabled && (
-              <Button onClick={() => navigate("/trivia")} variant="outline" size="sm" aria-label="Saturday Trivia">
+              <Button onClick={() => navigate("/trivia/sessions")} variant="outline" size="sm" aria-label="Saturday Trivia">
                 <Trophy className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Trivia</span>
               </Button>

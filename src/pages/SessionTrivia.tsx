@@ -259,7 +259,7 @@ export default function SessionTrivia() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => navigate('/trivia?demo=true')} className="w-full">
+              <Button onClick={() => navigate('/trivia/sessions?demo=true')} className="w-full">
                 <Play className="h-4 w-4 mr-2" />
                 Try Demo Version
               </Button>
