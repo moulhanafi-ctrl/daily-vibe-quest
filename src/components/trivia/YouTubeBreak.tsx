@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Video, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { wellnessEvents } from "@/lib/wellnessAnalytics";
 
 interface YouTubeBreakProps {
   userId: string;
@@ -60,6 +61,7 @@ export const YouTubeBreak = ({
 
       if (error || !data) {
         console.warn('Using fallback video:', error);
+        wellnessEvents.fallbackUsed('db_fetch_failed');
         setVideoData({
           youtube_video_id: FALLBACK_VIDEO.videoId,
           title: FALLBACK_VIDEO.title,
@@ -77,6 +79,7 @@ export const YouTubeBreak = ({
       }
     } catch (error) {
       console.error('Error loading video:', error);
+      wellnessEvents.fallbackUsed('exception_occurred');
       setVideoData({
         youtube_video_id: FALLBACK_VIDEO.videoId,
         title: FALLBACK_VIDEO.title,
@@ -141,6 +144,9 @@ export const YouTubeBreak = ({
   useEffect(() => {
     if (!videoData) return;
 
+    // Track embed start
+    wellnessEvents.embedStart(videoData.youtube_video_id, breakPosition);
+
     // Load YouTube IFrame API
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
@@ -182,6 +188,9 @@ export const YouTubeBreak = ({
       const duration = videoData?.duration_seconds || 45;
       setSecondsWatched(duration);
       saveProgress(duration, true);
+      
+      // Track completion
+      wellnessEvents.embedEnd(videoData?.youtube_video_id, breakPosition, duration);
     }
   };
 
@@ -210,6 +219,7 @@ export const YouTubeBreak = ({
 
   const handleComplete = () => {
     stopTracking();
+    wellnessEvents.unlockSuccess(breakPosition === 1 ? 2 : 3);
     onComplete();
   };
 

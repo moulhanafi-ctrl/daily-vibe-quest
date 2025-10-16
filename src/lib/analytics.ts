@@ -65,7 +65,13 @@ export type EventType =
   | "therapist_card_directions_clicked"
   | "therapist_phone_clicked"
   | "therapist_website_clicked"
-  | "therapist_directions_clicked";
+  | "therapist_directions_clicked"
+  | "wellness_fetch_success"
+  | "wellness_fetch_failure"
+  | "wellness_embed_start"
+  | "wellness_embed_end"
+  | "wellness_unlock_success"
+  | "wellness_fallback_used";
 
 interface TrackEventParams {
   eventType: EventType;

@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, Plus, Pencil, Trash2, Play, Calendar } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Pencil, Trash2, Play, Calendar, Video, Eye } from "lucide-react";
 
 interface TriviaQuestion {
   id: string;
@@ -50,6 +50,9 @@ export default function TriviaAdmin() {
   const [stats, setStats] = useState<any>(null);
   const [generationLogs, setGenerationLogs] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [wellnessVideos, setWellnessVideos] = useState<any[]>([]);
+  const [isFetchingWellness, setIsFetchingWellness] = useState(false);
+  const [previewVideo, setPreviewVideo] = useState<any>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -82,6 +85,7 @@ export default function TriviaAdmin() {
       loadRounds();
       loadStats();
       loadGenerationLogs();
+      loadWellnessVideos();
     }
   }, [hasAccess]);
 
@@ -189,6 +193,51 @@ export default function TriviaAdmin() {
       if (data) setGenerationLogs(data);
     } catch (error) {
       console.error('Failed to load generation logs:', error);
+    }
+  };
+
+  const loadWellnessVideos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('trivia_break_videos')
+        .select('*')
+        .order('week_key', { ascending: false })
+        .limit(10);
+      
+      if (error) throw error;
+      setWellnessVideos(data || []);
+    } catch (error) {
+      console.error('Failed to load wellness videos:', error);
+    }
+  };
+
+  const handleFetchWellnessVideos = async () => {
+    setIsFetchingWellness(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-youtube-wellness-shorts', {
+        body: { 
+          topics: ["self care", "mindfulness", "deep breathing", "motivation", "gratitude"],
+          manual: true 
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Wellness Videos Fetched!",
+        description: `Saved ${data.videos} videos for week ${data.week_key}`,
+      });
+
+      // Reload videos
+      await loadWellnessVideos();
+    } catch (error: any) {
+      toast({
+        title: "Fetch Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingWellness(false);
     }
   };
 
@@ -463,6 +512,7 @@ export default function TriviaAdmin() {
             <TabsTrigger value="questions">Questions ({questions.length})</TabsTrigger>
             <TabsTrigger value="rounds">Rounds ({rounds.length})</TabsTrigger>
             <TabsTrigger value="autogen">Auto-Gen</TabsTrigger>
+            <TabsTrigger value="wellness">Wellness Breaks</TabsTrigger>
           </TabsList>
 
           <TabsContent value="autogen">
@@ -555,6 +605,90 @@ export default function TriviaAdmin() {
                   <p className="text-sm">
                     To enable automated weekly generation, set up pg_cron jobs in Supabase. 
                     See <code className="bg-black/10 px-1 rounded">src/docs/TRIVIA_AUTO_GEN_SETUP.md</code> for instructions.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="wellness">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Wellness Breaks</CardTitle>
+                    <CardDescription>YouTube wellness shorts between trivia sessions</CardDescription>
+                  </div>
+                  <Button 
+                    onClick={handleFetchWellnessVideos}
+                    disabled={isFetchingWellness}
+                  >
+                    {isFetchingWellness ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Video className="h-4 w-4 mr-2" />}
+                    Run Wellness Fetch Now
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <h3 className="font-semibold">How It Works</h3>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• <strong>Friday 6pm:</strong> Auto-fetches 2 wellness videos (30-60s) from YouTube</li>
+                    <li>• <strong>Break 1:</strong> Shown between Session 1 and 2</li>
+                    <li>• <strong>Break 2:</strong> Shown between Session 2 and 3</li>
+                    <li>• <strong>Features:</strong> Captions ON, channel attribution, progress tracking</li>
+                    <li>• <strong>Fallback:</strong> Uses stock video if YouTube API fails</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-4">Recent Videos ({wellnessVideos.length})</h3>
+                  {wellnessVideos.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No wellness videos yet. Click "Run Wellness Fetch Now" to populate.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Week</TableHead>
+                          <TableHead>Position</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Channel</TableHead>
+                          <TableHead>Duration</TableHead>
+                          <TableHead>Preview</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {wellnessVideos.map((video) => (
+                          <TableRow key={video.id}>
+                            <TableCell>{new Date(video.week_key).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                Break {video.break_position}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">{video.title}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{video.channel_name}</TableCell>
+                            <TableCell>{video.duration_seconds}s</TableCell>
+                            <TableCell>
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => setPreviewVideo(video)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+
+                <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-sm mb-2">⚠️ Setup Required</h4>
+                  <p className="text-sm">
+                    To enable automated weekly fetching, set up pg_cron job in Supabase. 
+                    See <code className="bg-black/10 px-1 rounded">src/docs/YOUTUBE_WELLNESS_CRON_SETUP.sql</code> for instructions.
                   </p>
                 </div>
               </CardContent>
@@ -896,6 +1030,44 @@ export default function TriviaAdmin() {
               </Button>
               <Button onClick={handleSaveRound} disabled={roundForm.question_ids.length < 5}>
                 Create Round
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Video Preview Modal */}
+        <Dialog open={!!previewVideo} onOpenChange={() => setPreviewVideo(null)}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{previewVideo?.title}</DialogTitle>
+              <DialogDescription>
+                From {previewVideo?.channel_name} • {previewVideo?.duration_seconds}s
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                {previewVideo && (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${previewVideo.youtube_video_id}?cc_load_policy=1`}
+                    title={previewVideo.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                )}
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm">{previewVideo?.tip_content}</p>
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  Informational only — this is not medical advice
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPreviewVideo(null)}>
+                Close
               </Button>
             </DialogFooter>
           </DialogContent>
