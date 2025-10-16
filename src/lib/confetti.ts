@@ -3,7 +3,13 @@ import confetti from "canvas-confetti";
 export const celebrateFirstEntry = () => {
   const duration = 2000;
   const animationEnd = Date.now() + duration;
-  const defaults = { startVelocity: 25, spread: 360, ticks: 50, zIndex: 9999 };
+  const defaults = { 
+    startVelocity: 25, 
+    spread: 360, 
+    ticks: 50, 
+    zIndex: 9999,
+    disableForReducedMotion: true 
+  };
 
   function randomInRange(min: number, max: number) {
     return Math.random() * (max - min) + min;
@@ -36,6 +42,18 @@ export const quickCelebrate = () => {
     particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
-    zIndex: 9999
+    zIndex: 9999,
+    disableForReducedMotion: true
+  });
+};
+
+export const correctAnswerCelebrate = () => {
+  confetti({
+    particleCount: 120,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors: ['#22c55e', '#86efac', '#4ade80'],
+    zIndex: 9999,
+    disableForReducedMotion: true
   });
 };

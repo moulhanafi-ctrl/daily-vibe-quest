@@ -2331,6 +2331,39 @@ export type Database = {
         }
         Relationships: []
       }
+      trivia_break_progress: {
+        Row: {
+          break_position: number
+          completed: boolean
+          completed_at: string | null
+          id: string
+          seconds_watched: number
+          updated_at: string
+          user_id: string
+          week_key: string
+        }
+        Insert: {
+          break_position: number
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          seconds_watched?: number
+          updated_at?: string
+          user_id: string
+          week_key: string
+        }
+        Update: {
+          break_position?: number
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          seconds_watched?: number
+          updated_at?: string
+          user_id?: string
+          week_key?: string
+        }
+        Relationships: []
+      }
       trivia_break_videos: {
         Row: {
           break_position: number
@@ -2548,6 +2581,115 @@ export type Database = {
         }
         Relationships: []
       }
+      trivia_room_members: {
+        Row: {
+          avatar: string | null
+          id: string
+          joined_at: string
+          nickname: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          avatar?: string | null
+          id?: string
+          joined_at?: string
+          nickname: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          avatar?: string | null
+          id?: string
+          joined_at?: string
+          nickname?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_room_members_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_room_scores: {
+        Row: {
+          completed_at: string
+          correct_count: number
+          id: string
+          room_id: string
+          session_number: number
+          time_ms: number | null
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          correct_count?: number
+          id?: string
+          room_id: string
+          session_number: number
+          time_ms?: number | null
+          total_questions?: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          correct_count?: number
+          id?: string
+          room_id?: string
+          session_number?: number
+          time_ms?: number | null
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_room_scores_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_rooms: {
+        Row: {
+          created_at: string
+          expires_at: string
+          host_user_id: string
+          id: string
+          mode: string
+          room_code: string
+          status: string
+          week_key: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          host_user_id: string
+          id?: string
+          mode?: string
+          room_code: string
+          status?: string
+          week_key: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          host_user_id?: string
+          id?: string
+          mode?: string
+          room_code?: string
+          status?: string
+          week_key?: string
+        }
+        Relationships: []
+      }
       trivia_rounds: {
         Row: {
           age_group: Database["public"]["Enums"]["age_group"]
@@ -2615,6 +2757,33 @@ export type Database = {
             referencedColumns: ["week_key"]
           },
         ]
+      }
+      trivia_settings: {
+        Row: {
+          animations_enabled: boolean
+          haptics_enabled: boolean
+          id: string
+          sounds_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          animations_enabled?: boolean
+          haptics_enabled?: boolean
+          id?: string
+          sounds_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          animations_enabled?: boolean
+          haptics_enabled?: boolean
+          id?: string
+          sounds_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       trivia_weekly_sessions: {
         Row: {
@@ -2851,6 +3020,10 @@ export type Database = {
         Returns: string
       }
       generate_invite_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_trivia_room_code: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

@@ -5,11 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Play, Video, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 import confetti from "canvas-confetti";
 import { DEMO_TRIVIA_DATA } from "@/lib/demoTriviaData";
+import { AnswerFeedback } from "@/components/trivia/AnswerFeedback";
+import { WellnessVideoPlayer } from "@/components/trivia/WellnessVideoPlayer";
+import { TriviaSettings, type TriviaSettings as TriviaSettingsType } from "@/components/trivia/TriviaSettings";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface TriviaSession {
   id: string;
@@ -54,10 +65,26 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
   const [completedSessions, setCompletedSessions] = useState<number[]>([]);
   const [showingBreak, setShowingBreak] = useState(false);
   const [currentBreak, setCurrentBreak] = useState<BreakVideo | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackCorrect, setFeedbackCorrect] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [settings, setSettings] = useState<TriviaSettingsType>({
+    animations_enabled: true,
+    sounds_enabled: false,
+    haptics_enabled: false
+  });
 
   useEffect(() => {
     loadTriviaSession();
   }, [mode, forceDemo]);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
+    };
+    loadUser();
+  }, []);
 
   const loadTriviaSession = async () => {
     try {
@@ -172,6 +199,14 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
     if (isCorrect) {
       setSessionScore(sessionScore + 10);
     }
+    
+    // Show visual feedback
+    setFeedbackCorrect(isCorrect);
+    setShowFeedback(true);
+  };
+
+  const handleFeedbackComplete = () => {
+    setShowFeedback(false);
     setShowResult(true);
   };
 
@@ -267,33 +302,20 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
   }
 
   // Show mental health break video
-  if (showingBreak && currentBreak) {
+  if (showingBreak && currentBreak && userId) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-2xl w-full">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Video className="h-6 w-6 text-primary" />
-              Mental Health Break: {currentBreak.title}
-            </CardTitle>
-            <CardDescription>Take a {currentBreak.duration_seconds} second break</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-muted p-6 rounded-lg text-center">
-              <p className="text-lg mb-4">{currentBreak.tip_content}</p>
-              <p className="text-sm text-muted-foreground italic">
-                Informational only — this is not medical advice
-              </p>
-            </div>
-            <Button onClick={moveToNextSession} size="lg" className="w-full">
-              Continue to Session {currentSessionNum + 1}
-            </Button>
-            <Button variant="outline" onClick={() => setShowingBreak(false)} className="w-full">
-              Replay Break
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <WellnessVideoPlayer
+        userId={userId}
+        weekKey={currentSession?.week_key || ''}
+        breakPosition={currentBreak.break_position}
+        title={currentBreak.title}
+        content={currentBreak.tip_content}
+        durationSeconds={currentBreak.duration_seconds}
+        videoUrl={currentBreak.video_url}
+        onComplete={moveToNextSession}
+        onResumeLater={() => navigate('/dashboard')}
+        isDemoMode={isDemoMode}
+      />
     );
   }
 
@@ -304,6 +326,15 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="container mx-auto px-4 max-w-2xl">
+        {/* Answer Feedback Overlay */}
+        {showFeedback && (
+          <AnswerFeedback
+            isCorrect={feedbackCorrect}
+            onComplete={handleFeedbackComplete}
+            enabled={settings.animations_enabled}
+          />
+        )}
+
         <div className="mb-6 flex items-center justify-between gap-4">
           {isDemoMode && (
             <Badge variant="secondary" className="flex-shrink-0">
@@ -315,18 +346,43 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Exit
             </Button>
-            {!isDemoMode && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                type="button"
-                aria-label="Run Demo Version"
-                onClick={(e) => { e.stopPropagation?.(); navigate('/trivia/demo'); }}
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Try Demo Version
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {!isDemoMode && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  type="button"
+                  aria-label="Run Demo Version"
+                  onClick={(e) => { e.stopPropagation?.(); navigate('/trivia/demo'); }}
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Try Demo Version
+                </Button>
+              )}
+              {userId && (
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" type="button" aria-label="Settings">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Settings</SheetTitle>
+                      <SheetDescription>
+                        Customize your trivia experience
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="mt-6">
+                      <TriviaSettings 
+                        userId={userId}
+                        onSettingsChange={setSettings}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             {[1, 2, 3].map(num => (
