@@ -123,7 +123,7 @@ export const SaturdayTriviaCard = ({ userId, ageGroup }: { userId: string; ageGr
             </div>
             <Button 
               className="w-full"
-              onClick={() => navigate('/trivia')}
+              onClick={() => navigate('/trivia/sessions')}
             >
               <Play className="h-4 w-4 mr-2" />
               Play Now
@@ -131,7 +131,7 @@ export const SaturdayTriviaCard = ({ userId, ageGroup }: { userId: string; ageGr
             <Button 
               variant="outline"
               className="w-full"
-              onClick={() => navigate('/trivia?demo=true')}
+              onClick={() => navigate('/trivia/sessions?demo=true')}
             >
               Try Demo Version
             </Button>
@@ -148,7 +148,7 @@ export const SaturdayTriviaCard = ({ userId, ageGroup }: { userId: string; ageGr
             <Button 
               variant="outline"
               className="w-full"
-              onClick={() => navigate('/trivia')}
+              onClick={() => navigate('/trivia/sessions')}
             >
               View Scoreboard
             </Button>
@@ -166,7 +166,7 @@ export const SaturdayTriviaCard = ({ userId, ageGroup }: { userId: string; ageGr
             </div>
             <Button 
               className="w-full"
-              onClick={() => navigate('/trivia?demo=true')}
+              onClick={() => navigate('/trivia/sessions?demo=true')}
             >
               <Play className="h-4 w-4 mr-2" />
               Run Full Demo Now
