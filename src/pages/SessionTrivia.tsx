@@ -29,11 +29,20 @@ interface BreakVideo {
   video_url: string;
 }
 
-export default function SessionTrivia() {
+interface SessionTriviaProps {
+  mode?: 'auto' | 'demo' | 'live';
+}
+
+export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const isDemoMode = searchParams.get('demo') === 'true';
+  
+  // Determine demo mode: explicit route > query param > localStorage > auto-detection
+  const queryDemo = searchParams.get('demo') === 'true';
+  const storedMode = typeof window !== 'undefined' ? localStorage.getItem('triviaMode') : null;
+  const forceDemo = mode === 'demo' || queryDemo || storedMode === 'demo';
+  const [isDemoMode, setIsDemoMode] = useState(forceDemo);
   const [loading, setLoading] = useState(true);
   const [currentSession, setCurrentSession] = useState<TriviaSession | null>(null);
   const [breakVideos, setBreakVideos] = useState<BreakVideo[]>([]);
@@ -47,29 +56,29 @@ export default function SessionTrivia() {
   const [currentBreak, setCurrentBreak] = useState<BreakVideo | null>(null);
 
   useEffect(() => {
-    console.log('[SessionTrivia] Component mounted, isDemoMode:', isDemoMode);
     loadTriviaSession();
-  }, [isDemoMode]);
+  }, [mode, forceDemo]);
 
   const loadTriviaSession = async () => {
     try {
-      // Demo mode: Use hardcoded demo data
-      if (isDemoMode) {
-        console.log('[SessionTrivia] Loading demo data');
+      // Force demo mode if explicitly requested
+      if (forceDemo) {
+        console.log('Trivia mode: demo (forced)');
         setCurrentSession(DEMO_TRIVIA_DATA.session);
         setBreakVideos(DEMO_TRIVIA_DATA.breakVideos);
+        setIsDemoMode(true);
         setLoading(false);
-        console.log('[SessionTrivia] Demo data loaded:', DEMO_TRIVIA_DATA.session);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('triviaMode', 'demo');
+        }
         return;
       }
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('[SessionTrivia] No user found, redirecting to auth');
         navigate('/auth');
         return;
       }
-      console.log('[SessionTrivia] User authenticated:', user.id);
 
       // Get current week's Saturday
       const now = new Date();
@@ -86,10 +95,19 @@ export default function SessionTrivia() {
         .eq('status', 'published')
         .single();
 
+      // Auto-fallback to demo if no live data available
       if (error || !session) {
-        console.log('No published session found');
+        console.log('Trivia mode: demo (fallback - no live data)', { reason: error ? 'error' : 'empty' });
+        setCurrentSession(DEMO_TRIVIA_DATA.session);
+        setBreakVideos(DEMO_TRIVIA_DATA.breakVideos);
+        setIsDemoMode(true);
         setLoading(false);
         return;
+      }
+
+      console.log('Trivia mode: live');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('triviaMode', 'live');
       }
 
       setCurrentSession(session);
@@ -243,37 +261,7 @@ export default function SessionTrivia() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">
-          Loading Saturday Trivia...
-          {isDemoMode && <span className="block text-xs mt-2">(Demo Mode)</span>}
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentSession) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <Card>
-            <CardHeader>
-              <CardTitle>No Trivia Available Yet</CardTitle>
-              <CardDescription>
-                Saturday Trivia publishes every Saturday at 7:00 PM EST. Check back then!
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate('/trivia/sessions?demo=true')} className="w-full">
-                <Play className="h-4 w-4 mr-2" />
-                Try Demo Version
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <div className="text-muted-foreground">Loading Saturday Trivia...</div>
       </div>
     );
   }
@@ -316,17 +304,24 @@ export default function SessionTrivia() {
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="container mx-auto px-4 max-w-2xl">
-        {isDemoMode && (
-          <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-            <p className="text-sm font-semibold text-primary">🎮 Demo Mode</p>
-            <p className="text-xs text-muted-foreground">Preview the full Saturday Trivia experience</p>
+        <div className="mb-6 flex items-center justify-between gap-4">
+          {isDemoMode && (
+            <Badge variant="secondary" className="flex-shrink-0">
+              🎮 Demo Mode
+            </Badge>
+          )}
+          <div className="flex gap-2 flex-1 justify-between">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Exit
+            </Button>
+            {!isDemoMode && (
+              <Button variant="outline" size="sm" onClick={() => navigate('/trivia/demo')}>
+                <Play className="h-4 w-4 mr-2" />
+                Run Demo
+              </Button>
+            )}
           </div>
-        )}
-        <div className="mb-6 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Exit
-          </Button>
           <div className="flex gap-2">
             {[1, 2, 3].map(num => (
               <Badge 

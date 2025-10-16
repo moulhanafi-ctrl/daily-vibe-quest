@@ -101,7 +101,8 @@ const App = () => (
           <Route path="/orders" element={<Orders />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/trivia" element={<TriviaRedirect />} />
-          <Route path="/trivia/sessions" element={<SessionTrivia />} />
+          <Route path="/trivia/sessions" element={<SessionTrivia mode="auto" />} />
+          <Route path="/trivia/demo" element={<SessionTrivia mode="demo" />} />
           <Route path="/policies/shipping" element={<Shipping />} />
           <Route path="/policies/refunds" element={<Refunds />} />
           <Route path="/legal" element={<LegalIndex />} />
