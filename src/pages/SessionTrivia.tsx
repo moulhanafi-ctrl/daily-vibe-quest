@@ -316,9 +316,15 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
               Exit
             </Button>
             {!isDemoMode && (
-              <Button variant="outline" size="sm" onClick={() => navigate('/trivia/demo')}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                type="button"
+                aria-label="Run Demo Version"
+                onClick={(e) => { e.stopPropagation?.(); navigate('/trivia/demo'); }}
+              >
                 <Play className="h-4 w-4 mr-2" />
-                Run Demo
+                Try Demo Version
               </Button>
             )}
           </div>
