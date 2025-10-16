@@ -2331,6 +2331,53 @@ export type Database = {
         }
         Relationships: []
       }
+      trivia_break_videos: {
+        Row: {
+          break_position: number
+          captions_url: string | null
+          created_at: string | null
+          duration_seconds: number
+          id: string
+          thumbnail_url: string | null
+          tip_content: string
+          title: string
+          video_url: string
+          week_key: string
+        }
+        Insert: {
+          break_position: number
+          captions_url?: string | null
+          created_at?: string | null
+          duration_seconds: number
+          id?: string
+          thumbnail_url?: string | null
+          tip_content: string
+          title: string
+          video_url: string
+          week_key: string
+        }
+        Update: {
+          break_position?: number
+          captions_url?: string | null
+          created_at?: string | null
+          duration_seconds?: number
+          id?: string
+          thumbnail_url?: string | null
+          tip_content?: string
+          title?: string
+          video_url?: string
+          week_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_break_videos_week_key_fkey"
+            columns: ["week_key"]
+            isOneToOne: false
+            referencedRelation: "trivia_weekly_sessions"
+            referencedColumns: ["week_key"]
+          },
+        ]
+      }
       trivia_generation_log: {
         Row: {
           age_group: Database["public"]["Enums"]["age_group"]
@@ -2528,6 +2575,83 @@ export type Database = {
           locale?: string
           published?: boolean | null
           question_ids?: string[]
+        }
+        Relationships: []
+      }
+      trivia_session_progress: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          id: string
+          score: number
+          session_number: number
+          user_id: string
+          week_key: string
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          id?: string
+          score?: number
+          session_number: number
+          user_id: string
+          week_key: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          id?: string
+          score?: number
+          session_number?: number
+          user_id?: string
+          week_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_session_progress_week_key_fkey"
+            columns: ["week_key"]
+            isOneToOne: false
+            referencedRelation: "trivia_weekly_sessions"
+            referencedColumns: ["week_key"]
+          },
+        ]
+      }
+      trivia_weekly_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          published_at: string | null
+          scheduled_at_local: string
+          session_1_questions: Json
+          session_2_questions: Json
+          session_3_questions: Json
+          status: string
+          topics: string[]
+          week_key: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          scheduled_at_local: string
+          session_1_questions?: Json
+          session_2_questions?: Json
+          session_3_questions?: Json
+          status?: string
+          topics?: string[]
+          week_key: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          scheduled_at_local?: string
+          session_1_questions?: Json
+          session_2_questions?: Json
+          session_3_questions?: Json
+          status?: string
+          topics?: string[]
+          week_key?: string
         }
         Relationships: []
       }

@@ -22,6 +22,7 @@ import Library from "./pages/Library";
 import Orders from "./pages/Orders";
 import Journal from "./pages/Journal";
 import Trivia from "./pages/Trivia";
+import SessionTrivia from "./pages/SessionTrivia";
 import TriviaAdmin from "./pages/admin/TriviaAdmin";
 import Shipping from "./pages/policies/Shipping";
 import Refunds from "./pages/policies/Refunds";
@@ -95,6 +96,7 @@ const App = () => (
           <Route path="/orders" element={<Orders />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/trivia" element={<Trivia />} />
+          <Route path="/trivia/sessions" element={<SessionTrivia />} />
           <Route path="/policies/shipping" element={<Shipping />} />
           <Route path="/policies/refunds" element={<Refunds />} />
           <Route path="/legal" element={<LegalIndex />} />
