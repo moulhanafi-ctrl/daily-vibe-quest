@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { ArrowLeft, Play, Video, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 import confetti from "canvas-confetti";
+import { DEMO_TRIVIA_DATA } from "@/lib/demoTriviaData";
 
 interface TriviaSession {
   id: string;
@@ -31,6 +32,8 @@ interface BreakVideo {
 export default function SessionTrivia() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const isDemoMode = searchParams.get('demo') === 'true';
   const [loading, setLoading] = useState(true);
   const [currentSession, setCurrentSession] = useState<TriviaSession | null>(null);
   const [breakVideos, setBreakVideos] = useState<BreakVideo[]>([]);
@@ -49,6 +52,14 @@ export default function SessionTrivia() {
 
   const loadTriviaSession = async () => {
     try {
+      // Demo mode: Use hardcoded demo data
+      if (isDemoMode) {
+        setCurrentSession(DEMO_TRIVIA_DATA.session);
+        setBreakVideos(DEMO_TRIVIA_DATA.breakVideos);
+        setLoading(false);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate('/auth');
@@ -180,6 +191,12 @@ export default function SessionTrivia() {
 
   const saveSessionProgress = async () => {
     try {
+      // Skip saving in demo mode
+      if (isDemoMode) {
+        setCompletedSessions([...completedSessions, currentSessionNum]);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !currentSession) return;
 
@@ -241,6 +258,12 @@ export default function SessionTrivia() {
                 Saturday Trivia publishes every Saturday at 7:00 PM EST. Check back then!
               </CardDescription>
             </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate('/trivia?demo=true')} className="w-full">
+                <Play className="h-4 w-4 mr-2" />
+                Try Demo Version
+              </Button>
+            </CardContent>
           </Card>
         </div>
       </div>
@@ -285,6 +308,12 @@ export default function SessionTrivia() {
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="container mx-auto px-4 max-w-2xl">
+        {isDemoMode && (
+          <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <p className="text-sm font-semibold text-primary">🎮 Demo Mode</p>
+            <p className="text-xs text-muted-foreground">Preview the full Saturday Trivia experience</p>
+          </div>
+        )}
         <div className="mb-6 flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
             <ArrowLeft className="h-4 w-4 mr-2" />

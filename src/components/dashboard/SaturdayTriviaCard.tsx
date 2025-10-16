@@ -128,6 +128,13 @@ export const SaturdayTriviaCard = ({ userId, ageGroup }: { userId: string; ageGr
               <Play className="h-4 w-4 mr-2" />
               Play Now
             </Button>
+            <Button 
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate('/trivia?demo=true')}
+            >
+              Try Demo Version
+            </Button>
           </>
         ) : currentRound && isWeekend && hasPlayed ? (
           <>
@@ -157,6 +164,13 @@ export const SaturdayTriviaCard = ({ userId, ageGroup }: { userId: string; ageGr
                 Check back this Saturday!
               </p>
             </div>
+            <Button 
+              className="w-full"
+              onClick={() => navigate('/trivia?demo=true')}
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Run Full Demo Now
+            </Button>
           </>
         )}
       </CardContent>
