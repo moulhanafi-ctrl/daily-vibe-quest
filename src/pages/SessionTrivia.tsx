@@ -11,7 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import confetti from "canvas-confetti";
 import { DEMO_TRIVIA_DATA } from "@/lib/demoTriviaData";
 import { AnswerFeedback } from "@/components/trivia/AnswerFeedback";
-import { WellnessVideoPlayer } from "@/components/trivia/WellnessVideoPlayer";
+import { YouTubeBreak } from "@/components/trivia/YouTubeBreak";
 import { TriviaSettings, type TriviaSettings as TriviaSettingsType } from "@/components/trivia/TriviaSettings";
 import {
   Sheet,
@@ -304,14 +304,10 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
   // Show mental health break video
   if (showingBreak && currentBreak && userId) {
     return (
-      <WellnessVideoPlayer
+      <YouTubeBreak
         userId={userId}
         weekKey={currentSession?.week_key || ''}
         breakPosition={currentBreak.break_position}
-        title={currentBreak.title}
-        content={currentBreak.tip_content}
-        durationSeconds={currentBreak.duration_seconds}
-        videoUrl={currentBreak.video_url}
         onComplete={moveToNextSession}
         onResumeLater={() => navigate('/dashboard')}
         isDemoMode={isDemoMode}

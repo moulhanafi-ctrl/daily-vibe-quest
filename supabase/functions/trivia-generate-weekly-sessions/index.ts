@@ -102,24 +102,9 @@ Deno.serve(async (req) => {
 
     if (sessionError) throw sessionError;
 
-    // Create mental health break videos (text-based for now)
-    for (let i = 0; i < 2; i++) {
-      const tip = selectedTips[i];
-      const videoUrl = await generateBreakVideo(tip, weekKey);
-      
-      await supabase
-        .from('trivia_break_videos')
-        .insert({
-          week_key: weekKey,
-          break_position: i + 1,
-          title: tip.title,
-          tip_content: tip.content,
-          duration_seconds: tip.duration,
-          video_url: videoUrl,
-          thumbnail_url: null,
-          captions_url: null,
-        });
-    }
+    // Mental health breaks will be populated by fetch-youtube-wellness-shorts function
+    // This runs separately and inserts YouTube videos or fallback clips
+    console.log('[TRIVIA-SESSION-GEN] Break videos will be populated by YouTube fetch function');
 
     console.log('[TRIVIA-SESSION-GEN] Successfully created session and break videos');
 

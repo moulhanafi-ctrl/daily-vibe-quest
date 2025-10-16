@@ -2368,6 +2368,7 @@ export type Database = {
         Row: {
           break_position: number
           captions_url: string | null
+          channel_name: string | null
           created_at: string | null
           duration_seconds: number
           id: string
@@ -2376,10 +2377,12 @@ export type Database = {
           title: string
           video_url: string
           week_key: string
+          youtube_video_id: string | null
         }
         Insert: {
           break_position: number
           captions_url?: string | null
+          channel_name?: string | null
           created_at?: string | null
           duration_seconds: number
           id?: string
@@ -2388,10 +2391,12 @@ export type Database = {
           title: string
           video_url: string
           week_key: string
+          youtube_video_id?: string | null
         }
         Update: {
           break_position?: number
           captions_url?: string | null
+          channel_name?: string | null
           created_at?: string | null
           duration_seconds?: number
           id?: string
@@ -2400,6 +2405,7 @@ export type Database = {
           title?: string
           video_url?: string
           week_key?: string
+          youtube_video_id?: string | null
         }
         Relationships: [
           {
