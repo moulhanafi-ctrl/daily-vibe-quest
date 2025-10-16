@@ -2459,6 +2459,150 @@ export type Database = {
         }
         Relationships: []
       }
+      trivia_logs: {
+        Row: {
+          created_at: string | null
+          error_details: string | null
+          event_type: string
+          function_name: string | null
+          id: string
+          message: string | null
+          metadata: Json | null
+          status: string
+          week_key: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_details?: string | null
+          event_type: string
+          function_name?: string | null
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          status: string
+          week_key: string
+        }
+        Update: {
+          created_at?: string | null
+          error_details?: string | null
+          event_type?: string
+          function_name?: string | null
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          status?: string
+          week_key?: string
+        }
+        Relationships: []
+      }
+      trivia_notification_logs: {
+        Row: {
+          deep_link_clicks: number
+          email_delivered: number
+          email_errors: number
+          email_opened: number
+          email_sent: number
+          error_details: Json | null
+          id: string
+          metadata: Json | null
+          notification_type: string
+          push_delivered: number
+          push_errors: number
+          push_opened: number
+          push_sent: number
+          quiet_hours_skipped: number
+          scheduled_at: string
+          sent_at: string | null
+          total_users: number
+          week_key: string
+        }
+        Insert: {
+          deep_link_clicks?: number
+          email_delivered?: number
+          email_errors?: number
+          email_opened?: number
+          email_sent?: number
+          error_details?: Json | null
+          id?: string
+          metadata?: Json | null
+          notification_type: string
+          push_delivered?: number
+          push_errors?: number
+          push_opened?: number
+          push_sent?: number
+          quiet_hours_skipped?: number
+          scheduled_at: string
+          sent_at?: string | null
+          total_users?: number
+          week_key: string
+        }
+        Update: {
+          deep_link_clicks?: number
+          email_delivered?: number
+          email_errors?: number
+          email_opened?: number
+          email_sent?: number
+          error_details?: Json | null
+          id?: string
+          metadata?: Json | null
+          notification_type?: string
+          push_delivered?: number
+          push_errors?: number
+          push_opened?: number
+          push_sent?: number
+          quiet_hours_skipped?: number
+          scheduled_at?: string
+          sent_at?: string | null
+          total_users?: number
+          week_key?: string
+        }
+        Relationships: []
+      }
+      trivia_notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_enabled: boolean | null
+          id: string
+          push_enabled: boolean | null
+          quiet_hours_enabled: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          reminder_enabled: boolean | null
+          start_enabled: boolean | null
+          timezone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          push_enabled?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          reminder_enabled?: boolean | null
+          start_enabled?: boolean | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          push_enabled?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          reminder_enabled?: boolean | null
+          start_enabled?: boolean | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       trivia_preferences: {
         Row: {
           created_at: string | null
@@ -3032,6 +3176,16 @@ export type Database = {
       generate_trivia_room_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_trivia_notification_users: {
+        Args: { p_notification_type: string; p_scheduled_time: string }
+        Returns: {
+          email: string
+          email_enabled: boolean
+          in_quiet_hours: boolean
+          push_enabled: boolean
+          user_id: string
+        }[]
       }
       has_active_subscription: {
         Args: { uid: string }
