@@ -139,13 +139,66 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Health check endpoint
+  if (req.method === 'GET' && new URL(req.url).pathname.endsWith('/health')) {
+    try {
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Check DB connection and push subscriptions table
+      const { count, error: countError } = await supabaseAdmin
+        .from('push_subscriptions')
+        .select('*', { count: 'exact', head: true });
+
+      // Check daily messages exist
+      const { count: msgCount, error: msgError } = await supabaseAdmin
+        .from('daily_messages')
+        .select('*', { count: 'exact', head: true });
+
+      const vapidPublic = Deno.env.get('VAPID_PUBLIC_KEY');
+      const vapidPrivate = Deno.env.get('VAPID_PRIVATE_KEY');
+      const resendKey = Deno.env.get('RESEND_API_KEY');
+
+      return new Response(JSON.stringify({
+        ok: true,
+        db_connected: !countError && !msgError,
+        push_subscriptions_count: count || 0,
+        daily_messages_count: msgCount || 0,
+        vapid_configured: !!(vapidPublic && vapidPrivate),
+        email_fallback_configured: !!resendKey,
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+  }
+
   try {
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('🚀 Starting daily notification job...');
+    const { dryRun } = await req.json().catch(() => ({ dryRun: false }));
+    console.log(`🚀 Starting daily notification job... ${dryRun ? '(DRY RUN)' : ''}`);
+    
+    // Log telemetry: job started
+    console.log(JSON.stringify({
+      event: 'daily_job_started',
+      timestamp: new Date().toISOString(),
+      dryRun,
+    }));
 
     // Get current day of week (0=Sunday, 6=Saturday)
     const now = new Date();
@@ -310,6 +363,14 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Complete: ${sent} sent, ${skipped} skipped, ${failed} failed`);
 
+    // Log telemetry: job completed
+    console.log(JSON.stringify({
+      event: 'daily_job_completed',
+      timestamp: new Date().toISOString(),
+      stats: { sent, skipped, failed, total: users.length },
+      message_title: message.message_title,
+    }));
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -318,6 +379,7 @@ Deno.serve(async (req) => {
         failed,
         total: users.length,
         message: message.message_title,
+        timestamp: new Date().toISOString(),
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
