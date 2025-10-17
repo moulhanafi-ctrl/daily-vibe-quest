@@ -1,8 +1,29 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// VAPID public key - this would normally be stored as an environment variable
-// For now, we'll use the browser's default Push API without VAPID
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || null;
+// Cache for VAPID public key
+let cachedVapidKey: string | null = null;
+
+// Fetch VAPID public key from backend
+const getVapidPublicKey = async (): Promise<string | null> => {
+  if (cachedVapidKey) {
+    return cachedVapidKey;
+  }
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-vapid-key`);
+    if (!response.ok) {
+      console.error('Failed to fetch VAPID key');
+      return null;
+    }
+    
+    const { publicKey } = await response.json();
+    cachedVapidKey = publicKey;
+    return publicKey;
+  } catch (error) {
+    console.error('Error fetching VAPID key:', error);
+    return null;
+  }
+};
 
 export interface PushNotificationSupport {
   supported: boolean;
@@ -111,16 +132,17 @@ export const subscribeToPushNotifications = async (): Promise<{ success: boolean
     // Wait for service worker to be ready
     await navigator.serviceWorker.ready;
 
+    // Get VAPID public key
+    const vapidPublicKey = await getVapidPublicKey();
+    if (!vapidPublicKey) {
+      return { success: false, error: 'VAPID key not configured. Please contact support.' };
+    }
+
     // Subscribe to push notifications
     const subscribeOptions: PushSubscriptionOptionsInit = {
-      userVisibleOnly: true
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey).buffer as ArrayBuffer
     };
-
-    // Add VAPID key if available
-    if (VAPID_PUBLIC_KEY) {
-      const key = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      subscribeOptions.applicationServerKey = key.buffer as ArrayBuffer;
-    }
 
     const subscription = await registration.pushManager.subscribe(subscribeOptions);
     
