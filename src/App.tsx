@@ -38,6 +38,7 @@ import NotFound from "./pages/NotFound";
 import AdminAI from "./pages/admin/AdminAI";
 import ArthurAdmin from "./pages/admin/ArthurAdmin";
 import Analytics from "./pages/admin/Analytics";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import SubscriberAnalytics from "./pages/admin/SubscriberAnalytics";
 import HelpAdmin from "./pages/admin/HelpAdmin";
 import HelpLocationsAdmin from "./pages/admin/HelpLocationsAdmin";
@@ -112,6 +113,7 @@ const App = () => (
           <Route path="/community-guidelines" element={<CommunityGuidelines />} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/inclusion" element={<Inclusion />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/ai" element={<AdminAI />} />
           <Route path="/admin/arthur" element={<ArthurAdmin />} />
           <Route path="/admin/analytics" element={<Analytics />} />

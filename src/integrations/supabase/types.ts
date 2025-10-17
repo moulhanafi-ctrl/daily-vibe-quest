@@ -3344,6 +3344,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_subscriber_kpi: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_push: number
+          weekly_delta: number
+        }[]
+      }
       get_trivia_notification_users: {
         Args: { p_notification_type: string; p_scheduled_time: string }
         Returns: {
