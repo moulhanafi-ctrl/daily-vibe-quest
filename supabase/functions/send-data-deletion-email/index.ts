@@ -93,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Vibe Check <no-reply@vibecheckapps.com>",
+      from: "Daily Vibe Check <no-reply@dailyvibecheck.com>",
       to: [email],
       subject: subject,
       html: htmlContent,

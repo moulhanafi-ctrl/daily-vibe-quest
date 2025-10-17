@@ -17,7 +17,7 @@ export const AppDownload = () => {
                   Available on iPhone & Android
                 </h2>
                 <p className="text-base sm:text-lg text-muted-foreground">
-                  Download Vibe Check and start your daily wellness journey.
+                  Download Daily Vibe Check and start your daily wellness journey.
                 </p>
               </div>
 

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.dailyvibequest.app',
-  appName: 'Vibe Check',
+  appName: 'Daily Vibe Check',
   webDir: 'dist',
   server: {
     androidScheme: 'https'

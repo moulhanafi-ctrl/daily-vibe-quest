@@ -38,7 +38,7 @@ self.addEventListener('push', (event) => {
   console.log('Push notification received:', event);
   
   let data = {
-    title: 'Vibe Check',
+    title: 'Daily Vibe Check',
     body: 'You have a new notification',
     icon: '/vibe-check-logo.png',
     badge: '/vibe-check-logo.png'

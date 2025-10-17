@@ -7,4 +7,4 @@ Disallow: /journal/
 Disallow: /cart/
 Disallow: /orders/
 
-Sitemap: https://vibecheck.app/sitemap.xml
+Sitemap: https://dailyvibecheck.com/sitemap.xml

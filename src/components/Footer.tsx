@@ -19,7 +19,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/policies/shipping" className="hover:text-primary">Shipping</Link></li>
               <li><Link to="/policies/refunds" className="hover:text-primary">Refunds</Link></li>
-              <li><a href="mailto:vibecheckapps@gmail.com" className="hover:text-primary">Contact Us</a></li>
+              <li><a href="mailto:hello@dailyvibecheck.com" className="hover:text-primary">Contact Us</a></li>
             </ul>
           </div>
           <div>
@@ -40,7 +40,7 @@ export const Footer = () => {
             </ul>
             <div className="mt-4 space-y-2 text-sm text-muted-foreground">
               <p>🔒 Secure Checkout</p>
-              <p className="text-xs">Card statement: VIBE CHECK APP</p>
+              <p className="text-xs">Card statement: DAILY VIBE CHECK</p>
             </div>
           </div>
         </div>
@@ -49,10 +49,10 @@ export const Footer = () => {
             <IssueReporter />
           </div>
           <p className="text-xs max-w-3xl mx-auto">
-            <strong>Disclaimer:</strong> Vibe Check is a mental wellness platform and does not provide medical advice, diagnosis, or clinical services. If you are in crisis, call 988 or contact a licensed professional.
+            <strong>Disclaimer:</strong> Daily Vibe Check is a mental wellness platform and does not provide medical advice, diagnosis, or clinical services. If you are in crisis, call 988 or contact a licensed professional.
           </p>
           <p>🏳️‍🌈 Inclusive by design. Everyone belongs here. 🏳️‍⚧️</p>
-          <p>&copy; 2025 Vibe Check. All rights reserved.</p>
+          <p>&copy; 2025 Daily Vibe Check. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -15,7 +15,7 @@ export const CrisisBanner = () => {
                   Need Immediate Help?
                 </h2>
                 <p className="text-base text-white/90">
-                  <strong>Vibe Check is a mental wellness platform and does not provide medical advice, diagnosis, or clinical services.</strong> If you are in crisis or need immediate support, please reach out to a professional.
+                  <strong>Daily Vibe Check is a mental wellness platform and does not provide medical advice, diagnosis, or clinical services.</strong> If you are in crisis or need immediate support, please reach out to a professional.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center">

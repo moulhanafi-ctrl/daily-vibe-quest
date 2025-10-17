@@ -148,7 +148,7 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
         <AlertCircle className="h-4 w-4 text-destructive" />
         <AlertDescription>
           <strong>Emergency?</strong> If you're in immediate danger, call 911 or your local emergency services.
-          Vibe Check is a wellness platform and does not provide medical advice, diagnosis, or clinical services.
+          Daily Vibe Check is a wellness platform and does not provide medical advice, diagnosis, or clinical services.
         </AlertDescription>
       </Alert>
 

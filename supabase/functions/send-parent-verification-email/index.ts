@@ -43,14 +43,14 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     const emailResponse = await resend.emails.send({
-      from: "Vibe Check <no-reply@vibecheckapps.com>",
+      from: "Daily Vibe Check <no-reply@dailyvibecheck.com>",
       to: [parentEmail],
       subject: subjects[language as keyof typeof subjects] || subjects.en,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333;">Parent Verification Required</h1>
           <p>Hello,</p>
-          <p><strong>${childName}</strong> is setting up a Vibe Check account and needs your verification.</p>
+          <p><strong>${childName}</strong> is setting up a Daily Vibe Check account and needs your verification.</p>
           <div style="background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px;">
             <p style="margin: 0; font-size: 14px; color: #666;">Your verification code:</p>
             <p style="font-size: 32px; font-weight: bold; color: #333; margin: 10px 0; letter-spacing: 4px;">${code}</p>

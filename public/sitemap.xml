@@ -1,67 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://vibecheck.app/</loc>
+    <loc>https://dailyvibecheck.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/auth</loc>
+    <loc>https://dailyvibecheck.com/auth</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/dashboard</loc>
+    <loc>https://dailyvibecheck.com/dashboard</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/journal</loc>
+    <loc>https://dailyvibecheck.com/journal</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/chat-rooms</loc>
+    <loc>https://dailyvibecheck.com/chat-rooms</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/store</loc>
+    <loc>https://dailyvibecheck.com/store</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/help/nearby</loc>
+    <loc>https://dailyvibecheck.com/help/nearby</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/legal</loc>
+    <loc>https://dailyvibecheck.com/legal</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/legal/terms</loc>
+    <loc>https://dailyvibecheck.com/legal/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/legal/privacy</loc>
+    <loc>https://dailyvibecheck.com/legal/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/legal/community-guidelines</loc>
+    <loc>https://dailyvibecheck.com/legal/community-guidelines</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/legal/inclusion</loc>
+    <loc>https://dailyvibecheck.com/legal/inclusion</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://vibecheck.app/legal/crisis</loc>
+    <loc>https://dailyvibecheck.com/legal/crisis</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

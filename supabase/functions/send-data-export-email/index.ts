@@ -43,14 +43,14 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     const emailResponse = await resend.emails.send({
-      from: "Vibe Check <no-reply@vibecheckapps.com>",
+      from: "Daily Vibe Check <no-reply@dailyvibecheck.com>",
       to: [email],
       subject: subjects[language as keyof typeof subjects] || subjects.en,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333;">Your Data Export is Ready</h1>
           <p>Hello,</p>
-          <p>Your Vibe Check data export has been prepared and is ready to download.</p>
+          <p>Your Daily Vibe Check data export has been prepared and is ready to download.</p>
           <div style="margin: 30px 0;">
             <a href="${downloadUrl}" 
                style="background: #4F46E5; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">

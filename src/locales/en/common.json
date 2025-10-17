@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Vibe Check"
+    "name": "Daily Vibe Check"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -27,11 +27,11 @@
     "manage": "Manage"
   },
   "inclusion": {
-    "banner": "Everyone belongs here. Vibe Check welcomes people of all backgrounds, identities, and experiences including the LGBTQ+ community.",
+    "banner": "Everyone belongs here. Daily Vibe Check welcomes people of all backgrounds, identities, and experiences including the LGBTQ+ community.",
     "shortBanner": "Everyone belongs here."
   },
   "crisis": {
-    "banner": "Emergency? If you're in immediate danger, call 911 or your local emergency services. Vibe Check isn't therapy and can't provide emergency care.",
+    "banner": "Emergency? If you're in immediate danger, call 911 or your local emergency services. Daily Vibe Check isn't therapy and can't provide emergency care.",
     "title": "Crisis Resources",
     "subtitle": "You don't have to face this alone. Help is available 24/7.",
     "findLocal": "Find Local Crisis Resources"
