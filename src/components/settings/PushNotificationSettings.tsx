@@ -40,24 +40,36 @@ export const PushNotificationSettings = () => {
   const handleToggleNotifications = async (enabled: boolean) => {
     if (enabled) {
       // Subscribe
-      const success = await subscribeToPushNotifications();
-      if (success) {
+      const result = await subscribeToPushNotifications();
+      if (result.success) {
         setIsSubscribed(true);
         toast({
           title: "Notifications Enabled",
           description: "You'll now receive push notifications on this device"
         });
       } else {
+        // Map error codes to user-friendly messages
+        let errorMessage = "There was an error enabling push notifications";
+        if (result.error === 'permission_denied') {
+          errorMessage = "Notifications are blocked in your browser settings. Click the lock icon in the address bar to enable them.";
+        } else if (result.error?.includes('VAPID')) {
+          errorMessage = "Push configuration error. Please contact support.";
+        } else if (result.error?.includes('network') || result.error?.includes('fetch')) {
+          errorMessage = "Network error — check your connection and try again.";
+        } else if (result.error) {
+          errorMessage = result.error;
+        }
+        
         toast({
           title: "Failed to Enable Notifications",
-          description: "There was an error enabling push notifications",
+          description: errorMessage,
           variant: "destructive"
         });
       }
     } else {
       // Unsubscribe
-      const success = await unsubscribeFromPushNotifications();
-      if (success) {
+      const result = await unsubscribeFromPushNotifications();
+      if (result.success) {
         setIsSubscribed(false);
         toast({
           title: "Notifications Disabled",
@@ -66,7 +78,7 @@ export const PushNotificationSettings = () => {
       } else {
         toast({
           title: "Failed to Disable Notifications",
-          description: "There was an error disabling push notifications",
+          description: result.error || "There was an error disabling push notifications",
           variant: "destructive"
         });
       }

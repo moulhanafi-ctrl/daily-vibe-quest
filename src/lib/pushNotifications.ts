@@ -89,26 +89,23 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 // Subscribe to push notifications
-export const subscribeToPushNotifications = async (): Promise<boolean> => {
+export const subscribeToPushNotifications = async (): Promise<{ success: boolean; error?: string }> => {
   try {
     const support = checkPushNotificationSupport();
     if (!support.supported) {
-      console.error('Push notifications not supported:', support.message);
-      return false;
+      return { success: false, error: support.message || 'Push notifications not supported' };
     }
 
     // Request permission
     const permission = await requestNotificationPermission();
     if (permission !== 'granted') {
-      console.log('Notification permission denied');
-      return false;
+      return { success: false, error: 'permission_denied' };
     }
 
     // Register service worker
     const registration = await registerServiceWorker();
     if (!registration) {
-      console.error('Service worker registration failed');
-      return false;
+      return { success: false, error: 'Service worker registration failed' };
     }
 
     // Wait for service worker to be ready
@@ -132,73 +129,88 @@ export const subscribeToPushNotifications = async (): Promise<boolean> => {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.error('User not authenticated');
-      return false;
+      return { success: false, error: 'User not authenticated' };
     }
 
-    // Store subscription in database
+    // Get auth token for edge function
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return { success: false, error: 'No active session' };
+    }
+
+    // Call edge function to store subscription
     const subscriptionData = subscription.toJSON();
-    const { error } = await supabase
-      .from('push_subscriptions')
-      .upsert([{
-        user_id: user.id,
-        endpoint: subscription.endpoint,
-        subscription_data: subscriptionData as any,
-        device_info: {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/subscribe-push`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        subscription: subscriptionData,
+        deviceInfo: {
           userAgent: navigator.userAgent,
           platform: navigator.platform,
-          language: navigator.language
-        }
-      }], {
-        onConflict: 'user_id,endpoint'
-      });
+          language: navigator.language,
+        },
+      }),
+    });
 
-    if (error) {
+    if (!response.ok) {
+      const error = await response.json();
       console.error('Error storing subscription:', error);
-      return false;
+      return { success: false, error: error.error || 'Failed to store subscription' };
     }
 
     console.log('Push subscription stored successfully');
-    return true;
+    return { success: true };
   } catch (error) {
     console.error('Error subscribing to push notifications:', error);
-    return false;
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 };
 
 // Unsubscribe from push notifications
-export const unsubscribeFromPushNotifications = async (): Promise<boolean> => {
+export const unsubscribeFromPushNotifications = async (): Promise<{ success: boolean; error?: string }> => {
   try {
     const registration = await navigator.serviceWorker.getRegistration('/');
     if (!registration) {
       console.log('No service worker registration found');
-      return true;
+      return { success: true };
     }
 
     const subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
       console.log('No push subscription found');
-      return true;
+      return { success: true };
+    }
+
+    // Get auth token for edge function
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      // Call edge function to remove subscription
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsubscribe-push`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+        }),
+      });
     }
 
     // Unsubscribe from push
     await subscription.unsubscribe();
     console.log('Unsubscribed from push notifications');
 
-    // Remove from database
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase
-        .from('push_subscriptions')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('endpoint', subscription.endpoint);
-    }
-
-    return true;
+    return { success: true };
   } catch (error) {
     console.error('Error unsubscribing from push notifications:', error);
-    return false;
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 };
 
@@ -218,18 +230,32 @@ export const isSubscribedToPushNotifications = async (): Promise<boolean> => {
   }
 };
 
-// Send a test notification
+// Send a test notification via edge function
 export const sendTestNotification = async (): Promise<void> => {
   const support = checkPushNotificationSupport();
   if (!support.supported || support.permission !== 'granted') {
     throw new Error('Notifications not supported or not permitted');
   }
 
-  const registration = await navigator.serviceWorker.ready;
-  await registration.showNotification('Test Notification', {
-    body: 'This is a test notification from Vibe Check',
-    icon: '/vibe-check-logo.png',
-    badge: '/vibe-check-logo.png',
-    tag: 'test-notification'
+  // Get auth token for edge function
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error('No active session');
+  }
+
+  // Call edge function to send test notification
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-test-push`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
   });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to send test notification');
+  }
+
+  console.log('Test notification sent successfully');
 };

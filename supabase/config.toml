@@ -86,3 +86,15 @@ verify_jwt = false
 
 [functions.run-health-checks]
 verify_jwt = false
+
+[functions.subscribe-push]
+verify_jwt = true
+
+[functions.unsubscribe-push]
+verify_jwt = true
+
+[functions.send-test-push]
+verify_jwt = true
+
+[functions.send-push-notification]
+verify_jwt = false
