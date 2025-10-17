@@ -12,6 +12,7 @@ import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { ParentNotificationSettings } from "@/components/family/ParentNotificationSettings";
 import { PushNotificationSettings } from "@/components/settings/PushNotificationSettings";
 import { DailyNotificationSettings } from "@/components/settings/DailyNotificationSettings";
+import { ProfileFieldsForm } from "@/components/settings/ProfileFieldsForm";
 import { TestContact } from "@/components/family/TestContact";
 import { FocusAreasPopup } from "@/components/dashboard/FocusAreasPopup";
 import { MFASettings } from "@/components/settings/MFASettings";
@@ -98,7 +99,19 @@ const Settings = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile">
+          <TabsContent value="profile" className="space-y-4">
+            <Card className="p-6">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">Profile Information</h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Update your personal details, birthday, and timezone preferences.
+                  </p>
+                  <ProfileFieldsForm userId={userId} />
+                </div>
+              </div>
+            </Card>
+
             <Card className="p-6">
               <div className="space-y-6">
                 <div>

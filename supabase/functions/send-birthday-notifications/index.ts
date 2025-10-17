@@ -1,9 +1,8 @@
-import { Resend } from "npm:resend@4.0.0";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -99,35 +98,44 @@ Deno.serve(async (req) => {
           metadata: { email: user.email, full_name: user.full_name }
         });
 
-        const emailResponse = await resend.emails.send({
-          from: `Daily Vibe Quest <${fromEmail}>`,
-          to: [user.email],
-          subject: "🎂 Happy Birthday from Daily Vibe Quest!",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #6366f1;">Happy Birthday${user.full_name ? `, ${user.full_name}` : ""}! 🎂</h1>
-              <p style="font-size: 18px; line-height: 1.6;">
-                Wishing you a wonderful day filled with joy, love, and all your favorite things!
-              </p>
-              <p style="font-size: 16px; line-height: 1.6;">
-                We hope this year brings you closer to your wellness goals and fills your life with positivity.
-              </p>
-              <div style="margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; text-align: center;">
-                <p style="color: white; font-size: 20px; margin: 0;">
-                  🎉 Enjoy a special gift on us! 🎉
+        const emailResponse = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${resendApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: `Daily Vibe Quest <${fromEmail}>`,
+            to: [user.email],
+            subject: "🎂 Happy Birthday from Daily Vibe Quest!",
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h1 style="color: #6366f1;">Happy Birthday${user.full_name ? `, ${user.full_name}` : ""}! 🎂</h1>
+                <p style="font-size: 18px; line-height: 1.6;">
+                  Wishing you a wonderful day filled with joy, love, and all your favorite things!
                 </p>
-                <a href="${appUrl}/store" 
-                   style="background-color: white; color: #667eea; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 15px; font-weight: bold;">
-                  Browse Store
-                </a>
+                <p style="font-size: 16px; line-height: 1.6;">
+                  We hope this year brings you closer to your wellness goals and fills your life with positivity.
+                </p>
+                <div style="margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; text-align: center;">
+                  <p style="color: white; font-size: 20px; margin: 0;">
+                    🎉 Enjoy a special gift on us! 🎉
+                  </p>
+                  <a href="${appUrl}/store" 
+                     style="background-color: white; color: #667eea; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 15px; font-weight: bold;">
+                    Browse Store
+                  </a>
+                </div>
+                <p style="font-size: 14px; color: #666; margin-top: 30px;">
+                  Warmest wishes,<br>
+                  The Daily Vibe Quest Team
+                </p>
               </div>
-              <p style="font-size: 14px; color: #666; margin-top: 30px;">
-                Warmest wishes,<br>
-                The Daily Vibe Quest Team
-              </p>
-            </div>
-          `,
+            `,
+          }),
         });
+
+        const emailData = await emailResponse.json();
 
         await supabase.from("email_logs").insert({
           user_id: user.id,
@@ -136,7 +144,7 @@ Deno.serve(async (req) => {
           metadata: { 
             email: user.email, 
             full_name: user.full_name,
-            resend_id: emailResponse.data?.id 
+            resend_id: emailData.id 
           }
         });
 
@@ -162,17 +170,24 @@ Deno.serve(async (req) => {
         const adminEmail = Deno.env.get("ADMIN_EMAIL") || "admin@daily-vibe-quest.lovable.app";
         const userList = birthdayUsers.map(u => `• ${u.full_name || 'Unknown'} (${u.email})`).join('\n');
         
-        await resend.emails.send({
-          from: `Daily Vibe Quest <${fromEmail}>`,
-          to: [adminEmail],
-          subject: `🎂 ${birthdayUsers.length} Birthday${birthdayUsers.length !== 1 ? 's' : ''} Today`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2>Birthday Notifications Summary</h2>
-              <p>Sent ${successCount} birthday emails today (${failCount} failed):</p>
-              <pre style="background: #f5f5f5; padding: 15px; border-radius: 6px;">${userList}</pre>
-            </div>
-          `,
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${resendApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: `Daily Vibe Quest <${fromEmail}>`,
+            to: [adminEmail],
+            subject: `🎂 ${birthdayUsers.length} Birthday${birthdayUsers.length !== 1 ? 's' : ''} Today`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Birthday Notifications Summary</h2>
+                <p>Sent ${successCount} birthday emails today (${failCount} failed):</p>
+                <pre style="background: #f5f5f5; padding: 15px; border-radius: 6px;">${userList}</pre>
+              </div>
+            `,
+          }),
         });
 
         await supabase.from("email_logs").insert({

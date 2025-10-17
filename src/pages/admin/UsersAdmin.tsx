@@ -55,14 +55,24 @@ export default function UsersAdmin() {
       const { data: profiles, error } = await query;
       if (error) throw error;
 
-      // Get emails from auth.users
+      // Get emails from auth.users via admin API
       const { data: { users: authUsers } } = await supabase.auth.admin.listUsers();
-      const emailMap = new Map(authUsers?.map(u => [u.id, u.email]) || []);
+      
+      const emailMap = new Map<string, string>();
+      if (authUsers && Array.isArray(authUsers)) {
+        for (const authUser of authUsers) {
+          const userId = authUser?.id;
+          const userEmail = authUser?.email;
+          if (userId && userEmail) {
+            emailMap.set(userId, userEmail);
+          }
+        }
+      }
 
       let filteredData = (profiles || []).map(p => ({
         ...p,
         email: emailMap.get(p.id) || ""
-      })) as UserWithEmail[];
+      })).filter(u => u.email) as UserWithEmail[];
 
       if (hasBirthdayThisMonth) {
         const currentMonth = new Date().getMonth() + 1;

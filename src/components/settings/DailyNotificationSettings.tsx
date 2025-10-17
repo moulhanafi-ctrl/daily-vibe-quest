@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
-import { Calendar, Clock, Info, Moon } from "lucide-react";
+import { Calendar, Clock, Info, Moon, Cake } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 
@@ -20,9 +21,15 @@ interface NotificationPrefs {
   };
 }
 
+interface ProfileData {
+  marketing_opt_in: boolean;
+}
+
 export const DailyNotificationSettings = () => {
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState<ProfileData>({ marketing_opt_in: true });
   const [prefs, setPrefs] = useState<NotificationPrefs>({
     daily_enabled: true,
     daily_time: '09:00',
@@ -43,6 +50,7 @@ export const DailyNotificationSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Load notification preferences
       const { data, error } = await supabase
         .from('notification_prefs')
         .select('*')
@@ -66,6 +74,19 @@ export const DailyNotificationSettings = () => {
             end: quietHours.end || '07:00',
           },
         });
+      }
+
+      // Load profile for birthday opt-in
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('marketing_opt_in')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error loading profile:', profileError);
+      } else if (profileData) {
+        setProfile(profileData);
       }
     } catch (error) {
       console.error('Error in loadPreferences:', error);
@@ -291,6 +312,54 @@ export const DailyNotificationSettings = () => {
             </Alert>
           </>
         )}
+
+        {/* Birthday Notifications */}
+        <div className="border-t pt-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="birthdayEnabled" className="flex items-center gap-2">
+                <Cake className="h-4 w-4" />
+                Birthday Messages
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Receive a special message on your birthday
+              </p>
+            </div>
+            <Switch
+              id="birthdayEnabled"
+              checked={profile.marketing_opt_in}
+              onCheckedChange={async (checked) => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { error } = await supabase
+                  .from("profiles")
+                  .update({ marketing_opt_in: checked })
+                  .eq("id", user.id);
+
+                if (error) {
+                  toast({
+                    title: "Error updating preferences",
+                    description: error.message,
+                    variant: "destructive",
+                  });
+                } else {
+                  setProfile({ marketing_opt_in: checked });
+                  toast({
+                    title: checked ? "Birthday messages enabled" : "Birthday messages disabled",
+                  });
+                }
+              }}
+              disabled={saving}
+            />
+          </div>
+          <Alert className="mt-4">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              Make sure to set your birth date in your <strong>Profile</strong> settings to receive birthday messages.
+            </AlertDescription>
+          </Alert>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,9 +1,8 @@
-import { Resend } from "npm:resend@4.0.0";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,51 +37,60 @@ Deno.serve(async (req) => {
     const fromEmail = Deno.env.get("WELCOME_FROM_EMAIL") || "welcome@daily-vibe-quest.lovable.app";
     const appUrl = supabaseUrl.replace(".supabase.co", ".lovable.app");
 
-    const emailResponse = await resend.emails.send({
-      from: `Daily Vibe Quest <${fromEmail}>`,
-      to: [email],
-      subject: "Welcome to Daily Vibe Quest! 🎉",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #6366f1;">Welcome${full_name ? `, ${full_name}` : ""}! 🎉</h1>
-          <p style="font-size: 16px; line-height: 1.6;">
-            We're thrilled to have you join Daily Vibe Quest! Your journey to better mental wellness starts here.
-          </p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            Here's what you can do:
-          </p>
-          <ul style="font-size: 16px; line-height: 1.6;">
-            <li>Check in with your daily mood and journal entries</li>
-            <li>Join community chat rooms for support</li>
-            <li>Get personalized wellness suggestions</li>
-            <li>Track your progress over time</li>
-          </ul>
-          <div style="margin: 30px 0;">
-            <a href="${appUrl}/dashboard" 
-               style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Go to Dashboard
-            </a>
+    // Send email via Resend API
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: `Daily Vibe Quest <${fromEmail}>`,
+        to: [email],
+        subject: "Welcome to Daily Vibe Quest! 🎉",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #6366f1;">Welcome${full_name ? `, ${full_name}` : ""}! 🎉</h1>
+            <p style="font-size: 16px; line-height: 1.6;">
+              We're thrilled to have you join Daily Vibe Quest! Your journey to better mental wellness starts here.
+            </p>
+            <p style="font-size: 16px; line-height: 1.6;">
+              Here's what you can do:
+            </p>
+            <ul style="font-size: 16px; line-height: 1.6;">
+              <li>Check in with your daily mood and journal entries</li>
+              <li>Join community chat rooms for support</li>
+              <li>Get personalized wellness suggestions</li>
+              <li>Track your progress over time</li>
+            </ul>
+            <div style="margin: 30px 0;">
+              <a href="${appUrl}/dashboard" 
+                 style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                Go to Dashboard
+              </a>
+            </div>
+            <p style="font-size: 14px; color: #666;">
+              You can manage your preferences and profile in 
+              <a href="${appUrl}/settings" style="color: #6366f1;">Settings</a>.
+            </p>
+            <p style="font-size: 14px; color: #666; margin-top: 30px;">
+              Stay well,<br>
+              The Daily Vibe Quest Team
+            </p>
           </div>
-          <p style="font-size: 14px; color: #666;">
-            You can manage your preferences and profile in 
-            <a href="${appUrl}/settings" style="color: #6366f1;">Settings</a>.
-          </p>
-          <p style="font-size: 14px; color: #666; margin-top: 30px;">
-            Stay well,<br>
-            The Daily Vibe Quest Team
-          </p>
-        </div>
-      `,
+        `,
+      }),
     });
 
-    console.log(`[WELCOME-EMAIL] Sent successfully:`, emailResponse);
+    const emailData = await emailResponse.json();
+    console.log(`[WELCOME-EMAIL] Sent successfully:`, emailData);
 
     // Update log as sent
     await supabase.from("email_logs").insert({
       user_id,
       type: "welcome",
       status: "sent",
-      metadata: { email, full_name, resend_id: emailResponse.data?.id }
+      metadata: { email, full_name, resend_id: emailData.id }
     });
 
     return new Response(
