@@ -11,9 +11,10 @@ import { SaturdayTriviaCard } from "@/components/dashboard/SaturdayTriviaCard";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { FocusAreasPopup } from "@/components/dashboard/FocusAreasPopup";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag, Book, MapPin, Trophy, Target } from "lucide-react";
+import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag, Book, MapPin, Trophy, Target, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const Dashboard = () => {
   const [checkingSubscription, setCheckingSubscription] = useState(false);
   const [showFocusPopup, setShowFocusPopup] = useState(false);
   const triviaEnabled = useFeatureFlag("ff.trivia");
+  const { isAdmin } = useAdminCheck();
 
   useEffect(() => {
     // Check for checkout success
@@ -147,6 +149,18 @@ const Dashboard = () => {
 
           {/* Navigation Row */}
           <div id="main-content" className="flex justify-center items-center gap-2 flex-wrap">
+            {isAdmin && (
+              <Button 
+                onClick={() => navigate("/admin")} 
+                variant="outline" 
+                size="sm" 
+                className="border-primary hover:bg-primary/10 hover:shadow-[0_0_12px_rgba(147,51,234,0.3)] transition-all"
+                aria-label="Admin Dashboard"
+              >
+                <Shield className="h-4 w-4 sm:mr-2" />
+                <span className="hidden lg:inline">Admin</span>
+              </Button>
+            )}
             <Button 
               onClick={() => setShowFocusPopup(true)} 
               variant="outline" 
