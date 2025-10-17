@@ -51,9 +51,20 @@ export const getUserRoles = async (userId: string): Promise<UserRole | null> => 
 export const checkIsAdmin = async (): Promise<boolean> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return false;
-  
-  const roles = await getUserRoles(session.user.id);
-  return isAdmin(roles?.role, roles?.admin_role);
+  const uid = session.user.id;
+  try {
+    const [hasAdmin, owner, moderator, support, superAdmin] = await Promise.all([
+      supabase.rpc("has_role", { _user_id: uid, _role: "admin" }),
+      supabase.rpc("has_admin_role", { _user_id: uid, _admin_role: "owner" }),
+      supabase.rpc("has_admin_role", { _user_id: uid, _admin_role: "moderator" }),
+      supabase.rpc("has_admin_role", { _user_id: uid, _admin_role: "support" }),
+      supabase.rpc("is_super_admin", { _user_id: uid })
+    ]);
+    return Boolean(hasAdmin.data || owner.data || moderator.data || support.data || superAdmin.data);
+  } catch (e) {
+    console.error("checkIsAdmin rpc error", e);
+    return false;
+  }
 };
 
 /**
