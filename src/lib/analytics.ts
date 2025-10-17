@@ -75,7 +75,11 @@ export type EventType =
   | "homepage_mood_click"
   | "homepage_trial_cta_click"
   | "admin_dashboard_view"
-  | "admin_subscribers_card_click";
+  | "admin_subscribers_card_click"
+  | "admin_store_view"
+  | "admin_add_product"
+  | "admin_edit_product"
+  | "admin_remove_product";
 
 interface TrackEventParams {
   eventType: EventType;

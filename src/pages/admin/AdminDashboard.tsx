@@ -14,7 +14,8 @@ import {
   Heart,
   Settings,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Package
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -45,6 +46,24 @@ export default function AdminDashboard() {
       return response.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch store products count
+  const { data: storeStats, isLoading: storeLoading } = useQuery({
+    queryKey: ["admin-store-stats"],
+    queryFn: async () => {
+      const { count: totalCount } = await supabase
+        .from("store_products")
+        .select("*", { count: "exact", head: true });
+      
+      const { count: activeCount } = await supabase
+        .from("store_products")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true);
+
+      return { total: totalCount || 0, active: activeCount || 0 };
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleSubscribersClick = async () => {
@@ -125,6 +144,34 @@ export default function AdminDashboard() {
                 onClick={handleSubscribersClick}
               >
                 View details
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Store Merchandise KPI Card */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Store Merchandise</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {storeLoading ? (
+                <Skeleton className="h-8 w-20 mb-2" />
+              ) : (
+                <div className="text-2xl font-bold mb-2">
+                  {storeStats?.active || 0}
+                </div>
+              )}
+              <div className="text-sm text-muted-foreground mb-2">
+                {storeStats?.total || 0} total products
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full mt-4"
+                onClick={() => navigate("/admin/store")}
+              >
+                Manage Store
               </Button>
             </CardContent>
           </Card>

@@ -51,6 +51,7 @@ import FamilyMembers from "./pages/FamilyMembers";
 import ParentJournalViewer from "./pages/family/ParentJournalViewer";
 import FeatureFlags from "./pages/admin/FeatureFlags";
 import StripeAdmin from "./pages/admin/StripeAdmin";
+import StoreAdmin from "./pages/admin/StoreAdmin";
 import HelpNearby from "./pages/help/HelpNearby";
 import NationalHotlines from "./pages/help/NationalHotlines";
 import HelpResources from "./pages/help/HelpResources";
@@ -124,6 +125,7 @@ const App = () => (
           <Route path="/admin/products" element={<ProductsAdmin />} />
           <Route path="/admin/products/new" element={<ProductForm />} />
           <Route path="/admin/products/:id" element={<ProductForm />} />
+          <Route path="/admin/store" element={<StoreAdmin />} />
           <Route path="/admin/health" element={<HealthDashboard />} />
           <Route path="/family/chat" element={<FamilyChat />} />
           <Route path="/family/members" element={<FamilyMembers />} />
