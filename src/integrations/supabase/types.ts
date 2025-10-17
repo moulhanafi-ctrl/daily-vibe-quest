@@ -2299,6 +2299,8 @@ export type Database = {
       }
       store_products: {
         Row: {
+          category: string | null
+          compare_at_price: number | null
           created_at: string | null
           description: string | null
           id: string
@@ -2306,10 +2308,13 @@ export type Database = {
           is_active: boolean | null
           name: string
           price: number
+          sku: string | null
           stock: number | null
           updated_at: string | null
         }
         Insert: {
+          category?: string | null
+          compare_at_price?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -2317,10 +2322,13 @@ export type Database = {
           is_active?: boolean | null
           name: string
           price: number
+          sku?: string | null
           stock?: number | null
           updated_at?: string | null
         }
         Update: {
+          category?: string | null
+          compare_at_price?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -2328,6 +2336,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           price?: number
+          sku?: string | null
           stock?: number | null
           updated_at?: string | null
         }
@@ -2393,6 +2402,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscriber_daily_rollups: {
+        Row: {
+          birthday_opt_in: number
+          created_at: string | null
+          daily_opt_in: number
+          day: string
+          id: string
+          push_subscribers: number
+          total_users: number
+        }
+        Insert: {
+          birthday_opt_in?: number
+          created_at?: string | null
+          daily_opt_in?: number
+          day: string
+          id?: string
+          push_subscribers?: number
+          total_users?: number
+        }
+        Update: {
+          birthday_opt_in?: number
+          created_at?: string | null
+          daily_opt_in?: number
+          day?: string
+          id?: string
+          push_subscribers?: number
+          total_users?: number
+        }
+        Relationships: []
       }
       system_health_results: {
         Row: {
@@ -3328,15 +3367,6 @@ export type Database = {
           is_active: boolean | null
           role: string | null
           user_id: string | null
-        }
-        Relationships: []
-      }
-      subscriber_daily_rollups: {
-        Row: {
-          daily_optin_new: number | null
-          day: string | null
-          push_new: number | null
-          users_total: number | null
         }
         Relationships: []
       }

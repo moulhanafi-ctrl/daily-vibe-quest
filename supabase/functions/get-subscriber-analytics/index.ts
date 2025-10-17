@@ -240,6 +240,59 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
+    if (type === "deliverability") {
+      // Fetch deliverability stats for last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data: notificationLogs } = await supabase
+        .from("notification_logs")
+        .select("status, sent_at, opened_at")
+        .gte("sent_at", sevenDaysAgo.toISOString());
+
+      const { data: emailLogs } = await supabase
+        .from("email_logs")
+        .select("status, sent_at")
+        .gte("sent_at", sevenDaysAgo.toISOString());
+
+      const pushSent = notificationLogs?.filter(l => l.status === "sent").length || 0;
+      const pushOpened = notificationLogs?.filter(l => l.opened_at !== null).length || 0;
+      const pushFailed = notificationLogs?.filter(l => l.status === "failed").length || 0;
+
+      const emailSent = emailLogs?.filter(l => l.status === "sent").length || 0;
+      const emailFailed = emailLogs?.filter(l => l.status === "failed").length || 0;
+
+      return new Response(
+        JSON.stringify({
+          push: {
+            sent: pushSent,
+            opened: pushOpened,
+            failed: pushFailed,
+            openRate: pushSent > 0 ? ((pushOpened / pushSent) * 100).toFixed(1) : "0.0"
+          },
+          email: {
+            sent: emailSent,
+            failed: emailFailed,
+            deliveryRate: emailSent > 0 ? (((emailSent - emailFailed) / emailSent) * 100).toFixed(1) : "0.0"
+          }
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Cache-Control": "max-age=300",
+          },
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ error: "Invalid request type" }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (error: any) {
     console.error("[SUBSCRIBER-ANALYTICS] Error:", error);
     return new Response(

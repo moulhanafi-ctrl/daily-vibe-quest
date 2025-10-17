@@ -10,18 +10,21 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Package, Search, Store as StoreIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Search, Store as StoreIcon, Upload, X, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 interface StoreProduct {
   id: string;
+  sku: string | null;
   name: string;
   description: string | null;
   price: number;
+  compare_at_price: number | null;
   image_url: string | null;
   stock: number;
+  category: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -34,16 +37,21 @@ export default function StoreAdmin() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<StoreProduct | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
   const ITEMS_PER_PAGE = 20;
 
   // Form state
   const [formData, setFormData] = useState({
+    sku: "",
     name: "",
     description: "",
     price: "",
+    compare_at_price: "",
+    category: "",
     stock: "0",
     is_active: true,
-    image_url: ""
   });
 
   // Fetch products
@@ -79,18 +87,72 @@ export default function StoreAdmin() {
     }
   };
 
+  // Upload image to storage
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      setUploading(true);
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from("product-images")
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload image");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image must be less than 5MB");
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Create product mutation
   const createProductMutation = useMutation({
-    mutationFn: async (newProduct: Partial<StoreProduct>) => {
+    mutationFn: async (newProduct: Partial<StoreProduct> & { name: string; price: number }) => {
+      // Upload image if selected
+      let imageUrl = imagePreview;
+      if (imageFile) {
+        const uploadedUrl = await uploadImage(imageFile);
+        if (!uploadedUrl) throw new Error("Image upload failed");
+        imageUrl = uploadedUrl;
+      }
+
       const { data, error } = await supabase
         .from("store_products")
         .insert([{
-          name: newProduct.name!,
-          description: newProduct.description,
-          price: newProduct.price!,
-          stock: newProduct.stock,
-          is_active: newProduct.is_active,
-          image_url: newProduct.image_url
+          name: newProduct.name,
+          price: newProduct.price,
+          description: newProduct.description || null,
+          sku: newProduct.sku || `SKU-${Date.now()}`,
+          category: newProduct.category || null,
+          compare_at_price: newProduct.compare_at_price || null,
+          stock: newProduct.stock || 0,
+          is_active: newProduct.is_active !== undefined ? newProduct.is_active : true,
+          image_url: imageUrl || null,
         }])
         .select()
         .single();
@@ -115,9 +177,18 @@ export default function StoreAdmin() {
   const updateProductMutation = useMutation({
     mutationFn: async (updatedProduct: Partial<StoreProduct> & { id: string }) => {
       const { id, ...updates } = updatedProduct;
+      
+      // Upload new image if selected
+      let imageUrl = updates.image_url;
+      if (imageFile) {
+        const uploadedUrl = await uploadImage(imageFile);
+        if (!uploadedUrl) throw new Error("Image upload failed");
+        imageUrl = uploadedUrl;
+      }
+      
       const { data, error } = await supabase
         .from("store_products")
-        .update(updates)
+        .update({ ...updates, image_url: imageUrl })
         .eq("id", id)
         .select()
         .single();
@@ -162,13 +233,17 @@ export default function StoreAdmin() {
 
   const resetForm = () => {
     setFormData({
+      sku: "",
       name: "",
       description: "",
       price: "",
+      compare_at_price: "",
+      category: "",
       stock: "0",
       is_active: true,
-      image_url: ""
     });
+    setImageFile(null);
+    setImagePreview("");
   };
 
   const handleOpenAddModal = () => {
@@ -179,13 +254,16 @@ export default function StoreAdmin() {
   const handleOpenEditModal = (product: StoreProduct) => {
     setEditingProduct(product);
     setFormData({
+      sku: product.sku || "",
       name: product.name,
       description: product.description || "",
       price: product.price.toString(),
+      compare_at_price: product.compare_at_price?.toString() || "",
+      category: product.category || "",
       stock: product.stock.toString(),
       is_active: product.is_active,
-      image_url: product.image_url || ""
     });
+    setImagePreview(product.image_url || "");
   };
 
   const handleSubmit = () => {
@@ -194,13 +272,22 @@ export default function StoreAdmin() {
       return;
     }
 
-    const productData: Partial<StoreProduct> = {
+    const price = parseFloat(formData.price);
+    if (isNaN(price) || price < 0) {
+      toast.error("Please enter a valid price");
+      return;
+    }
+
+    const productData = {
+      sku: formData.sku,
       name: formData.name,
       description: formData.description || null,
-      price: parseFloat(formData.price),
+      price: price,
+      compare_at_price: formData.compare_at_price ? parseFloat(formData.compare_at_price) : null,
+      category: formData.category || null,
       stock: parseInt(formData.stock) || 0,
       is_active: formData.is_active,
-      image_url: formData.image_url || null
+      image_url: imagePreview || null,
     };
 
     if (editingProduct) {
@@ -209,7 +296,11 @@ export default function StoreAdmin() {
         ...productData
       });
     } else {
-      createProductMutation.mutate(productData);
+      createProductMutation.mutate({
+        ...productData,
+        name: formData.name,
+        price: price,
+      });
     }
   };
 
@@ -224,6 +315,15 @@ export default function StoreAdmin() {
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex justify-between items-center">
           <div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate("/admin")}
+              className="mb-2"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Package className="h-8 w-8" />
               Store Merchandise Management
@@ -233,7 +333,7 @@ export default function StoreAdmin() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => navigate("/store")}>
+            <Button onClick={() => navigate("/store")} variant="outline">
               <StoreIcon className="h-4 w-4 mr-2" />
               View Public Store
             </Button>
@@ -285,12 +385,16 @@ export default function StoreAdmin() {
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-center gap-4 flex-1">
-                      {product.image_url && (
+                      {product.image_url ? (
                         <img
                           src={product.image_url}
                           alt={product.name}
                           className="w-16 h-16 object-cover rounded"
                         />
+                      ) : (
+                        <div className="w-16 h-16 bg-muted rounded flex items-center justify-center">
+                          <Package className="h-8 w-8 text-muted-foreground" />
+                        </div>
                       )}
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -298,13 +402,24 @@ export default function StoreAdmin() {
                           <Badge variant={product.is_active ? "default" : "secondary"}>
                             {product.is_active ? "Active" : "Inactive"}
                           </Badge>
+                          {product.category && (
+                            <Badge variant="outline">{product.category}</Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-1">
                           {product.description || "No description"}
                         </p>
                         <div className="flex gap-4 text-sm mt-1">
                           <span className="font-medium">${product.price.toFixed(2)}</span>
+                          {product.compare_at_price && (
+                            <span className="text-muted-foreground line-through">
+                              ${product.compare_at_price.toFixed(2)}
+                            </span>
+                          )}
                           <span className="text-muted-foreground">Stock: {product.stock}</span>
+                          {product.sku && (
+                            <span className="text-muted-foreground">SKU: {product.sku}</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -362,7 +477,7 @@ export default function StoreAdmin() {
             resetForm();
           }
         }}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingProduct ? "Edit Product" : "Add New Product"}
@@ -373,14 +488,60 @@ export default function StoreAdmin() {
             </DialogHeader>
 
             <div className="space-y-4">
+              {/* Image Upload */}
               <div>
-                <Label htmlFor="name">Product Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter product name"
-                />
+                <Label>Product Image</Label>
+                <div className="mt-2 space-y-2">
+                  {imagePreview && (
+                    <div className="relative w-full h-48 border rounded-lg overflow-hidden">
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreview("");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      disabled={uploading}
+                    />
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Maximum file size: 5MB. Supported formats: JPG, PNG, WEBP
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Product Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Enter product name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="sku">SKU</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    placeholder="Auto-generated if empty"
+                  />
+                </div>
               </div>
 
               <div>
@@ -394,7 +555,7 @@ export default function StoreAdmin() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="price">Price ($) *</Label>
                   <Input
@@ -405,6 +566,19 @@ export default function StoreAdmin() {
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                     placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="compare_at_price">Compare At Price ($)</Label>
+                  <Input
+                    id="compare_at_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.compare_at_price}
+                    onChange={(e) => setFormData({ ...formData, compare_at_price: e.target.value })}
+                    placeholder="Optional"
                   />
                 </div>
 
@@ -422,12 +596,12 @@ export default function StoreAdmin() {
               </div>
 
               <div>
-                <Label htmlFor="image_url">Image URL</Label>
+                <Label htmlFor="category">Category</Label>
                 <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
+                  id="category"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  placeholder="e.g. Clothing, Electronics, Books"
                 />
               </div>
 
@@ -454,9 +628,9 @@ export default function StoreAdmin() {
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={createProductMutation.isPending || updateProductMutation.isPending}
+                disabled={createProductMutation.isPending || updateProductMutation.isPending || uploading}
               >
-                {editingProduct ? "Update" : "Create"} Product
+                {uploading ? "Uploading..." : editingProduct ? "Update Product" : "Create Product"}
               </Button>
             </DialogFooter>
           </DialogContent>
