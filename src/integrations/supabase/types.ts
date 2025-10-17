@@ -758,6 +758,36 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          error: string | null
+          id: string
+          metadata: Json | null
+          sent_at: string | null
+          status: string | null
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          error?: string | null
+          id?: string
+          metadata?: Json | null
+          sent_at?: string | null
+          status?: string | null
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          error?: string | null
+          id?: string
+          metadata?: Json | null
+          sent_at?: string | null
+          status?: string | null
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       entitlements: {
         Row: {
           created_at: string | null
@@ -1990,8 +2020,10 @@ export type Database = {
           age: number | null
           age_group: Database["public"]["Enums"]["age_group"]
           avatar_url: string | null
+          birth_date: string | null
           created_at: string | null
           first_name: string | null
+          full_name: string | null
           id: string
           inclusion_acknowledged_version: string | null
           insurance: Json | null
@@ -2003,6 +2035,7 @@ export type Database = {
           legal_consent_user_agent: string | null
           legal_consent_version: string | null
           location: Json | null
+          marketing_opt_in: boolean | null
           optional_reflection: string | null
           parent_id: string | null
           pronouns: string | null
@@ -2011,6 +2044,7 @@ export type Database = {
           show_pronouns: boolean | null
           subscription_expires_at: string | null
           subscription_status: string | null
+          timezone: string | null
           updated_at: string | null
           username: string | null
           zipcode: string | null
@@ -2019,8 +2053,10 @@ export type Database = {
           age?: number | null
           age_group?: Database["public"]["Enums"]["age_group"]
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string | null
           first_name?: string | null
+          full_name?: string | null
           id: string
           inclusion_acknowledged_version?: string | null
           insurance?: Json | null
@@ -2032,6 +2068,7 @@ export type Database = {
           legal_consent_user_agent?: string | null
           legal_consent_version?: string | null
           location?: Json | null
+          marketing_opt_in?: boolean | null
           optional_reflection?: string | null
           parent_id?: string | null
           pronouns?: string | null
@@ -2040,6 +2077,7 @@ export type Database = {
           show_pronouns?: boolean | null
           subscription_expires_at?: string | null
           subscription_status?: string | null
+          timezone?: string | null
           updated_at?: string | null
           username?: string | null
           zipcode?: string | null
@@ -2048,8 +2086,10 @@ export type Database = {
           age?: number | null
           age_group?: Database["public"]["Enums"]["age_group"]
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string | null
           first_name?: string | null
+          full_name?: string | null
           id?: string
           inclusion_acknowledged_version?: string | null
           insurance?: Json | null
@@ -2061,6 +2101,7 @@ export type Database = {
           legal_consent_user_agent?: string | null
           legal_consent_version?: string | null
           location?: Json | null
+          marketing_opt_in?: boolean | null
           optional_reflection?: string | null
           parent_id?: string | null
           pronouns?: string | null
@@ -2069,6 +2110,7 @@ export type Database = {
           show_pronouns?: boolean | null
           subscription_expires_at?: string | null
           subscription_status?: string | null
+          timezone?: string | null
           updated_at?: string | null
           username?: string | null
           zipcode?: string | null
