@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
     // Get all users with daily notifications enabled
     const { data: users, error: usersError } = await supabaseAdmin
       .from('notification_prefs')
-      .select('user_id, daily_enabled, quiet_hours, timezone')
+      .select('user_id, quiet_hours, timezone')
       .eq('daily_enabled', true);
 
     if (usersError) {

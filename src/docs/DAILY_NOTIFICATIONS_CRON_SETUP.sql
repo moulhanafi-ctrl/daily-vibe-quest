@@ -1,5 +1,5 @@
 -- Daily Notifications Cron Setup
--- This SQL script sets up automated daily push notifications for all active users
+-- This SQL script sets up automated daily push notifications for all opted-in users
 
 -- Prerequisites:
 -- 1. Ensure pg_cron extension is enabled
