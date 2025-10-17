@@ -5,6 +5,7 @@ import { Sparkles, Settings } from "lucide-react";
 import heroBackground from "@/assets/hero-background.jpg";
 import vibeCheckLogo from "@/assets/vibe-check-logo.png";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { trackEvent } from "@/lib/analytics";
 
 const moods = [
   { emoji: "😊", label: "Great", color: "mint" },
@@ -18,6 +19,22 @@ export const Hero = () => {
   const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const { isAdmin } = useAdminCheck();
+
+  const handleMoodClick = (index: number, moodLabel: string) => {
+    setSelectedMood(index);
+    trackEvent({
+      eventType: "homepage_mood_click",
+      metadata: { mood: moodLabel, mood_index: index }
+    });
+  };
+
+  const handleTrialCTAClick = () => {
+    trackEvent({
+      eventType: "homepage_trial_cta_click",
+      metadata: { from_mood: selectedMood !== null ? moods[selectedMood].label : "unknown" }
+    });
+    navigate("/auth");
+  };
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
@@ -69,43 +86,34 @@ export const Hero = () => {
           </div>
 
           <div className="w-full max-w-md space-y-6 animate-slide-up">
-            <div className="flex justify-center gap-4 flex-wrap" role="group" aria-label="Select your current mood">
-              {moods.map((mood, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedMood(index)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-smooth hover:scale-110 hover:-translate-y-1 active:scale-95 ${
-                    selectedMood === index
-                      ? "bg-card shadow-soft ring-2 ring-primary scale-105"
-                      : "bg-card/80 backdrop-blur shadow-card"
-                  }`}
-                  style={{
-                    animationDelay: `${index * 0.1}s`,
-                  }}
-                  aria-label={`Select ${mood.label} mood`}
-                  aria-pressed={selectedMood === index}
-                >
-                  <span className="text-4xl transition-smooth hover:scale-125" aria-hidden="true">{mood.emoji}</span>
-                  <span className="text-sm font-medium">{mood.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {selectedMood !== null && (
+            {selectedMood === null ? (
+              <div className="flex justify-center gap-4 flex-wrap" role="group" aria-label="Select your current mood">
+                {moods.map((mood, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleMoodClick(index, mood.label)}
+                    className="flex flex-col items-center gap-2 p-4 rounded-2xl transition-smooth hover:scale-110 hover:-translate-y-1 active:scale-95 bg-card/80 backdrop-blur shadow-card"
+                    style={{
+                      animationDelay: `${index * 0.1}s`,
+                    }}
+                    aria-label={`Select ${mood.label} mood`}
+                  >
+                    <span className="text-4xl transition-smooth hover:scale-125" aria-hidden="true">{mood.emoji}</span>
+                    <span className="text-sm font-medium">{mood.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
               <div className="animate-fade-in space-y-4">
-                <p className="text-muted-foreground">
-                  Thanks for sharing! Let's make today better together.
-                </p>
                 <Button 
                   type="button"
-                  variant="hero" 
                   size="lg" 
-                  className="w-full min-h-[44px] touch-manipulation font-semibold" 
-                  onClick={() => navigate("/auth")}
-                  onTouchStart={() => navigate("/auth")}
-                  aria-label="Start your wellness journey"
+                  className="w-full min-h-[72px] text-2xl md:text-3xl font-bold touch-manipulation bg-gradient-to-r from-primary via-primary/90 to-primary hover:from-primary/90 hover:via-primary hover:to-primary/90 shadow-[0_8px_32px_hsl(var(--primary)/0.4)] hover:shadow-[0_12px_48px_hsl(var(--primary)/0.6)] transition-all duration-300 animate-pulse-soft" 
+                  onClick={handleTrialCTAClick}
+                  onTouchStart={handleTrialCTAClick}
+                  aria-label="Start your 7-day free trial"
                 >
-                  Start Your Journey →
+                  Start Your 7-Day Free Trial Now
                 </Button>
               </div>
             )}

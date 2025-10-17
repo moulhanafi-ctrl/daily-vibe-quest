@@ -71,7 +71,11 @@ export type EventType =
   | "wellness_embed_start"
   | "wellness_embed_end"
   | "wellness_unlock_success"
-  | "wellness_fallback_used";
+  | "wellness_fallback_used"
+  | "homepage_mood_click"
+  | "homepage_trial_cta_click"
+  | "admin_dashboard_view"
+  | "admin_subscribers_card_click";
 
 interface TrackEventParams {
   eventType: EventType;
