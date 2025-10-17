@@ -10,10 +10,15 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Package, Search, Store as StoreIcon, Upload, X, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import type { Database } from "@/integrations/supabase/types";
+
+type AgeGroup = Database["public"]["Enums"]["age_group"];
 
 interface StoreProduct {
   id: string;
@@ -25,6 +30,7 @@ interface StoreProduct {
   image_url: string | null;
   stock: number;
   category: string | null;
+  age_group: AgeGroup;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -34,6 +40,7 @@ export default function StoreAdmin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup>("adult");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<StoreProduct | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,6 +48,13 @@ export default function StoreAdmin() {
   const [imagePreview, setImagePreview] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const ITEMS_PER_PAGE = 20;
+
+  const ageGroups: { value: AgeGroup; label: string; emoji: string }[] = [
+    { value: "child", label: "Kids Store", emoji: "🧒" },
+    { value: "teen", label: "Teens Store", emoji: "🧑‍🎓" },
+    { value: "adult", label: "Adults Store", emoji: "🧍" },
+    { value: "elder", label: "Elders Store", emoji: "👵" },
+  ];
 
   // Form state
   const [formData, setFormData] = useState({
@@ -50,17 +64,19 @@ export default function StoreAdmin() {
     price: "",
     compare_at_price: "",
     category: "",
+    age_group: "adult" as AgeGroup,
     stock: "0",
     is_active: true,
   });
 
   // Fetch products
   const { data: products, isLoading } = useQuery({
-    queryKey: ["admin-store-products", searchQuery, currentPage],
+    queryKey: ["admin-store-products", searchQuery, selectedAgeGroup, currentPage],
     queryFn: async () => {
       let query = supabase
         .from("store_products")
         .select("*")
+        .eq("age_group", selectedAgeGroup)
         .order("created_at", { ascending: false });
 
       if (searchQuery) {
@@ -149,6 +165,7 @@ export default function StoreAdmin() {
           description: newProduct.description || null,
           sku: newProduct.sku || `SKU-${Date.now()}`,
           category: newProduct.category || null,
+          age_group: newProduct.age_group || selectedAgeGroup,
           compare_at_price: newProduct.compare_at_price || null,
           stock: newProduct.stock || 0,
           is_active: newProduct.is_active !== undefined ? newProduct.is_active : true,
@@ -239,6 +256,7 @@ export default function StoreAdmin() {
       price: "",
       compare_at_price: "",
       category: "",
+      age_group: selectedAgeGroup,
       stock: "0",
       is_active: true,
     });
@@ -260,6 +278,7 @@ export default function StoreAdmin() {
       price: product.price.toString(),
       compare_at_price: product.compare_at_price?.toString() || "",
       category: product.category || "",
+      age_group: product.age_group,
       stock: product.stock.toString(),
       is_active: product.is_active,
     });
@@ -285,6 +304,7 @@ export default function StoreAdmin() {
       price: price,
       compare_at_price: formData.compare_at_price ? parseFloat(formData.compare_at_price) : null,
       category: formData.category || null,
+      age_group: formData.age_group,
       stock: parseInt(formData.stock) || 0,
       is_active: formData.is_active,
       image_url: imagePreview || null,
@@ -344,33 +364,48 @@ export default function StoreAdmin() {
           </div>
         </div>
 
-        {/* Search */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Search Products</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by product name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Age Group Tabs */}
+        <Tabs value={selectedAgeGroup} onValueChange={(value) => {
+          setSelectedAgeGroup(value as AgeGroup);
+          setCurrentPage(1);
+        }}>
+          <TabsList className="grid w-full grid-cols-4">
+            {ageGroups.map((group) => (
+              <TabsTrigger key={group.value} value={group.value}>
+                {group.emoji} {group.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {/* Products List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Products</CardTitle>
-            <CardDescription>
-              {products?.length || 0} products found
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          {ageGroups.map((group) => (
+            <TabsContent key={group.value} value={group.value} className="space-y-4">
+              {/* Search */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Search {group.label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by product name..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Products List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{group.label} Products</CardTitle>
+                  <CardDescription>
+                    {products?.length || 0} products found
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
             {isLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map(i => (
@@ -447,27 +482,30 @@ export default function StoreAdmin() {
                 No products found. Add your first product to get started.
               </div>
             )}
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
 
-        {/* Pagination */}
-        {products && products.length === ITEMS_PER_PAGE && (
-          <div className="flex justify-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(p => p + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        )}
+              {/* Pagination */}
+              {products && products.length === ITEMS_PER_PAGE && (
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(p => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
 
         {/* Add/Edit Modal */}
         <Dialog open={isAddModalOpen || !!editingProduct} onOpenChange={(open) => {
@@ -595,14 +633,35 @@ export default function StoreAdmin() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g. Clothing, Electronics, Books"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="e.g. Clothing, Electronics, Books"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="age_group">Age Group *</Label>
+                  <Select
+                    value={formData.age_group}
+                    onValueChange={(value: AgeGroup) => setFormData({ ...formData, age_group: value })}
+                  >
+                    <SelectTrigger id="age_group">
+                      <SelectValue placeholder="Select age group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ageGroups.map((group) => (
+                        <SelectItem key={group.value} value={group.value}>
+                          {group.emoji} {group.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">

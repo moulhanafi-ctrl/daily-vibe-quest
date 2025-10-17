@@ -2299,6 +2299,7 @@ export type Database = {
       }
       store_products: {
         Row: {
+          age_group: Database["public"]["Enums"]["age_group"]
           category: string | null
           compare_at_price: number | null
           created_at: string | null
@@ -2313,6 +2314,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          age_group?: Database["public"]["Enums"]["age_group"]
           category?: string | null
           compare_at_price?: number | null
           created_at?: string | null
@@ -2327,6 +2329,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          age_group?: Database["public"]["Enums"]["age_group"]
           category?: string | null
           compare_at_price?: number | null
           created_at?: string | null
