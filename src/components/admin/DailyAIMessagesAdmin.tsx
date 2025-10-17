@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Heart, Send, Clock, Users, CheckCircle, XCircle, AlertCircle, Download, Eye, Mail, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AdminGuard } from "./AdminGuard";
+import { EmailProviderPanel } from "./EmailProviderPanel";
 
 interface JobLog {
   id: string;
@@ -29,7 +30,6 @@ export function DailyAIMessagesAdmin() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [providerHealth, setProviderHealth] = useState<any>(null);
   const [healthChecking, setHealthChecking] = useState(false);
-  const [testEmailSending, setTestEmailSending] = useState(false);
 
   useEffect(() => {
     loadLogs();
@@ -128,45 +128,6 @@ export function DailyAIMessagesAdmin() {
     }
   };
 
-  const sendTestEmail = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.email) {
-      toast.error("You must be logged in with an email");
-      return;
-    }
-
-    setTestEmailSending(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("send-daily-ai-messages", {
-        body: { 
-          windowType: "manual",
-          testUserId: user.id 
-        },
-      });
-
-      if (error) throw error;
-
-      const emailChannel = data.delivery_details?.[0]?.channels?.email;
-      if (emailChannel) {
-        if (emailChannel.status === 'sent') {
-          toast.success(`✅ Test email sent successfully to ${emailChannel.to}`);
-        } else if (emailChannel.status === 'skipped_misconfigured') {
-          toast.error(`❌ Email provider misconfigured: ${emailChannel.reason}`);
-        } else {
-          toast.error(`❌ Email failed: ${emailChannel.error || 'Unknown error'}`);
-        }
-      } else {
-        toast.info("Email channel not attempted");
-      }
-
-      await checkProviderHealth();
-    } catch (error) {
-      console.error("Error sending test email:", error);
-      toast.error("Failed to send test email");
-    } finally {
-      setTestEmailSending(false);
-    }
-  };
 
   const downloadDetails = (log: JobLog) => {
     const dataStr = JSON.stringify(log.error_details || {}, null, 2);
@@ -211,6 +172,8 @@ export function DailyAIMessagesAdmin() {
   return (
     <AdminGuard>
       <div className="space-y-6">
+        {/* Email Provider Configuration Panel */}
+        <EmailProviderPanel />
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -250,7 +213,14 @@ export function DailyAIMessagesAdmin() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-900">
-                  Email provider is healthy and ready to send
+                  <div className="space-y-1">
+                    <div>Email provider is healthy and ready to send</div>
+                    {providerHealth.domainVerified === false && (
+                      <div className="text-sm text-yellow-700">
+                        ⚠️ Note: Sender domain is unverified - deliverability may be reduced
+                      </div>
+                    )}
+                  </div>
                 </AlertDescription>
               </Alert>
             )}
@@ -278,14 +248,6 @@ export function DailyAIMessagesAdmin() {
               </div>
 
               <div className="flex gap-2 flex-wrap">
-                <Button 
-                  onClick={sendTestEmail} 
-                  disabled={testEmailSending || !providerHealth?.healthy}
-                  variant="outline"
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  {testEmailSending ? "Sending..." : "Send Test Email"}
-                </Button>
                 <Button onClick={sendTestToSelf} disabled={loading}>
                   <Send className="h-4 w-4 mr-2" />
                   Send Test to Myself
@@ -295,11 +257,6 @@ export function DailyAIMessagesAdmin() {
                   Send to All Users Now
                 </Button>
               </div>
-              {!providerHealth?.healthy && (
-                <p className="text-sm text-muted-foreground">
-                  ⚠️ Test email button disabled: {providerHealth?.error}
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>

@@ -8,13 +8,67 @@ const corsHeaders = {
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-const RESEND_FROM_EMAIL = Deno.env.get("WELCOME_FROM_EMAIL") || "Mostapha <notifications@resend.dev>";
+const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || Deno.env.get("WELCOME_FROM_EMAIL") || "Mostapha <notifications@resend.dev>";
 
 interface ProviderHealthCheck {
   healthy: boolean;
   provider: string;
   error?: string;
   details?: string;
+  domainVerified?: boolean;
+  fromEmail?: string;
+}
+
+interface DomainInfo {
+  id: string;
+  name: string;
+  status: string;
+  records?: any[];
+}
+
+async function checkDomainVerification(): Promise<{ verified: boolean; domain?: string; records?: any[] }> {
+  if (!RESEND_API_KEY || RESEND_API_KEY.trim() === '') {
+    return { verified: false };
+  }
+
+  try {
+    // Extract domain from RESEND_FROM_EMAIL
+    const emailMatch = RESEND_FROM_EMAIL.match(/<(.+)>/) || [null, RESEND_FROM_EMAIL];
+    const email = emailMatch[1] || RESEND_FROM_EMAIL;
+    const domain = email.split('@')[1];
+
+    if (!domain) {
+      return { verified: false };
+    }
+
+    const response = await fetch("https://api.resend.com/domains", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY.trim()}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      return { verified: false, domain };
+    }
+
+    const { data: domains } = await response.json();
+    const matchingDomain = domains?.find((d: DomainInfo) => d.name === domain);
+
+    if (!matchingDomain) {
+      return { verified: false, domain };
+    }
+
+    return {
+      verified: matchingDomain.status === 'verified',
+      domain,
+      records: matchingDomain.records || []
+    };
+  } catch (error) {
+    console.error("Domain verification check error:", error);
+    return { verified: false };
+  }
 }
 
 async function checkEmailProvider(): Promise<ProviderHealthCheck> {
@@ -27,13 +81,23 @@ async function checkEmailProvider(): Promise<ProviderHealthCheck> {
     };
   }
 
+  if (!RESEND_FROM_EMAIL || RESEND_FROM_EMAIL.trim() === '') {
+    return {
+      healthy: false,
+      provider: 'resend',
+      error: 'RESEND_FROM_EMAIL not configured',
+      details: 'Email sender address is missing from environment secrets'
+    };
+  }
+
   // Validate key format (basic check)
   if (RESEND_API_KEY.length < 20 || !RESEND_API_KEY.startsWith('re_')) {
     return {
       healthy: false,
       provider: 'resend',
       error: 'Invalid API key format',
-      details: 'RESEND_API_KEY appears to be malformed (should start with re_)'
+      details: 'RESEND_API_KEY appears to be malformed (should start with re_)',
+      fromEmail: RESEND_FROM_EMAIL
     };
   }
 
@@ -52,7 +116,8 @@ async function checkEmailProvider(): Promise<ProviderHealthCheck> {
         healthy: false,
         provider: 'resend',
         error: 'API key is invalid or expired',
-        details: 'Resend returned 401 Unauthorized. Please rotate the RESEND_API_KEY secret.'
+        details: 'Resend returned 401 Unauthorized. Please rotate the RESEND_API_KEY secret.',
+        fromEmail: RESEND_FROM_EMAIL
       };
     }
 
@@ -62,20 +127,30 @@ async function checkEmailProvider(): Promise<ProviderHealthCheck> {
         healthy: false,
         provider: 'resend',
         error: `Provider error: ${response.status}`,
-        details: errorText
+        details: errorText,
+        fromEmail: RESEND_FROM_EMAIL
       };
     }
 
+    // Check domain verification
+    const domainCheck = await checkDomainVerification();
+
     return {
       healthy: true,
-      provider: 'resend'
+      provider: 'resend',
+      domainVerified: domainCheck.verified,
+      fromEmail: RESEND_FROM_EMAIL,
+      details: domainCheck.verified 
+        ? 'Email provider is healthy and domain is verified' 
+        : 'Email provider is healthy but sender domain is unverified - deliverability may be reduced'
     };
   } catch (error) {
     return {
       healthy: false,
       provider: 'resend',
       error: 'Network error',
-      details: error instanceof Error ? error.message : 'Unknown error connecting to Resend'
+      details: error instanceof Error ? error.message : 'Unknown error connecting to Resend',
+      fromEmail: RESEND_FROM_EMAIL
     };
   }
 }
@@ -209,10 +284,199 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json().catch(() => ({}));
-    const windowType = body.windowType || "scheduled"; // 'morning', 'evening', 'kickoff', 'manual', 'health_check'
+    const windowType = body.windowType || "scheduled"; // 'morning', 'evening', 'kickoff', 'manual', 'health_check', 'test_email', 'get_domains'
     const testUserId = body.testUserId;
+    const testEmail = body.testEmail;
     const isManualBypass = windowType === "manual" || testUserId;
     const isHealthCheck = windowType === "health_check";
+    const isTestEmail = windowType === "test_email";
+    const isGetDomains = windowType === "get_domains";
+
+    // Get domains endpoint
+    if (isGetDomains) {
+      if (!RESEND_API_KEY || RESEND_API_KEY.trim() === '') {
+        return new Response(
+          JSON.stringify({ error: "RESEND_API_KEY not configured" }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 400
+          }
+        );
+      }
+
+      try {
+        const response = await fetch("https://api.resend.com/domains", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${RESEND_API_KEY.trim()}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          return new Response(
+            JSON.stringify({ error: `Failed to fetch domains: ${error}` }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: response.status
+            }
+          );
+        }
+
+        const data = await response.json();
+        const domainCheck = await checkDomainVerification();
+        
+        return new Response(
+          JSON.stringify({ 
+            domains: data.data || [],
+            currentDomain: domainCheck.domain,
+            currentFromEmail: RESEND_FROM_EMAIL
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200
+          }
+        );
+      } catch (error) {
+        return new Response(
+          JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500
+          }
+        );
+      }
+    }
+
+    // Test email endpoint
+    if (isTestEmail) {
+      const emailHealth = await checkEmailProvider();
+      
+      if (!emailHealth.healthy) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: emailHealth.error,
+            details: emailHealth.details
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 400
+          }
+        );
+      }
+
+      if (!testEmail || !testEmail.includes('@')) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: "Invalid test email address"
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 400
+          }
+        );
+      }
+
+      try {
+        const testHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="color: #22c55e; margin-bottom: 5px;">✅ Resend Test OK</h2>
+                <p style="color: #666; font-size: 16px; margin-top: 5px;">This is a Resend connectivity test</p>
+              </div>
+              
+              <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="color: #333; font-size: 15px; line-height: 1.8; margin: 0;">
+                  <strong>Timestamp:</strong> ${new Date().toISOString()}<br/>
+                  <strong>From:</strong> ${RESEND_FROM_EMAIL}<br/>
+                  <strong>Domain Verified:</strong> ${emailHealth.domainVerified ? '✅ Yes' : '⚠️ No (see note below)'}
+                </p>
+              </div>
+
+              ${!emailHealth.domainVerified ? `
+                <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                  <p style="color: #92400e; font-size: 14px; margin: 0;">
+                    ⚠️ <strong>Note:</strong> Your sender domain is not verified in Resend. 
+                    Emails will still send but may have reduced deliverability. 
+                    Add DNS records in Resend to verify your domain.
+                  </p>
+                </div>
+              ` : ''}
+              
+              <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e5e5; text-align: center; color: #999; font-size: 12px;">
+                <p>Resend API test successful. If you received this email, your email provider is configured correctly.</p>
+              </div>
+            </body>
+          </html>
+        `;
+
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${RESEND_API_KEY!.trim()}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: RESEND_FROM_EMAIL,
+            to: [testEmail],
+            subject: "✅ Resend Test OK",
+            html: testHtml,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          return new Response(
+            JSON.stringify({ 
+              success: false,
+              error: "Resend API error",
+              details: error,
+              statusCode: response.status
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200 // Return 200 so frontend can parse the error
+            }
+          );
+        }
+
+        const result = await response.json();
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            messageId: result.id,
+            from: RESEND_FROM_EMAIL,
+            to: testEmail,
+            domainVerified: emailHealth.domainVerified,
+            timestamp: new Date().toISOString()
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200
+          }
+        );
+      } catch (error) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error"
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200
+          }
+        );
+      }
+    }
 
     // Health check endpoint
     if (isHealthCheck) {
