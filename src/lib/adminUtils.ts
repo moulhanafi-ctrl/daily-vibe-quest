@@ -26,15 +26,23 @@ export const getUserRoles = async (userId: string): Promise<UserRole | null> => 
   const { data, error } = await supabase
     .from("user_roles")
     .select("role, admin_role")
-    .eq("user_id", userId)
-    .maybeSingle();
-  
+    .eq("user_id", userId);
+
   if (error) {
     console.error("Error fetching user roles:", error);
     return null;
   }
-  
-  return data;
+
+  if (!data || data.length === 0) return null;
+
+  // Prefer an admin row if multiple exist
+  const adminRow = data.find((r: any) => {
+    const role = String(r.role || '').toLowerCase();
+    const adminRole = String(r.admin_role || '').toLowerCase();
+    return role === 'admin' || ['owner', 'moderator', 'support', 'super_admin'].includes(adminRole);
+  });
+
+  return adminRow || (data[0] as UserRole);
 };
 
 /**
