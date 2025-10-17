@@ -1,6 +1,7 @@
 import { StripeModeToggle } from "@/components/admin/StripeModeToggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { AdminGuard } from "@/components/admin/AdminGuard";
 
 const StripeAdmin = () => {
   // Checklist for Phase 2 completion
@@ -16,7 +17,8 @@ const StripeAdmin = () => {
   ];
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <AdminGuard>
+      <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold mb-2">Stripe Configuration</h1>
         <p className="text-muted-foreground">
@@ -129,9 +131,10 @@ const StripeAdmin = () => {
               <span className="font-medium">Record test results</span> in audit log
             </li>
           </ol>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminGuard>
   );
 };
 

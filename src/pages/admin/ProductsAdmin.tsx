@@ -7,17 +7,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { AdminGuard } from "@/components/admin/AdminGuard";
 
 interface Product {
   id: string;
-  title: string;
-  subtitle: string | null;
-  slug: string;
-  price_cents: number;
-  category: string;
-  type: string;
+  sku: string | null;
+  name: string;
+  description: string | null;
+  price: number;
+  compare_at_price: number | null;
+  image_url: string | null;
+  stock: number;
+  category: string | null;
+  age_group: string;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export default function ProductsAdmin() {
@@ -33,7 +38,7 @@ export default function ProductsAdmin() {
   const loadProducts = async () => {
     try {
       const { data, error } = await supabase
-        .from("products" as any)
+        .from("store_products")
         .select("*")
         .order("created_at", { ascending: false });
 
@@ -50,7 +55,7 @@ export default function ProductsAdmin() {
   const toggleActive = async (productId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
-        .from("products" as any)
+        .from("store_products")
         .update({ is_active: !currentStatus })
         .eq("id", productId);
 
@@ -68,7 +73,7 @@ export default function ProductsAdmin() {
 
     try {
       const { error } = await supabase
-        .from("products" as any)
+        .from("store_products")
         .delete()
         .eq("id", productId);
 
@@ -82,8 +87,9 @@ export default function ProductsAdmin() {
   };
 
   const filteredProducts = products.filter((product) =>
-    product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (product.category && product.category.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   if (loading) {
@@ -95,7 +101,8 @@ export default function ProductsAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 pb-20">
+    <AdminGuard>
+      <div className="min-h-screen bg-background p-4 pb-20">
       <div className="container mx-auto max-w-7xl">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -130,23 +137,26 @@ export default function ProductsAdmin() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-semibold">{product.title}</h3>
+                      <h3 className="text-xl font-semibold">{product.name}</h3>
                       <Badge variant={product.is_active ? "default" : "secondary"}>
                         {product.is_active ? "Active" : "Draft"}
                       </Badge>
+                      {product.category && (
+                        <Badge variant="outline" className="capitalize">
+                          {product.category}
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="capitalize">
-                        {product.type}
-                      </Badge>
-                      <Badge variant="outline" className="capitalize">
-                        {product.category}
+                        {product.age_group}
                       </Badge>
                     </div>
-                    {product.subtitle && (
-                      <p className="text-muted-foreground mb-2">{product.subtitle}</p>
+                    {product.description && (
+                      <p className="text-muted-foreground mb-2 line-clamp-2">{product.description}</p>
                     )}
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>Slug: {product.slug}</span>
-                      <span>${(product.price_cents / 100).toFixed(2)}</span>
+                      {product.sku && <span>SKU: {product.sku}</span>}
+                      <span>${product.price.toFixed(2)}</span>
+                      <span>Stock: {product.stock}</span>
                     </div>
                   </div>
 
@@ -203,5 +213,6 @@ export default function ProductsAdmin() {
         </div>
       </div>
     </div>
+    </AdminGuard>
   );
 }

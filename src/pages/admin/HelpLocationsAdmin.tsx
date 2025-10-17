@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Plus, MapPin, Check, X, Download, Upload, RefreshCw } from "lucide-react";
+import { AdminGuard } from "@/components/admin/AdminGuard";
 
 interface HelpLocation {
   id: string;
@@ -289,7 +290,8 @@ export default function HelpLocationsAdmin() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <AdminGuard>
+      <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <SecurityWarningBanner />
         
@@ -564,5 +566,6 @@ export default function HelpLocationsAdmin() {
         </Card>
       </div>
     </div>
+    </AdminGuard>
   );
 }

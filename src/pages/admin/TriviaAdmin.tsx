@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, Plus, Pencil, Trash2, Play, Calendar, Video, Eye } from "lucide-react";
+import { AdminGuard } from "@/components/admin/AdminGuard";
 
 interface TriviaQuestion {
   id: string;
@@ -454,7 +455,8 @@ export default function TriviaAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <AdminGuard>
+      <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
         <Button
           variant="ghost"
@@ -1074,5 +1076,6 @@ export default function TriviaAdmin() {
         </Dialog>
       </div>
     </div>
+    </AdminGuard>
   );
 }
