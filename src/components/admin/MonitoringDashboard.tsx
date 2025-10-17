@@ -142,7 +142,7 @@ export const MonitoringDashboard = () => {
           </ul>
           <p className="pt-2"><strong>Quick Kill Switches:</strong></p>
           <ul className="list-disc pl-5 space-y-1">
-            <li><code>ff.notifications_pause</code> - Stop all Arthur notifications</li>
+            <li><code>ff.notifications_pause</code> - Stop all Mostapha notifications</li>
             <li><code>ff.store_pdp_v2</code> - Revert store to basic mode</li>
             <li><code>ff.room_safety</code> - Disable room reporting features</li>
           </ul>

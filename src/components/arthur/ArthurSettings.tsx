@@ -84,7 +84,7 @@ export const ArthurSettings = () => {
         });
       }
 
-      toast({ title: "Settings updated", description: "Your Arthur preferences have been saved" });
+      toast({ title: "Settings updated", description: "Your Mostapha preferences have been saved" });
     } catch (err: any) {
       console.error("Error updating preferences:", err);
       // revert optimistic change
@@ -93,7 +93,7 @@ export const ArthurSettings = () => {
       const status = err?.status ?? 500;
       const description =
         status === 401 || status === 403
-          ? "Please sign in again to change Arthur settings."
+          ? "Please sign in again to change Mostapha settings."
           : status === 409
           ? "We’re setting up your preferences—try again."
           : "Couldn’t save right now. Retrying…";
@@ -111,16 +111,16 @@ export const ArthurSettings = () => {
       <CardHeader>
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-primary" />
-          <CardTitle>Arthur - Your Daily Coach</CardTitle>
+          <CardTitle>Mostapha - Your Daily Coach</CardTitle>
         </div>
         <CardDescription>
-          Get gentle, personalized check-ins and motivation from Arthur
+          Get gentle, personalized check-ins and motivation from Mostapha
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="arthur-enabled">Enable Arthur</Label>
+            <Label htmlFor="arthur-enabled">Enable Mostapha</Label>
             <p className="text-sm text-muted-foreground">
               Receive daily messages from your friendly vibe guide
             </p>
@@ -139,7 +139,7 @@ export const ArthurSettings = () => {
               <div>
                 <p className="text-sm font-medium mb-1">Notification Schedule</p>
                 <p className="text-sm text-muted-foreground">
-                  Arthur sends up to 2 personalized messages daily:
+                  Mostapha sends up to 2 personalized messages daily:
                 </p>
                 <ul className="text-sm text-muted-foreground mt-2 space-y-1 ml-4">
                   <li>• Morning message at {preferences.windows[0]} (local time)</li>
@@ -149,9 +149,9 @@ export const ArthurSettings = () => {
             </div>
 
             <div className="p-4 bg-muted/50 rounded-lg border">
-              <p className="text-sm font-medium mb-2">About Arthur</p>
+              <p className="text-sm font-medium mb-2">About Mostapha</p>
               <p className="text-sm text-muted-foreground">
-                Arthur is your friendly AI coach who sends warm, encouraging messages 
+                Mostapha is your friendly AI coach who sends warm, encouraging messages 
                 tailored to your focus areas and mood patterns. Messages are always 
                 respectful of your privacy and never reference your private journal entries.
               </p>

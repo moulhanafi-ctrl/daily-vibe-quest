@@ -86,7 +86,7 @@ const Settings = () => {
               {t("notifications", "Notifications")}
             </TabsTrigger>
             <TabsTrigger value="arthur" className="gap-2">
-              ✨ Arthur
+              ✨ Mostapha
             </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="security" className="gap-2">

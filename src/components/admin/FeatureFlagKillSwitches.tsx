@@ -48,10 +48,10 @@ export const FeatureFlagKillSwitches = () => {
           <div className="flex items-center justify-between p-4 rounded-lg border">
             <div className="space-y-1">
               <Label htmlFor="notifications-pause" className="text-base font-medium">
-                Pause Arthur Notifications
+                Pause Mostapha Notifications
               </Label>
               <p className="text-sm text-muted-foreground">
-                Stops all automated Arthur check-ins and nudges
+                Stops all automated Mostapha check-ins and nudges
               </p>
               {notificationsPaused && (
                 <p className="text-xs text-yellow-600 font-medium">
@@ -119,7 +119,7 @@ export const FeatureFlagKillSwitches = () => {
           <h4 className="font-medium mb-2">When to Use Kill Switches</h4>
           <ul className="text-sm space-y-2 text-muted-foreground">
             <li>
-              <strong>Notifications Pause:</strong> High notification error rate, Arthur misbehaving, email delivery issues
+              <strong>Notifications Pause:</strong> High notification error rate, Mostapha misbehaving, email delivery issues
             </li>
             <li>
               <strong>Store Pause:</strong> Payment processing errors, webhook failures, inventory issues

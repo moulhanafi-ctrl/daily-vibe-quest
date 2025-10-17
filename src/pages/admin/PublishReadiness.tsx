@@ -83,7 +83,7 @@ const PublishReadiness = () => {
 
               <h3>Kill Switches (Keep Available)</h3>
               <ul>
-                <li><code>ff.notifications_pause=false</code> (toggle to pause Arthur notifications)</li>
+                <li><code>ff.notifications_pause=false</code> (toggle to pause Mostapha notifications)</li>
                 <li><code>ff.store_pdp_v2=false</code> (revert store on issues)</li>
                 <li><code>ff.room_safety=false</code> (disable reporting features if abused)</li>
               </ul>

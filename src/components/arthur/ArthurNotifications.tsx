@@ -38,7 +38,7 @@ export const ArthurNotifications = () => {
       .order('delivered_at', { ascending: false });
 
     if (error) {
-      console.error('Error loading Arthur messages:', error);
+      console.error('Error loading Mostapha messages:', error);
       return;
     }
 

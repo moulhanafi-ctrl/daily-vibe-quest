@@ -164,7 +164,7 @@ export default function ArthurAdmin() {
         <div className="flex items-center gap-3">
           <Sparkles className="w-8 h-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">Arthur Admin</h1>
+            <h1 className="text-3xl font-bold">Mostapha Admin</h1>
             <p className="text-muted-foreground">Manage notification templates and settings</p>
           </div>
         </div>
@@ -240,8 +240,8 @@ export default function ArthurAdmin() {
         <TabsContent value="settings">
           <Card>
             <CardHeader>
-              <CardTitle>Arthur Configuration</CardTitle>
-              <CardDescription>Global settings for the Arthur persona</CardDescription>
+              <CardTitle>Mostapha Configuration</CardTitle>
+              <CardDescription>Global settings for the Mostapha persona</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">

@@ -26,28 +26,28 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if Arthur is enabled
+    // Check if Mostapha is enabled
     const { data: arthurConfig } = await supabaseClient
       .from('arthur_config')
       .select('*')
       .single();
 
     if (!arthurConfig || !arthurConfig.enabled) {
-      console.log('Arthur is disabled');
+      console.log('Mostapha is disabled');
       return new Response(
-        JSON.stringify({ success: false, message: 'Arthur disabled' }),
+        JSON.stringify({ success: false, message: 'Mostapha disabled' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
-    // Get all users with Arthur enabled
+    // Get all users with Mostapha enabled
     const { data: usersWithPrefs } = await supabaseClient
       .from('arthur_preferences')
       .select('user_id, preferred_time, timezone, max_daily_messages')
       .eq('enabled', true);
 
     if (!usersWithPrefs || usersWithPrefs.length === 0) {
-      console.log('No users with Arthur enabled');
+      console.log('No users with Mostapha enabled');
       return new Response(
         JSON.stringify({ success: true, message: 'No users to notify' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -192,14 +192,14 @@ serve(async (req) => {
             parent_id: profile.parent_id || userPref.user_id, // Self-notify if no parent
             event_type: 'digest',
             payload: {
-              arthur_message: personalizedContent,
+              mostapha_message: personalizedContent,
               message_type: selectedTemplate.message_type,
               timestamp: new Date().toISOString()
             }
           });
 
         notificationsSent++;
-        console.log(`Sent Arthur notification to user ${userPref.user_id}`);
+        console.log(`Sent Mostapha notification to user ${userPref.user_id}`);
 
       } catch (userError) {
         console.error(`Error processing user ${userPref.user_id}:`, userError);
@@ -210,7 +210,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Sent ${notificationsSent} Arthur notifications` 
+        message: `Sent ${notificationsSent} Mostapha notifications` 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
