@@ -1,5 +1,5 @@
 -- Daily AI Messages Cron Job Setup
--- Sends AI-generated support messages from Mostapha twice daily
+-- Sends AI-generated support messages from Mostapha twice daily to ALL opted-in users
 
 -- KICKOFF: Send first batch tonight at 8:00 PM America/Detroit (2025-10-17)
 SELECT cron.schedule(
@@ -67,13 +67,13 @@ SELECT
   n.status,
   n.sent_at,
   n.payload_json->>'title' as title,
-  n.payload_json->>'message' as message
+  LEFT(n.payload_json->>'message', 100) as message_preview
 FROM public.notifications n
 WHERE n.type = 'daily_ai_message'
 ORDER BY n.sent_at DESC
 LIMIT 20;
 
--- Count notifications by status
+-- Count notifications by status (last 24h)
 SELECT 
   status,
   channel,
@@ -82,6 +82,25 @@ FROM public.notifications
 WHERE type = 'daily_ai_message'
   AND sent_at > NOW() - INTERVAL '24 hours'
 GROUP BY status, channel;
+
+-- Count unique users who received messages (last 24h)
+SELECT COUNT(DISTINCT user_id) as unique_recipients
+FROM public.notifications
+WHERE type = 'daily_ai_message'
+  AND sent_at > NOW() - INTERVAL '24 hours'
+  AND status = 'sent';
+
+-- View window types (to track manual vs scheduled)
+SELECT 
+  window_type,
+  COUNT(*) as runs,
+  AVG(users_targeted) as avg_targeted,
+  AVG(sent_count) as avg_sent,
+  AVG(error_count) as avg_errors
+FROM public.daily_ai_message_logs
+WHERE run_time > NOW() - INTERVAL '7 days'
+GROUP BY window_type
+ORDER BY run_time DESC;
 
 -- To manually trigger for testing:
 -- SELECT net.http_post(

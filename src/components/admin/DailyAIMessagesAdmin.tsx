@@ -120,6 +120,13 @@ export function DailyAIMessagesAdmin() {
               </AlertDescription>
             </Alert>
 
+            <Alert variant="default" className="border-blue-200 bg-blue-50">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-900">
+                Manual sends bypass all subscription and activity filters - they will send to any user with notifications enabled
+              </AlertDescription>
+            </Alert>
+
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold mb-2">Manual Controls</h3>

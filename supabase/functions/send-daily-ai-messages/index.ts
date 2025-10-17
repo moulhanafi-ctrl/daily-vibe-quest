@@ -132,14 +132,15 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const windowType = body.windowType || "scheduled"; // 'morning', 'evening', 'kickoff', 'manual'
     const testUserId = body.testUserId;
+    const isManualBypass = windowType === "manual" || testUserId;
 
-    console.log(`Starting daily AI message job - window: ${windowType}`);
+    console.log(`Starting daily AI message job - window: ${windowType}, bypass: ${isManualBypass}`);
 
     // Create job log
     const { data: jobLog, error: jobLogError } = await supabase
       .from("daily_ai_message_logs")
       .insert({
-        window_type: windowType,
+        window_type: isManualBypass ? `${windowType}_bypass` : windowType,
         status: "running",
       })
       .select()
@@ -150,10 +151,10 @@ serve(async (req) => {
       throw new Error("Failed to create job log");
     }
 
-    // Get eligible users
+    // Get eligible users - ALL opted-in users (no subscription or generation checks)
     let usersQuery = supabase
       .from("profiles")
-      .select("id, username, notification_opt_in, notification_channel, notification_timezone, subscription_status")
+      .select("id, username, notification_opt_in, notification_channel, notification_timezone")
       .eq("notification_opt_in", true);
 
     if (testUserId) {
