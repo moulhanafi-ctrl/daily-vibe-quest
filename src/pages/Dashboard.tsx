@@ -142,25 +142,27 @@ const Dashboard = () => {
             >
               MindfulU
             </button>
-            <p className="text-xs text-muted-foreground hidden sm:block">
-              Welcome back, {profile?.username}! ({profile?.age_group})
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                Welcome back, {profile?.username}! ({profile?.age_group})
+              </p>
+              {isAdmin && (
+                <Button 
+                  onClick={() => navigate("/admin")} 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-primary hover:bg-primary/10 hover:shadow-[0_0_12px_rgba(147,51,234,0.3)] transition-all"
+                  aria-label="Admin Dashboard"
+                >
+                  <Shield className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Navigation Row */}
           <div id="main-content" className="flex justify-center items-center gap-2 flex-wrap">
-            {isAdmin && (
-              <Button 
-                onClick={() => navigate("/admin")} 
-                variant="outline" 
-                size="sm" 
-                className="border-primary hover:bg-primary/10 hover:shadow-[0_0_12px_rgba(147,51,234,0.3)] transition-all"
-                aria-label="Admin Dashboard"
-              >
-                <Shield className="h-4 w-4 sm:mr-2" />
-                <span className="hidden lg:inline">Admin</span>
-              </Button>
-            )}
             <Button 
               onClick={() => setShowFocusPopup(true)} 
               variant="outline" 
