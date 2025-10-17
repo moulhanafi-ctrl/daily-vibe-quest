@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          admin_id: string
+          created_at: string | null
+          event: string
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string | null
+          event: string
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string | null
+          event?: string
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       admin_role_audit: {
         Row: {
           action: string
@@ -3268,6 +3292,15 @@ export type Database = {
           is_active: boolean | null
           role: string | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      subscriber_daily_rollups: {
+        Row: {
+          daily_optin_new: number | null
+          day: string | null
+          push_new: number | null
+          users_total: number | null
         }
         Relationships: []
       }

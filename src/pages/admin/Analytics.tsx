@@ -112,6 +112,26 @@ export default function Analytics() {
           Back to Admin
         </Button>
 
+        {/* Quick Links */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/analytics/subscribers")}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Subscriber Analytics
+              </CardTitle>
+              <CardDescription>
+                Growth, opt-ins, and deliverability metrics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">
+                View Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle>Analytics Events</CardTitle>
