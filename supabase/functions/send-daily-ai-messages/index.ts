@@ -171,28 +171,35 @@ serve(async (req) => {
     console.log(`Found ${users?.length || 0} eligible users`);
 
     let usersTargeted = 0;
-    let sentCount = 0;
-    let errorCount = 0;
-    const errorDetails: any[] = [];
+    let channelsSent = 0;
+    let channelsFailed = 0;
+    let usersFullyFailed = 0;
+    const deliveryDetails: any[] = [];
 
     for (const user of users || []) {
+      const userDelivery: any = {
+        user_id: user.id,
+        username: user.username,
+        channels: {},
+        attempted_at: new Date().toISOString()
+      };
+
       try {
         const { data: userData } = await supabase.auth.admin.getUserById(user.id);
-        if (!userData?.user?.email) {
-          console.log(`Skipping user ${user.id}: no email found`);
-          continue;
-        }
-
+        
         usersTargeted++;
 
-        // Extract first name from username or email
-        let firstName = user.username || 'there';
-        if (firstName.includes('@')) {
-          // If username is email, extract name before @
-          firstName = firstName.split('@')[0];
+        // Extract first name from username or email with safe fallback
+        let firstName = 'there';
+        if (user.username && !user.username.includes('@')) {
+          firstName = user.username;
+        } else if (userData?.user?.email) {
+          firstName = userData.user.email.split('@')[0];
         }
-        // Capitalize first letter
         firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+        
+        userDelivery.first_name = firstName;
+        userDelivery.email = userData?.user?.email;
 
         // Get recent mood context (last 7 days)
         let moodContext = '';
@@ -227,103 +234,206 @@ serve(async (req) => {
         const appUrl = supabaseUrl.replace('/functions/v1', '');
         const channel = user.notification_channel || 'both';
 
+        let channelSuccesses = 0;
+        let channelFailures = 0;
+
         // Send in-app notification
         if (channel === 'in_app' || channel === 'both') {
-          const { error: inAppError } = await supabase
-            .from("notifications")
-            .insert({
-              user_id: user.id,
-              type: "daily_ai_message",
-              channel: "in_app",
-              payload_json: {
-                title: personalizedGreeting,
-                message: `Your message is ready to be viewed.\n\n${aiMessage}`,
-                link: "/dashboard",
-              },
-              status: "sent",
-            });
+          try {
+            const { error: inAppError } = await supabase
+              .from("notifications")
+              .insert({
+                user_id: user.id,
+                type: "daily_ai_message",
+                channel: "in_app",
+                payload_json: {
+                  title: personalizedGreeting,
+                  message: `Your message is ready to be viewed.\n\n${aiMessage}`,
+                  link: "/dashboard",
+                },
+                status: "sent",
+              });
 
-          if (inAppError) {
-            console.error(`Failed to create in-app notification for ${user.id}:`, inAppError);
-            errorCount++;
-            errorDetails.push({ user_id: user.id, channel: 'in_app', error: inAppError.message });
-          } else {
-            sentCount++;
-            console.log(`In-app notification sent to user ${user.id}`);
+            if (inAppError) {
+              console.error(`Failed to create in-app notification for ${user.id}:`, inAppError);
+              channelsFailed++;
+              channelFailures++;
+              userDelivery.channels.in_app = {
+                status: 'failed',
+                error: inAppError.message,
+                timestamp: new Date().toISOString()
+              };
+            } else {
+              channelsSent++;
+              channelSuccesses++;
+              userDelivery.channels.in_app = {
+                status: 'sent',
+                timestamp: new Date().toISOString()
+              };
+              console.log(`In-app notification sent to user ${user.id}`);
+            }
+          } catch (e) {
+            channelsFailed++;
+            channelFailures++;
+            userDelivery.channels.in_app = {
+              status: 'failed',
+              error: e instanceof Error ? e.message : 'Unknown error',
+              timestamp: new Date().toISOString()
+            };
           }
         }
 
-        // Send email notification
+        // Validate and send email notification
         if (channel === 'email' || channel === 'both') {
-          const emailResult = await sendEmailNotification(
-            userData.user.email,
-            firstName,
-            personalizedGreeting,
-            aiMessage,
-            appUrl
-          );
-
-          if (emailResult.success) {
-            await supabase.from("notifications").insert({
-              user_id: user.id,
-              type: "daily_ai_message",
-              channel: "email",
-              payload_json: {
-                to: userData.user.email,
-                message: fullMessage,
-              },
-              status: "sent",
-            });
-            sentCount++;
-            console.log(`Email sent to user ${user.id}`);
+          const email = userData?.user?.email;
+          
+          // Pre-send validation
+          if (!email || !email.includes('@') || email.length < 5) {
+            userDelivery.channels.email = {
+              status: 'skipped_invalid',
+              reason: 'Invalid or missing email address',
+              timestamp: new Date().toISOString()
+            };
+            console.log(`Skipping email for ${user.id}: invalid email`);
           } else {
-            await supabase.from("notifications").insert({
-              user_id: user.id,
-              type: "daily_ai_message",
-              channel: "email",
-              payload_json: {
-                to: userData.user.email,
-                message: fullMessage,
-              },
-              status: "failed",
-              error_msg: emailResult.error,
-            });
-            errorCount++;
-            errorDetails.push({ user_id: user.id, channel: 'email', error: emailResult.error });
+            let retries = 0;
+            const maxRetries = 2;
+            let emailSuccess = false;
+            let lastError = '';
+
+            while (retries <= maxRetries && !emailSuccess) {
+              try {
+                const emailResult = await sendEmailNotification(
+                  email,
+                  firstName,
+                  personalizedGreeting,
+                  aiMessage,
+                  appUrl
+                );
+
+                if (emailResult.success) {
+                  await supabase.from("notifications").insert({
+                    user_id: user.id,
+                    type: "daily_ai_message",
+                    channel: "email",
+                    payload_json: {
+                      to: email,
+                      message: fullMessage,
+                    },
+                    status: "sent",
+                  });
+                  channelsSent++;
+                  channelSuccesses++;
+                  emailSuccess = true;
+                  userDelivery.channels.email = {
+                    status: 'sent',
+                    to: email,
+                    attempts: retries + 1,
+                    timestamp: new Date().toISOString()
+                  };
+                  console.log(`Email sent to user ${user.id}`);
+                } else {
+                  lastError = emailResult.error || 'Unknown error';
+                  
+                  // Check if error is retryable (429, 5xx)
+                  const isRetryable = lastError.includes('429') || 
+                                     lastError.includes('500') || 
+                                     lastError.includes('502') || 
+                                     lastError.includes('503');
+                  
+                  if (isRetryable && retries < maxRetries) {
+                    retries++;
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Backoff
+                    continue;
+                  }
+                  
+                  // Log failed email attempt
+                  await supabase.from("notifications").insert({
+                    user_id: user.id,
+                    type: "daily_ai_message",
+                    channel: "email",
+                    payload_json: {
+                      to: email,
+                      message: fullMessage,
+                    },
+                    status: "failed",
+                    error_msg: lastError,
+                  });
+                  
+                  channelsFailed++;
+                  channelFailures++;
+                  userDelivery.channels.email = {
+                    status: 'provider_error',
+                    error: lastError,
+                    to: email,
+                    attempts: retries + 1,
+                    timestamp: new Date().toISOString()
+                  };
+                  break;
+                }
+              } catch (e) {
+                lastError = e instanceof Error ? e.message : 'Unknown error';
+                retries++;
+                if (retries > maxRetries) {
+                  channelsFailed++;
+                  channelFailures++;
+                  userDelivery.channels.email = {
+                    status: 'provider_error',
+                    error: lastError,
+                    to: email,
+                    attempts: retries,
+                    timestamp: new Date().toISOString()
+                  };
+                }
+              }
+            }
           }
         }
+
+        // Only count as user error if ALL channels failed
+        if (channelFailures > 0 && channelSuccesses === 0) {
+          usersFullyFailed++;
+        }
+
+        deliveryDetails.push(userDelivery);
       } catch (userError) {
         console.error(`Error processing user ${user.id}:`, userError);
-        errorCount++;
-        errorDetails.push({ 
-          user_id: user.id, 
-          error: userError instanceof Error ? userError.message : "Unknown error" 
-        });
+        usersFullyFailed++;
+        userDelivery.fatal_error = userError instanceof Error ? userError.message : "Unknown error";
+        userDelivery.stack_trace = userError instanceof Error ? userError.stack : undefined;
+        deliveryDetails.push(userDelivery);
       }
     }
 
-    // Update job log
+    // Update job log with detailed metrics
     await supabase
       .from("daily_ai_message_logs")
       .update({
         users_targeted: usersTargeted,
-        sent_count: sentCount,
-        error_count: errorCount,
-        error_details: errorDetails.length > 0 ? errorDetails : null,
+        sent_count: channelsSent,
+        error_count: usersFullyFailed,
+        error_details: {
+          channels_sent: channelsSent,
+          channels_failed: channelsFailed,
+          users_fully_failed: usersFullyFailed,
+          delivery_details: deliveryDetails
+        },
         status: "completed",
         completed_at: new Date().toISOString(),
       })
       .eq("id", jobLog.id);
 
-    console.log(`Job completed: ${usersTargeted} users targeted, ${sentCount} sent, ${errorCount} errors`);
+    console.log(`Job completed: ${usersTargeted} users targeted, ${channelsSent} channels sent, ${channelsFailed} channels failed, ${usersFullyFailed} users fully failed`);
 
     return new Response(
       JSON.stringify({
         success: true,
         job_id: jobLog.id,
         users_targeted: usersTargeted,
-        sent_count: sentCount,
-        error_count: errorCount,
+        channels_sent: channelsSent,
+        channels_failed: channelsFailed,
+        users_fully_failed: usersFullyFailed,
+        delivery_details: deliveryDetails
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

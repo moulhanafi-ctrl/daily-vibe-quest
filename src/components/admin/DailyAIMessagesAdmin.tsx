@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Send, Clock, Users, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Heart, Send, Clock, Users, CheckCircle, XCircle, AlertCircle, Download, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { AdminGuard } from "./AdminGuard";
 
@@ -17,12 +18,15 @@ interface JobLog {
   error_count: number;
   status: string;
   completed_at: string;
+  error_details?: any;
 }
 
 export function DailyAIMessagesAdmin() {
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<JobLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
+  const [selectedLog, setSelectedLog] = useState<JobLog | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     loadLogs();
@@ -56,7 +60,7 @@ export function DailyAIMessagesAdmin() {
       if (error) throw error;
 
       toast.success(
-        `Messages sent! ${data.users_targeted} users targeted, ${data.sent_count} notifications sent.`
+        `Messages sent! ${data.users_targeted} users, ${data.channels_sent} channels delivered, ${data.users_fully_failed} fully failed.`
       );
 
       await loadLogs();
@@ -97,6 +101,44 @@ export function DailyAIMessagesAdmin() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const downloadDetails = (log: JobLog) => {
+    const dataStr = JSON.stringify(log.error_details || {}, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `daily-ai-messages-${log.id}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const openDetails = (log: JobLog) => {
+    setSelectedLog(log);
+    setDetailsOpen(true);
+  };
+
+  const getChannelStats = (details: any) => {
+    if (!details?.delivery_details) return null;
+    
+    const stats = {
+      in_app_sent: 0,
+      in_app_failed: 0,
+      email_sent: 0,
+      email_failed: 0,
+      email_skipped: 0
+    };
+
+    details.delivery_details.forEach((d: any) => {
+      if (d.channels?.in_app?.status === 'sent') stats.in_app_sent++;
+      if (d.channels?.in_app?.status === 'failed') stats.in_app_failed++;
+      if (d.channels?.email?.status === 'sent') stats.email_sent++;
+      if (d.channels?.email?.status === 'provider_error' || d.channels?.email?.status === 'failed') stats.email_failed++;
+      if (d.channels?.email?.status === 'skipped_invalid') stats.email_skipped++;
+    });
+
+    return stats;
   };
 
   return (
@@ -213,12 +255,167 @@ export function DailyAIMessagesAdmin() {
                         Completed: {new Date(log.completed_at).toLocaleString()}
                       </div>
                     )}
+
+                    {log.error_details && (
+                      <div className="flex gap-2 mt-3 pt-3 border-t">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openDetails(log)}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          View Details
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => downloadDetails(log)}
+                        >
+                          <Download className="h-3 w-3 mr-1" />
+                          Download JSON
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Details Modal */}
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Message Run Details</DialogTitle>
+              <DialogDescription>
+                Detailed breakdown of message delivery by user and channel
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedLog?.error_details && (
+              <div className="space-y-4">
+                {/* Summary Stats */}
+                {(() => {
+                  const stats = getChannelStats(selectedLog.error_details);
+                  return stats ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
+                      <div>
+                        <div className="text-sm font-medium">In-App Sent</div>
+                        <div className="text-2xl font-bold text-green-600">{stats.in_app_sent}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">Email Sent</div>
+                        <div className="text-2xl font-bold text-green-600">{stats.email_sent}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">Email Failed</div>
+                        <div className="text-2xl font-bold text-red-600">{stats.email_failed}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">Email Skipped</div>
+                        <div className="text-2xl font-bold text-yellow-600">{stats.email_skipped}</div>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Per-User Breakdown */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Per-User Delivery Status</h3>
+                  {selectedLog.error_details.delivery_details?.map((detail: any, idx: number) => (
+                    <div key={idx} className="border rounded-lg p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{detail.first_name || 'User'}</div>
+                          <div className="text-sm text-muted-foreground">{detail.email || detail.user_id}</div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(detail.attempted_at).toLocaleTimeString()}
+                        </div>
+                      </div>
+
+                      {/* Channel Status */}
+                      <div className="space-y-2">
+                        {detail.channels?.in_app && (
+                          <div className="flex items-center gap-2 text-sm">
+                            {detail.channels.in_app.status === 'sent' ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-600" />
+                            )}
+                            <span className="font-medium">In-App:</span>
+                            <Badge variant={detail.channels.in_app.status === 'sent' ? 'default' : 'destructive'}>
+                              {detail.channels.in_app.status}
+                            </Badge>
+                            {detail.channels.in_app.error && (
+                              <span className="text-xs text-red-600">
+                                {detail.channels.in_app.error}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {detail.channels?.email && (
+                          <div className="flex items-start gap-2 text-sm">
+                            {detail.channels.email.status === 'sent' ? (
+                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                            ) : detail.channels.email.status === 'skipped_invalid' ? (
+                              <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">Email:</span>
+                                <Badge variant={
+                                  detail.channels.email.status === 'sent' ? 'default' :
+                                  detail.channels.email.status === 'skipped_invalid' ? 'secondary' :
+                                  'destructive'
+                                }>
+                                  {detail.channels.email.status}
+                                </Badge>
+                                {detail.channels.email.attempts > 1 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    ({detail.channels.email.attempts} attempts)
+                                  </span>
+                                )}
+                              </div>
+                              {detail.channels.email.to && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  To: {detail.channels.email.to}
+                                </div>
+                              )}
+                              {(detail.channels.email.error || detail.channels.email.reason) && (
+                                <div className="text-xs text-red-600 mt-1 font-mono">
+                                  {detail.channels.email.error || detail.channels.email.reason}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Fatal Error */}
+                      {detail.fatal_error && (
+                        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
+                          <div className="font-semibold text-red-700">Fatal Error:</div>
+                          <div className="text-red-600 mt-1">{detail.fatal_error}</div>
+                          {detail.stack_trace && (
+                            <details className="mt-2">
+                              <summary className="cursor-pointer text-red-700">Stack Trace</summary>
+                              <pre className="mt-1 text-xs overflow-x-auto">{detail.stack_trace}</pre>
+                            </details>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminGuard>
   );
