@@ -8,6 +8,77 @@ const corsHeaders = {
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const RESEND_FROM_EMAIL = Deno.env.get("WELCOME_FROM_EMAIL") || "Mostapha <notifications@resend.dev>";
+
+interface ProviderHealthCheck {
+  healthy: boolean;
+  provider: string;
+  error?: string;
+  details?: string;
+}
+
+async function checkEmailProvider(): Promise<ProviderHealthCheck> {
+  if (!RESEND_API_KEY || RESEND_API_KEY.trim() === '') {
+    return {
+      healthy: false,
+      provider: 'resend',
+      error: 'RESEND_API_KEY not configured',
+      details: 'Email provider API key is missing from environment secrets'
+    };
+  }
+
+  // Validate key format (basic check)
+  if (RESEND_API_KEY.length < 20 || !RESEND_API_KEY.startsWith('re_')) {
+    return {
+      healthy: false,
+      provider: 'resend',
+      error: 'Invalid API key format',
+      details: 'RESEND_API_KEY appears to be malformed (should start with re_)'
+    };
+  }
+
+  // Test API call to verify key is valid
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY.trim()}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 401) {
+      return {
+        healthy: false,
+        provider: 'resend',
+        error: 'API key is invalid or expired',
+        details: 'Resend returned 401 Unauthorized. Please rotate the RESEND_API_KEY secret.'
+      };
+    }
+
+    if (!response.ok && response.status !== 404) {
+      const errorText = await response.text();
+      return {
+        healthy: false,
+        provider: 'resend',
+        error: `Provider error: ${response.status}`,
+        details: errorText
+      };
+    }
+
+    return {
+      healthy: true,
+      provider: 'resend'
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      provider: 'resend',
+      error: 'Network error',
+      details: error instanceof Error ? error.message : 'Unknown error connecting to Resend'
+    };
+  }
+}
 
 async function generateAIMessage(
   userName: string,
@@ -54,9 +125,9 @@ async function sendEmailNotification(
   personalizedGreeting: string,
   message: string,
   appUrl: string
-): Promise<{ success: boolean; error?: string }> {
-  if (!RESEND_API_KEY) {
-    return { success: false, error: "RESEND_API_KEY not configured" };
+): Promise<{ success: boolean; error?: string; statusCode?: number }> {
+  if (!RESEND_API_KEY || RESEND_API_KEY.trim() === '') {
+    return { success: false, error: "RESEND_API_KEY not configured", statusCode: 500 };
   }
 
   const html = `
@@ -95,11 +166,11 @@ async function sendEmailNotification(
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+        Authorization: `Bearer ${RESEND_API_KEY.trim()}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Mostapha <notifications@resend.dev>",
+        from: RESEND_FROM_EMAIL,
         to: [email],
         subject: "💌 Message from Mostapha",
         html,
@@ -109,13 +180,21 @@ async function sendEmailNotification(
     if (!response.ok) {
       const error = await response.text();
       console.error("Resend API error:", error);
-      return { success: false, error: `Resend API error: ${error}` };
+      return { 
+        success: false, 
+        error: `Resend API error: ${error}`,
+        statusCode: response.status 
+      };
     }
 
     return { success: true };
   } catch (error) {
     console.error("Email send error:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error",
+      statusCode: 500
+    };
   }
 }
 
@@ -130,11 +209,28 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json().catch(() => ({}));
-    const windowType = body.windowType || "scheduled"; // 'morning', 'evening', 'kickoff', 'manual'
+    const windowType = body.windowType || "scheduled"; // 'morning', 'evening', 'kickoff', 'manual', 'health_check'
     const testUserId = body.testUserId;
     const isManualBypass = windowType === "manual" || testUserId;
+    const isHealthCheck = windowType === "health_check";
+
+    // Health check endpoint
+    if (isHealthCheck) {
+      const emailHealth = await checkEmailProvider();
+      return new Response(
+        JSON.stringify(emailHealth),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: emailHealth.healthy ? 200 : 503
+        }
+      );
+    }
 
     console.log(`Starting daily AI message job - window: ${windowType}, bypass: ${isManualBypass}`);
+
+    // Run preflight health check
+    const emailHealth = await checkEmailProvider();
+    const emailProviderHealthy = emailHealth.healthy;
 
     // Create job log
     const { data: jobLog, error: jobLogError } = await supabase
@@ -173,8 +269,14 @@ serve(async (req) => {
     let usersTargeted = 0;
     let channelsSent = 0;
     let channelsFailed = 0;
+    let channelsSkipped = 0;
     let usersFullyFailed = 0;
     const deliveryDetails: any[] = [];
+    
+    // Log provider health status
+    if (!emailProviderHealthy) {
+      console.warn(`Email provider health check failed: ${emailHealth.error} - ${emailHealth.details}`);
+    }
 
     for (const user of users || []) {
       const userDelivery: any = {
@@ -287,8 +389,20 @@ serve(async (req) => {
         if (channel === 'email' || channel === 'both') {
           const email = userData?.user?.email;
           
+          // Check provider health first
+          if (!emailProviderHealthy) {
+            channelsSkipped++;
+            userDelivery.channels.email = {
+              status: 'skipped_misconfigured',
+              reason: emailHealth.error,
+              details: emailHealth.details,
+              timestamp: new Date().toISOString()
+            };
+            console.log(`Skipping email for ${user.id}: provider misconfigured - ${emailHealth.error}`);
+          }
           // Pre-send validation
-          if (!email || !email.includes('@') || email.length < 5) {
+          else if (!email || !email.includes('@') || email.length < 5) {
+            channelsSkipped++;
             userDelivery.channels.email = {
               status: 'skipped_invalid',
               reason: 'Invalid or missing email address',
@@ -334,12 +448,10 @@ serve(async (req) => {
                   console.log(`Email sent to user ${user.id}`);
                 } else {
                   lastError = emailResult.error || 'Unknown error';
+                  const statusCode = emailResult.statusCode || 500;
                   
-                  // Check if error is retryable (429, 5xx)
-                  const isRetryable = lastError.includes('429') || 
-                                     lastError.includes('500') || 
-                                     lastError.includes('502') || 
-                                     lastError.includes('503');
+                  // Check if error is retryable (429, 5xx but not 401)
+                  const isRetryable = (statusCode === 429 || statusCode >= 500) && statusCode !== 401;
                   
                   if (isRetryable && retries < maxRetries) {
                     retries++;
@@ -415,7 +527,10 @@ serve(async (req) => {
         error_details: {
           channels_sent: channelsSent,
           channels_failed: channelsFailed,
+          channels_skipped: channelsSkipped,
           users_fully_failed: usersFullyFailed,
+          email_provider_healthy: emailProviderHealthy,
+          email_provider_error: emailProviderHealthy ? null : emailHealth,
           delivery_details: deliveryDetails
         },
         status: "completed",
@@ -423,7 +538,7 @@ serve(async (req) => {
       })
       .eq("id", jobLog.id);
 
-    console.log(`Job completed: ${usersTargeted} users targeted, ${channelsSent} channels sent, ${channelsFailed} channels failed, ${usersFullyFailed} users fully failed`);
+    console.log(`Job completed: ${usersTargeted} users targeted, ${channelsSent} sent, ${channelsFailed} failed, ${channelsSkipped} skipped, ${usersFullyFailed} fully failed`);
 
     return new Response(
       JSON.stringify({
@@ -432,7 +547,9 @@ serve(async (req) => {
         users_targeted: usersTargeted,
         channels_sent: channelsSent,
         channels_failed: channelsFailed,
+        channels_skipped: channelsSkipped,
         users_fully_failed: usersFullyFailed,
+        email_provider_healthy: emailProviderHealthy,
         delivery_details: deliveryDetails
       }),
       {

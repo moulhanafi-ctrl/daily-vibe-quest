@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Heart, Send, Clock, Users, CheckCircle, XCircle, AlertCircle, Download, Eye } from "lucide-react";
+import { Heart, Send, Clock, Users, CheckCircle, XCircle, AlertCircle, Download, Eye, Mail, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AdminGuard } from "./AdminGuard";
 
@@ -27,10 +27,34 @@ export function DailyAIMessagesAdmin() {
   const [logsLoading, setLogsLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<JobLog | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [providerHealth, setProviderHealth] = useState<any>(null);
+  const [healthChecking, setHealthChecking] = useState(false);
+  const [testEmailSending, setTestEmailSending] = useState(false);
 
   useEffect(() => {
     loadLogs();
+    checkProviderHealth();
   }, []);
+
+  const checkProviderHealth = async () => {
+    setHealthChecking(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-daily-ai-messages", {
+        body: { windowType: "health_check" },
+      });
+
+      if (error) {
+        setProviderHealth({ healthy: false, error: error.message });
+      } else {
+        setProviderHealth(data);
+      }
+    } catch (error) {
+      console.error("Health check error:", error);
+      setProviderHealth({ healthy: false, error: "Failed to check provider health" });
+    } finally {
+      setHealthChecking(false);
+    }
+  };
 
   const loadLogs = async () => {
     try {
@@ -91,15 +115,56 @@ export function DailyAIMessagesAdmin() {
       if (error) throw error;
 
       toast.success(
-        `Test message sent to you! Preview: "${data.message_preview}"`
+        `Test sent! ${data.channels_sent} channels delivered, ${data.channels_skipped} skipped.`
       );
 
       await loadLogs();
+      await checkProviderHealth();
     } catch (error) {
       console.error("Error sending test:", error);
       toast.error("Failed to send test message");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendTestEmail = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+      toast.error("You must be logged in with an email");
+      return;
+    }
+
+    setTestEmailSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-daily-ai-messages", {
+        body: { 
+          windowType: "manual",
+          testUserId: user.id 
+        },
+      });
+
+      if (error) throw error;
+
+      const emailChannel = data.delivery_details?.[0]?.channels?.email;
+      if (emailChannel) {
+        if (emailChannel.status === 'sent') {
+          toast.success(`✅ Test email sent successfully to ${emailChannel.to}`);
+        } else if (emailChannel.status === 'skipped_misconfigured') {
+          toast.error(`❌ Email provider misconfigured: ${emailChannel.reason}`);
+        } else {
+          toast.error(`❌ Email failed: ${emailChannel.error || 'Unknown error'}`);
+        }
+      } else {
+        toast.info("Email channel not attempted");
+      }
+
+      await checkProviderHealth();
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      toast.error("Failed to send test email");
+    } finally {
+      setTestEmailSending(false);
     }
   };
 
@@ -127,7 +192,8 @@ export function DailyAIMessagesAdmin() {
       in_app_failed: 0,
       email_sent: 0,
       email_failed: 0,
-      email_skipped: 0
+      email_skipped: 0,
+      email_misconfigured: 0
     };
 
     details.delivery_details.forEach((d: any) => {
@@ -136,6 +202,7 @@ export function DailyAIMessagesAdmin() {
       if (d.channels?.email?.status === 'sent') stats.email_sent++;
       if (d.channels?.email?.status === 'provider_error' || d.channels?.email?.status === 'failed') stats.email_failed++;
       if (d.channels?.email?.status === 'skipped_invalid') stats.email_skipped++;
+      if (d.channels?.email?.status === 'skipped_misconfigured') stats.email_misconfigured++;
     });
 
     return stats;
@@ -155,6 +222,39 @@ export function DailyAIMessagesAdmin() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Provider Health Banner */}
+            {providerHealth && !providerHealth.healthy && (
+              <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold">Email Provider Misconfigured</div>
+                      <div className="text-sm mt-1">{providerHealth.error}: {providerHealth.details}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={checkProviderHealth}
+                      disabled={healthChecking}
+                    >
+                      <RefreshCw className={`h-3 w-3 mr-1 ${healthChecking ? 'animate-spin' : ''}`} />
+                      Re-check
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {providerHealth?.healthy && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-900">
+                  Email provider is healthy and ready to send
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -177,7 +277,15 @@ export function DailyAIMessagesAdmin() {
                 </p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <Button 
+                  onClick={sendTestEmail} 
+                  disabled={testEmailSending || !providerHealth?.healthy}
+                  variant="outline"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  {testEmailSending ? "Sending..." : "Send Test Email"}
+                </Button>
                 <Button onClick={sendTestToSelf} disabled={loading}>
                   <Send className="h-4 w-4 mr-2" />
                   Send Test to Myself
@@ -187,6 +295,11 @@ export function DailyAIMessagesAdmin() {
                   Send to All Users Now
                 </Button>
               </div>
+              {!providerHealth?.healthy && (
+                <p className="text-sm text-muted-foreground">
+                  ⚠️ Test email button disabled: {providerHealth?.error}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -232,7 +345,7 @@ export function DailyAIMessagesAdmin() {
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Targeted:</span>
@@ -242,6 +355,13 @@ export function DailyAIMessagesAdmin() {
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         <span className="text-muted-foreground">Sent:</span>
                         <span className="font-medium">{log.sent_count}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-yellow-500" />
+                        <span className="text-muted-foreground">Skipped:</span>
+                        <span className="font-medium">
+                          {log.error_details?.channels_skipped || 0}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <XCircle className="h-4 w-4 text-red-500" />
@@ -299,7 +419,7 @@ export function DailyAIMessagesAdmin() {
                 {(() => {
                   const stats = getChannelStats(selectedLog.error_details);
                   return stats ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-muted rounded-lg">
                       <div>
                         <div className="text-sm font-medium">In-App Sent</div>
                         <div className="text-2xl font-bold text-green-600">{stats.in_app_sent}</div>
@@ -313,8 +433,12 @@ export function DailyAIMessagesAdmin() {
                         <div className="text-2xl font-bold text-red-600">{stats.email_failed}</div>
                       </div>
                       <div>
-                        <div className="text-sm font-medium">Email Skipped</div>
+                        <div className="text-sm font-medium">Email Invalid</div>
                         <div className="text-2xl font-bold text-yellow-600">{stats.email_skipped}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">Provider Error</div>
+                        <div className="text-2xl font-bold text-orange-600">{stats.email_misconfigured}</div>
                       </div>
                     </div>
                   ) : null;
@@ -362,6 +486,8 @@ export function DailyAIMessagesAdmin() {
                               <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                             ) : detail.channels.email.status === 'skipped_invalid' ? (
                               <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                            ) : detail.channels.email.status === 'skipped_misconfigured' ? (
+                              <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
                             ) : (
                               <XCircle className="h-4 w-4 text-red-600 mt-0.5" />
                             )}
@@ -371,6 +497,7 @@ export function DailyAIMessagesAdmin() {
                                 <Badge variant={
                                   detail.channels.email.status === 'sent' ? 'default' :
                                   detail.channels.email.status === 'skipped_invalid' ? 'secondary' :
+                                  detail.channels.email.status === 'skipped_misconfigured' ? 'secondary' :
                                   'destructive'
                                 }>
                                   {detail.channels.email.status}
@@ -386,9 +513,14 @@ export function DailyAIMessagesAdmin() {
                                   To: {detail.channels.email.to}
                                 </div>
                               )}
-                              {(detail.channels.email.error || detail.channels.email.reason) && (
+                              {(detail.channels.email.error || detail.channels.email.reason || detail.channels.email.details) && (
                                 <div className="text-xs text-red-600 mt-1 font-mono">
                                   {detail.channels.email.error || detail.channels.email.reason}
+                                  {detail.channels.email.details && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      {detail.channels.email.details}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
