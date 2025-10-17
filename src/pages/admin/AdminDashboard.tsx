@@ -15,7 +15,8 @@ import {
   Settings,
   FileText,
   MessageSquare,
-  Package
+  Package,
+  Bell
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -238,6 +239,19 @@ export default function AdminDashboard() {
               <CardDescription>Manage policies and compliance docs</CardDescription>
               <Button variant="outline" size="sm" className="w-full mt-4">
                 View Legal
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/ai-digests")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">AI Digest Notifications</CardTitle>
+              <Bell className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <CardDescription>Manage twice-daily AI generation digests</CardDescription>
+              <Button variant="outline" size="sm" className="w-full mt-4">
+                Manage Digests
               </Button>
             </CardContent>
           </Card>

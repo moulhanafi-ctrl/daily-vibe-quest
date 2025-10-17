@@ -133,6 +133,39 @@ export type Database = {
           },
         ]
       }
+      ai_generations: {
+        Row: {
+          created_at: string
+          id: string
+          preview_url: string | null
+          summary: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preview_url?: string | null
+          summary?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preview_url?: string | null
+          summary?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_suggestions: {
         Row: {
           content: string
@@ -696,6 +729,45 @@ export type Database = {
           id?: string
           status?: Database["public"]["Enums"]["data_export_status"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      digest_job_logs: {
+        Row: {
+          completed_at: string | null
+          error_count: number
+          error_details: Json | null
+          id: string
+          run_time: string
+          sent_count: number
+          status: string
+          users_targeted: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_count?: number
+          error_details?: Json | null
+          id?: string
+          run_time?: string
+          sent_count?: number
+          status?: string
+          users_targeted?: number
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_count?: number
+          error_details?: Json | null
+          id?: string
+          run_time?: string
+          sent_count?: number
+          status?: string
+          users_targeted?: number
+          window_end?: string
+          window_start?: string
         }
         Relationships: []
       }
@@ -1794,6 +1866,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          error_msg: string | null
+          id: string
+          payload_json: Json
+          read_at: string | null
+          sent_at: string
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          error_msg?: string | null
+          id?: string
+          payload_json?: Json
+          read_at?: string | null
+          sent_at?: string
+          status?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          error_msg?: string | null
+          id?: string
+          payload_json?: Json
+          read_at?: string | null
+          sent_at?: string
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notify_waitlist: {
         Row: {
           created_at: string | null
@@ -2046,6 +2154,8 @@ export type Database = {
           avatar_url: string | null
           birth_date: string | null
           created_at: string | null
+          digest_time_1: string | null
+          digest_time_2: string | null
           first_name: string | null
           full_name: string | null
           id: string
@@ -2060,6 +2170,11 @@ export type Database = {
           legal_consent_version: string | null
           location: Json | null
           marketing_opt_in: boolean | null
+          notification_channel:
+            | Database["public"]["Enums"]["notification_channel"]
+            | null
+          notification_opt_in: boolean | null
+          notification_timezone: string | null
           optional_reflection: string | null
           parent_id: string | null
           pronouns: string | null
@@ -2079,6 +2194,8 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string | null
+          digest_time_1?: string | null
+          digest_time_2?: string | null
           first_name?: string | null
           full_name?: string | null
           id: string
@@ -2093,6 +2210,11 @@ export type Database = {
           legal_consent_version?: string | null
           location?: Json | null
           marketing_opt_in?: boolean | null
+          notification_channel?:
+            | Database["public"]["Enums"]["notification_channel"]
+            | null
+          notification_opt_in?: boolean | null
+          notification_timezone?: string | null
           optional_reflection?: string | null
           parent_id?: string | null
           pronouns?: string | null
@@ -2112,6 +2234,8 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string | null
+          digest_time_1?: string | null
+          digest_time_2?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
@@ -2126,6 +2250,11 @@ export type Database = {
           legal_consent_version?: string | null
           location?: Json | null
           marketing_opt_in?: boolean | null
+          notification_channel?:
+            | Database["public"]["Enums"]["notification_channel"]
+            | null
+          notification_opt_in?: boolean | null
+          notification_timezone?: string | null
           optional_reflection?: string | null
           parent_id?: string | null
           pronouns?: string | null
@@ -3430,6 +3559,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_unread_notification_count: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       has_active_subscription: {
         Args: { uid: string }
         Returns: boolean
@@ -3517,6 +3650,7 @@ export type Database = {
         | "angry"
         | "excited"
         | "tired"
+      notification_channel: "in_app" | "email" | "both"
       order_status: "pending" | "completed" | "failed" | "refunded"
       product_type: "physical" | "digital"
     }
@@ -3680,6 +3814,7 @@ export const Constants = {
         "excited",
         "tired",
       ],
+      notification_channel: ["in_app", "email", "both"],
       order_status: ["pending", "completed", "failed", "refunded"],
       product_type: ["physical", "digital"],
     },

@@ -12,6 +12,7 @@ import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { ParentNotificationSettings } from "@/components/family/ParentNotificationSettings";
 import { PushNotificationSettings } from "@/components/settings/PushNotificationSettings";
 import { DailyNotificationSettings } from "@/components/settings/DailyNotificationSettings";
+import { AIDigestSettings } from "@/components/settings/AIDigestSettings";
 import { ProfileFieldsForm } from "@/components/settings/ProfileFieldsForm";
 import { TestContact } from "@/components/family/TestContact";
 import { FocusAreasPopup } from "@/components/dashboard/FocusAreasPopup";
@@ -144,6 +145,7 @@ const Settings = () => {
           <TabsContent value="notifications" className="space-y-4">
             <PushNotificationSettings />
             <DailyNotificationSettings />
+            <AIDigestSettings />
             <ParentNotificationSettings />
           </TabsContent>
 

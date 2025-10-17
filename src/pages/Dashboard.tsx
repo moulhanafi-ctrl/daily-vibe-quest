@@ -15,6 +15,7 @@ import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, Shop
 import { toast } from "@/hooks/use-toast";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -146,6 +147,7 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground hidden sm:block">
                 Welcome back, {profile?.username}! ({profile?.age_group})
               </p>
+              <NotificationBell />
               {isAdmin && (
                 <Button 
                   onClick={() => navigate("/admin")} 
