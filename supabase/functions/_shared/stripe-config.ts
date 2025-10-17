@@ -40,6 +40,7 @@ export function getStripeConfig(): StripeConfig {
 export function createStripeClient(): Stripe {
   const config = getStripeConfig();
   return new Stripe(config.secretKey, {
-    apiVersion: "2025-08-27.basil",
+    apiVersion: "2024-11-20.acacia",
+    httpClient: Stripe.createFetchHttpClient(),
   });
 }

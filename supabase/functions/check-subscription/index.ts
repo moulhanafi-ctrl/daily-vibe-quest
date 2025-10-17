@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { createStripeClient, getStripeConfig } from "../_shared/stripe-config.ts";
 
 const corsHeaders = {
@@ -12,9 +11,48 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Health check endpoint
+  if (req.method === "GET" && new URL(req.url).pathname.endsWith("/health")) {
+    try {
+      const stripe = createStripeClient();
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+      
+      // Check DB connection
+      const { count } = await supabaseClient
+        .from("push_subscriptions")
+        .select("*", { count: "exact", head: true });
+      
+      const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY");
+      const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY");
+      
+      return new Response(JSON.stringify({
+        ok: true,
+        stripe_connected: !!stripe,
+        db_connected: true,
+        push_subscriptions_count: count || 0,
+        vapid_configured: !!(vapidPublic && vapidPrivate),
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
   }
 
   const supabaseClient = createClient(
