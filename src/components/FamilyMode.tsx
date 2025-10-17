@@ -35,6 +35,15 @@ export const FamilyMode = () => {
               See everyone's vibe at a glance and support each other through life's ups and downs.
             </p>
 
+            <div className="p-4 bg-mint/10 rounded-xl border-2 border-mint/30">
+              <p className="text-base font-semibold text-foreground flex items-start gap-2">
+                <Heart className="w-5 h-5 text-mint flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-mint">Safe for All Ages:</strong> Our age-gating system automatically blocks exposure to sensitive adult struggles, ensuring children and teens only see content designed for their developmental stage.
+                </span>
+              </p>
+            </div>
+
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center mt-0.5">
