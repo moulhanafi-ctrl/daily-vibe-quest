@@ -105,5 +105,8 @@ verify_jwt = false
 [functions.send-ai-generation-digests]
 verify_jwt = false
 
+[functions.send-daily-ai-messages]
+verify_jwt = false
+
 [functions.get-vapid-key]
 verify_jwt = false

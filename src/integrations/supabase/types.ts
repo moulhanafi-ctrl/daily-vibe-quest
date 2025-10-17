@@ -630,6 +630,42 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_ai_message_logs: {
+        Row: {
+          completed_at: string | null
+          error_count: number
+          error_details: Json | null
+          id: string
+          run_time: string
+          sent_count: number
+          status: string
+          users_targeted: number
+          window_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_count?: number
+          error_details?: Json | null
+          id?: string
+          run_time?: string
+          sent_count?: number
+          status?: string
+          users_targeted?: number
+          window_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_count?: number
+          error_details?: Json | null
+          id?: string
+          run_time?: string
+          sent_count?: number
+          status?: string
+          users_targeted?: number
+          window_type?: string
+        }
+        Relationships: []
+      }
       daily_messages: {
         Row: {
           active: boolean | null

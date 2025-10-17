@@ -255,6 +255,19 @@ export default function AdminDashboard() {
               </Button>
             </CardContent>
           </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/daily-ai-messages")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Daily AI Messages</CardTitle>
+              <Heart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <CardDescription>Manage daily support messages from Mostapha</CardDescription>
+              <Button variant="outline" size="sm" className="w-full mt-4">
+                Manage Messages
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recent Activity Section - Future Enhancement */}
