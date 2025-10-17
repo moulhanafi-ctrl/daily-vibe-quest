@@ -573,6 +573,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_messages: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          day_of_week: number
+          deep_link_url: string | null
+          id: string
+          message_body: string
+          message_title: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          day_of_week: number
+          deep_link_url?: string | null
+          id?: string
+          message_body: string
+          message_title: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          day_of_week?: number
+          deep_link_url?: string | null
+          id?: string
+          message_body?: string
+          message_title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       data_deletion_requests: {
         Row: {
           cancellation_token: string | null
@@ -1621,11 +1654,64 @@ export type Database = {
           },
         ]
       }
+      notification_logs: {
+        Row: {
+          channel: string
+          clicked_at: string | null
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          message_id: string | null
+          metadata: Json | null
+          notification_type: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          clicked_at?: string | null
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          notification_type?: string
+          sent_at?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          clicked_at?: string | null
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          notification_type?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "daily_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_prefs: {
         Row: {
           arthur_enabled: boolean
           channels: string[]
+          daily_enabled: boolean | null
+          daily_time: string | null
           quiet_hours: Json
+          timezone: string | null
           updated_at: string
           user_id: string
           windows: string[]
@@ -1633,7 +1719,10 @@ export type Database = {
         Insert: {
           arthur_enabled?: boolean
           channels?: string[]
+          daily_enabled?: boolean | null
+          daily_time?: string | null
           quiet_hours?: Json
+          timezone?: string | null
           updated_at?: string
           user_id: string
           windows?: string[]
@@ -1641,7 +1730,10 @@ export type Database = {
         Update: {
           arthur_enabled?: boolean
           channels?: string[]
+          daily_enabled?: boolean | null
+          daily_time?: string | null
           quiet_hours?: Json
+          timezone?: string | null
           updated_at?: string
           user_id?: string
           windows?: string[]

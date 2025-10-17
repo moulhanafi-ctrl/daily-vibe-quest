@@ -87,6 +87,9 @@ verify_jwt = false
 [functions.run-health-checks]
 verify_jwt = false
 
+[functions.send-push-notification]
+verify_jwt = false
+
 [functions.subscribe-push]
 verify_jwt = true
 
@@ -96,5 +99,5 @@ verify_jwt = true
 [functions.send-test-push]
 verify_jwt = true
 
-[functions.send-push-notification]
+[functions.send-daily-notification]
 verify_jwt = false
