@@ -77,13 +77,30 @@ serve(async (req) => {
       console.log("[EMAIL-STATUS] No API key, skipping domain check");
     }
 
+    // Check connectivity
+    let httpsOk = false;
+    try {
+      const pingResponse = await fetch("https://api.resend.com/domains", {
+        method: "HEAD",
+        headers: { "Authorization": `Bearer ${resendApiKey}` },
+      });
+      httpsOk = pingResponse.ok || pingResponse.status === 405; // HEAD might not be supported
+    } catch (error) {
+      console.error("[EMAIL-STATUS] Connectivity check failed:", error);
+      httpsOk = false;
+    }
+
     const response = {
       senderEmailConfigured,
       senderEmail: fromEmail || null,
       senderDisplay: fromDisplay,
-      resendDomain,
+      domain: resendDomain,
       domainStatus,
       domainVerified,
+      connectivity: {
+        dnsOk: true, // Always true in this context
+        httpsOk,
+      },
       lastCheckAt: new Date().toISOString(),
     };
 

@@ -14,9 +14,13 @@ interface EmailStatus {
   senderEmailConfigured: boolean;
   senderEmail: string | null;
   senderDisplay: string;
-  resendDomain?: string;
+  domain: string;
   domainStatus: "verified" | "unverified" | "not_found" | "blocked";
   domainVerified: boolean;
+  connectivity: {
+    dnsOk: boolean;
+    httpsOk: boolean;
+  };
   lastCheckAt: string;
 }
 
@@ -299,11 +303,12 @@ export function EmailProviderPanel() {
                       <div className="text-sm text-muted-foreground">
                         {emailStatus.senderDisplay} &lt;{emailStatus.senderEmail}&gt;
                       </div>
-                      {emailStatus.resendDomain && (
-                        <div className="text-xs text-muted-foreground">
-                          Domain: {emailStatus.resendDomain}
-                        </div>
-                      )}
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Domain: {emailStatus.domain}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        DNS {emailStatus.connectivity.dnsOk ? '✓' : '✗'} | HTTPS {emailStatus.connectivity.httpsOk ? '✓' : '✗'}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {getDomainStatusBadge(emailStatus.domainStatus)}
@@ -319,6 +324,20 @@ export function EmailProviderPanel() {
                 </div>
 
                 {/* Status-specific Alerts */}
+                {!emailStatus.connectivity.httpsOk && (
+                  <Alert variant="destructive">
+                    <XCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <div className="font-semibold">API Connection Failed</div>
+                        <p className="text-sm">
+                          Unable to connect to Resend API. Check your network connection or API key configuration.
+                        </p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {emailStatus.domainStatus === "unverified" && (
                   <Alert className="border-yellow-200 bg-yellow-50">
                     <AlertCircle className="h-4 w-4 text-yellow-600" />

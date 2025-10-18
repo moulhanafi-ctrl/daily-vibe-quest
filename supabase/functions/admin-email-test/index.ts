@@ -52,7 +52,14 @@ serve(async (req) => {
           from,
           to: [to],
           subject: "Resend Test – Daily Vibe Check",
-          text: "This is a test from Daily Vibe Check. If you received this email, your email configuration is working correctly!",
+          html: `
+            <h2>Email Configuration Test</h2>
+            <p>This is a test email from <strong>Daily Vibe Check</strong>.</p>
+            <p>If you received this email, your email configuration is working correctly!</p>
+            <hr>
+            <p style="color: #666; font-size: 12px;">Sent from: ${from}</p>
+            <p style="color: #666; font-size: 12px;">Test performed at: ${new Date().toISOString()}</p>
+          `,
         }),
       });
 
