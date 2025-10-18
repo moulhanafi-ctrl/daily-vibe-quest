@@ -186,7 +186,8 @@ export default function StoreAdmin() {
       setIsAddModalOpen(false);
     },
     onError: (error: any) => {
-      toast.error("Failed to create product: " + error.message);
+      console.error("Create product error:", error);
+      toast.error("Failed to create product: " + (error?.message || "Unknown error"));
     },
   });
 
@@ -222,7 +223,8 @@ export default function StoreAdmin() {
       setEditingProduct(null);
     },
     onError: (error: any) => {
-      toast.error("Failed to update product: " + error.message);
+      console.error("Update product error:", error);
+      toast.error("Failed to update product: " + (error?.message || "Unknown error"));
     },
   });
 
