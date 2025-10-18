@@ -186,7 +186,7 @@ serve(async (req) => {
     console.log("[STRIPE-LIVE-STATUS] Returning result", { ok: result.ok, errorCount: result.errors.length });
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: result.ok ? 200 : 400,
+      status: 200,
     });
 
   } catch (error: any) {
@@ -198,7 +198,7 @@ serve(async (req) => {
       stack: error.stack,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: 200,
     });
   }
 });
