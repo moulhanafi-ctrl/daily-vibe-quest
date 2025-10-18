@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Loader2, MessageSquareOff, MoreVertical, Flag, VolumeX, Shield } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageSquareOff, MoreVertical, Flag, VolumeX, Shield, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessageSkeleton } from "@/components/ChatMessageSkeleton";
@@ -15,6 +15,8 @@ import { trackEvent } from "@/lib/analytics";
 import { getBySlug, titleForId } from "@/lib/focusAreas";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useTranslation } from "react-i18next";
+import { useChatRoomPresence } from "@/hooks/useChatRoomPresence";
+import { ChatRoomOnboarding } from "@/components/chat/ChatRoomOnboarding";
 
 interface Message {
   id: string;
@@ -47,6 +49,8 @@ const ChatRoom = () => {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const MAX_MESSAGE_LENGTH = 500;
+
+  const { activeUsers } = useChatRoomPresence(resolvedRoomId || roomId || undefined, currentUserId, username);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -341,7 +345,10 @@ const ChatRoom = () => {
   const groupedMessages = groupMessages(messages.filter(msg => !mutedUsers.has(msg.user_id)));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background p-2 sm:p-4">
+    <>
+      <ChatRoomOnboarding onComplete={() => console.log("Onboarding completed")} />
+      
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background p-2 sm:p-4">
       <div className="container max-w-4xl mx-auto py-4 sm:py-8 h-[calc(100vh-2rem)] sm:h-[calc(100vh-4rem)] flex flex-col">
         <Button
           variant="ghost"
@@ -362,6 +369,16 @@ const ChatRoom = () => {
                 {room?.description && (
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">{room.description}</p>
                 )}
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <Badge variant="outline" className="text-xs">
+                    <Shield className="w-3 h-3 mr-1" />
+                    Moderated by VibeOps AI
+                  </Badge>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Users className="w-4 h-4" />
+                    <span className="text-xs font-medium">{activeUsers} active</span>
+                  </div>
+                </div>
               </div>
               <Badge 
                 variant="outline" 
@@ -502,6 +519,7 @@ const ChatRoom = () => {
           </CardContent>
         </Card>
       </div>
+      </div>
 
       <AlertDialog open={!!reportingMessage} onOpenChange={() => setReportingMessage(null)}>
         <AlertDialogContent>
@@ -519,7 +537,7 @@ const ChatRoom = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
 

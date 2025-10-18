@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Users, ArrowLeft, Crown, MessageSquareOff } from "lucide-react";
+import { MessageSquare, Users, ArrowLeft, Crown, MessageSquareOff, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { STRIPE_PLANS } from "@/lib/stripe";
 import { ChatRoomSkeleton } from "@/components/ChatRoomSkeleton";
@@ -11,6 +11,10 @@ import { InclusionBanner } from "@/components/InclusionBanner";
 import { LegalConsentModal } from "@/components/legal/LegalConsentModal";
 import { FeatureGate } from "@/components/FeatureGate";
 import { useConsentGate } from "@/hooks/useConsentGate";
+import { Badge } from "@/components/ui/badge";
+import { ChatRoomOnboarding } from "@/components/chat/ChatRoomOnboarding";
+import { useChatRoomPresence } from "@/hooks/useChatRoomPresence";
+import { ChatRoomCard } from "@/components/chat/ChatRoomCard";
 
 interface ChatRoom {
   id: string;
@@ -33,6 +37,8 @@ const ChatRooms = () => {
   const [loading, setLoading] = useState(true);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState("");
+  const [currentUsername, setCurrentUsername] = useState("");
   
   // Consent gate
   const {
@@ -54,6 +60,7 @@ const ChatRooms = () => {
           navigate("/auth");
           return;
         }
+        setCurrentUserId(user.id);
 
         // Use server-side view for access check (not cached client flags)
         const { data: accessData, error: accessError } = await supabase
@@ -75,12 +82,13 @@ const ChatRooms = () => {
         // Get user's focus areas (needed for room filtering)
         const { data: profile } = await supabase
           .from("profiles")
-          .select("selected_focus_areas")
+          .select("selected_focus_areas, username")
           .eq("id", user.id)
           .maybeSingle();
 
         const focusAreas = profile?.selected_focus_areas || [];
         setUserFocusAreas(focusAreas);
+        setCurrentUsername(profile?.username || "Anonymous");
 
         // Get chat rooms using safe RPC that works for admins and regular users
         const { data: chatRooms, error } = await supabase
@@ -276,36 +284,13 @@ const ChatRooms = () => {
           ) : (
             <div className="grid gap-4">
               {rooms.map((room) => (
-                <Card
+                <ChatRoomCard
                   key={room.id}
-                  className="cursor-pointer hover:shadow-lg transition-smooth focus-within:ring-2 focus-within:ring-primary"
-                  onClick={() => navigate(room.focus_area_key ? `/chat-rooms/${room.focus_area_key}` : `/chat/${room.id}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      navigate(room.focus_area_key ? `/chat-rooms/${room.focus_area_key}` : `/chat/${room.id}`);
-                    }
-                  }}
-                  aria-label={`Join ${room.name} chat room`}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <MessageSquare className="w-8 h-8 text-primary flex-shrink-0" aria-hidden="true" />
-                        <div>
-                          <CardTitle className="text-base sm:text-lg">{room.name}</CardTitle>
-                          <CardDescription className="text-sm">{room.description}</CardDescription>
-                        </div>
-                      </div>
-                      <Users className="w-5 h-5 text-muted-foreground flex-shrink-0" aria-hidden="true" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Button className="w-full" aria-label={`Join ${room.name}`}>Join Chat</Button>
-                  </CardContent>
-                </Card>
+                  room={room}
+                  currentUserId={currentUserId}
+                  currentUsername={currentUsername}
+                  onNavigate={(path) => navigate(path)}
+                />
               ))}
             </div>
           )}
@@ -313,6 +298,8 @@ const ChatRooms = () => {
       </div>
     </div>
     </FeatureGate>
+    
+    <ChatRoomOnboarding onComplete={() => console.log("Onboarding completed")} />
     
     <LegalConsentModal
       open={showConsentModal}
