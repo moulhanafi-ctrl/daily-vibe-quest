@@ -11,7 +11,8 @@ export const LiveModeStatus = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<any | null>(null);
 
-  const isLiveMode = !!(status?.ok && status?.stripe?.livemode);
+  const isLiveMode = !!(status?.env?.liveMode?.isTrue);
+  const verifiedLive = !!(status?.ok && status?.stripe?.livemode);
   const liveKeysConfigured = !!(status?.env?.publicKey?.present && status?.env?.secretKey?.present && status?.env?.webhookSecret?.present);
 
   const refresh = async (invalidate = false) => {
@@ -96,7 +97,7 @@ export const LiveModeStatus = () => {
           </Alert>
         )}
 
-        {isLiveMode && (
+        {isLiveMode && verifiedLive && (
           <Alert>
             <CheckCircle2 className="h-4 w-4" />
             <AlertDescription>
@@ -107,6 +108,19 @@ export const LiveModeStatus = () => {
             </AlertDescription>
           </Alert>
         )}
+
+        {isLiveMode && !verifiedLive && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Live Mode Enabled (configuration incomplete)</strong>
+              <p className="text-sm mt-1">
+                Set live keys and webhook: STRIPE_PUBLIC_KEY (pk_live_), STRIPE_LIVE_SECRET_KEY (sk_live_), STRIPE_LIVE_WEBHOOK_SECRET (whsec_). Then press Force.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
 
         <div className="pt-4 border-t">
           <h4 className="font-medium mb-2 flex items-center gap-2">
