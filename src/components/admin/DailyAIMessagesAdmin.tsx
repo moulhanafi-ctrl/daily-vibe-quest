@@ -228,7 +228,16 @@ export function DailyAIMessagesAdmin() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Messages are automatically sent at 9:00 AM and 8:00 PM daily to all opted-in users
+                <div className="space-y-2">
+                  <div>Messages are automatically sent at 9:00 AM and 8:00 PM daily to all opted-in users</div>
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 text-sm"
+                    onClick={() => window.location.href = '/admin/email-diagnostics'}
+                  >
+                    → Open Email Diagnostics for detailed troubleshooting
+                  </Button>
+                </div>
               </AlertDescription>
             </Alert>
 

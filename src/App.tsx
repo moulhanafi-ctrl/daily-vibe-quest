@@ -62,6 +62,7 @@ import PublishReadiness from "./pages/admin/PublishReadiness";
 import ProductionDashboard from "./pages/admin/ProductionDashboard";
 import AIDigestsAdmin from "./pages/admin/AIDigestsAdmin";
 import DailyAIMessagesAdmin from "./pages/admin/DailyAIMessagesAdmin";
+import EmailDiagnostics from "./pages/admin/EmailDiagnostics";
 import Recovery from "./pages/auth/Recovery";
 import VerifyCode from "./pages/auth/VerifyCode";
 import ResetPassword from "./pages/auth/ResetPassword";
@@ -142,6 +143,7 @@ const App = () => (
           <Route path="/admin/production" element={<ProductionDashboard />} />
           <Route path="/admin/ai-digests" element={<AIDigestsAdmin />} />
           <Route path="/admin/daily-ai-messages" element={<DailyAIMessagesAdmin />} />
+          <Route path="/admin/email-diagnostics" element={<EmailDiagnostics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help" element={<HelpNearby />} />
           <Route path="/help/nearby" element={<HelpNearby />} />

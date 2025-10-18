@@ -38,6 +38,11 @@ const OpsAdmin = () => {
           <h2>Quick Links</h2>
           <ul>
             <li>
+              <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/admin/email-diagnostics")}>
+                📧 Email Diagnostics (Resend)
+              </Button>
+            </li>
+            <li>
               <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/admin/health")}>
                 System Health Dashboard
               </Button>

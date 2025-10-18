@@ -108,5 +108,8 @@ verify_jwt = false
 [functions.send-daily-ai-messages]
 verify_jwt = false
 
+[functions.email-diagnostics]
+verify_jwt = true
+
 [functions.get-vapid-key]
 verify_jwt = false
