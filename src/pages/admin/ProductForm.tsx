@@ -366,7 +366,7 @@ export default function ProductForm() {
       navigate("/admin/products");
     } catch (error) {
       console.error("Error saving product:", error);
-      toast.error("Failed to save product");
+      toast.error("Failed to save product: " + (error as any)?.message);
     } finally {
       setLoading(false);
     }
