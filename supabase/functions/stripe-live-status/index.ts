@@ -16,13 +16,12 @@ const maskKey = (key: string): string => {
   return key.slice(0, 3) + "..." + key.slice(-6);
 };
 
-export default {
-  async fetch(req: Request) {
-    if (req.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
-    try {
+  try {
       const url = new URL(req.url);
       const invalidate = url.searchParams.get("invalidate") === "1";
 
@@ -167,5 +166,4 @@ export default {
         status: 500,
       });
     }
-  },
-};
+});

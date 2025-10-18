@@ -137,3 +137,12 @@ verify_jwt = true
 
 [functions.cleanup-stale-push-subscriptions]
 verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.stripe-live-status]
+verify_jwt = true
+
+[functions.stripe-live-diagnostic]
+verify_jwt = true
