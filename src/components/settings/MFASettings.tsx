@@ -34,6 +34,15 @@ export const MFASettings = () => {
   const enrollMFA = async () => {
     setLoading(true);
     try {
+      // Clean up any existing unverified factors first
+      const factors = await supabase.auth.mfa.listFactors();
+      const unverifiedFactors = factors.data?.totp.filter((f) => f.status !== "verified");
+      
+      // Unenroll any unverified factors to avoid conflicts
+      for (const factor of unverifiedFactors || []) {
+        await supabase.auth.mfa.unenroll({ factorId: factor.id });
+      }
+
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
         friendlyName: "Admin Account",
