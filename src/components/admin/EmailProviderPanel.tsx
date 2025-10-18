@@ -5,120 +5,110 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Mail, CheckCircle, XCircle, AlertTriangle, RefreshCw, Copy, Send } from "lucide-react";
+import { Mail, CheckCircle, XCircle, AlertCircle, RefreshCw, Send, Settings } from "lucide-react";
 import { toast } from "sonner";
 
-interface DomainInfo {
-  id: string;
-  name: string;
-  status: string;
-  records?: any[];
+interface EmailStatus {
+  senderEmailConfigured: boolean;
+  senderEmail: string | null;
+  senderDisplay: string;
+  resendDomain: string;
+  domainStatus: "not_found" | "unverified" | "verified" | "blocked";
+  domainVerified: boolean;
+  lastCheckAt: string;
 }
 
 export function EmailProviderPanel() {
   const [loading, setLoading] = useState(false);
-  const [domains, setDomains] = useState<DomainInfo[]>([]);
-  const [currentDomain, setCurrentDomain] = useState<string>("");
-  const [currentFromEmail, setCurrentFromEmail] = useState<string>("");
-  const [configError, setConfigError] = useState<string>("");
-  const [testEmail, setTestEmail] = useState("");
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [emailStatus, setEmailStatus] = useState<EmailStatus | null>(null);
+  const [testEmail, setTestEmail] = useState<string>("");
   const [testResult, setTestResult] = useState<any>(null);
-  const [testSending, setTestSending] = useState(false);
 
   useEffect(() => {
-    loadDomains();
     loadCurrentUserEmail();
+    loadEmailStatus();
   }, []);
 
   const loadCurrentUserEmail = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.email) {
-      setTestEmail(user.email);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setTestEmail(user.email);
+      }
+    } catch (error) {
+      console.error("Error loading user email:", error);
     }
   };
 
-  const loadDomains = async () => {
-    setLoading(true);
-    setConfigError("");
+  const loadEmailStatus = async () => {
+    setStatusLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-daily-ai-messages", {
-        body: { windowType: "get_domains" },
+      const { data, error } = await supabase.functions.invoke("admin-email-status");
+
+      if (error) {
+        console.error("Error loading email status:", error);
+        toast.error("Failed to load email provider status");
+        return;
+      }
+
+      setEmailStatus(data);
+    } catch (error: any) {
+      console.error("Error in loadEmailStatus:", error);
+      toast.error("Failed to connect to email provider");
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  const sendTestEmail = async () => {
+    if (!testEmail) {
+      toast.error("Please enter a test email address");
+      return;
+    }
+
+    setLoading(true);
+    setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-email-test", {
+        body: { to: testEmail },
       });
 
       if (error) {
-        setConfigError(error.message || "Failed to load configuration");
-        throw error;
-      }
-
-      setDomains(data.domains || []);
-      setCurrentDomain(data.currentDomain || "");
-      setCurrentFromEmail(data.currentFromEmail || "");
-      
-      // Validate email format
-      if (data.currentFromEmail) {
-        const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-        if (!emailRegex.test(data.currentFromEmail)) {
-          setConfigError(`Invalid email format detected: ${data.currentFromEmail.substring(0, 50)}...`);
-        }
+        setTestResult({ success: false, error: error.message });
+        toast.error(`Test email failed: ${error.message}`);
+      } else if (data.ok) {
+        setTestResult({ success: true, data });
+        toast.success("Test email sent successfully!");
       } else {
-        setConfigError("RESEND_FROM_EMAIL not configured");
+        setTestResult({ success: false, error: data.message });
+        toast.error(`Test failed: ${data.message}`);
       }
     } catch (error: any) {
-      console.error("Error loading domains:", error);
-      if (error.message?.includes("Email configuration invalid")) {
-        setConfigError(error.message);
-      } else {
-        toast.error("Failed to load domain information");
-      }
+      console.error("Error sending test email:", error);
+      setTestResult({ success: false, error: error.message });
+      toast.error("Network error: Failed to send test email");
     } finally {
       setLoading(false);
     }
   };
 
-  const sendTestEmail = async () => {
-    if (!testEmail || !testEmail.includes('@')) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    setTestSending(true);
-    setTestResult(null);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke("send-daily-ai-messages", {
-        body: { 
-          windowType: "test_email",
-          testEmail 
-        },
-      });
-
-      if (error) throw error;
-
-      setTestResult(data);
-      
-      if (data.success) {
-        toast.success(`✅ Test email sent successfully! Message ID: ${data.messageId}`);
-      } else {
-        toast.error(`❌ Test failed: ${data.error}`);
-      }
-    } catch (error) {
-      console.error("Error sending test email:", error);
-      toast.error("Failed to send test email");
-      setTestResult({ success: false, error: "Network error" });
-    } finally {
-      setTestSending(false);
+  const getDomainStatusBadge = (status: string) => {
+    switch (status) {
+      case "verified":
+        return <Badge className="bg-green-600">Domain verified</Badge>;
+      case "unverified":
+        return <Badge variant="outline" className="border-amber-600 text-amber-600">Domain not verified</Badge>;
+      case "blocked":
+        return <Badge variant="destructive">API key invalid</Badge>;
+      case "not_found":
+        return <Badge variant="secondary">Domain not found in Resend</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
-  };
-
-  const currentDomainInfo = domains.find(d => d.name === currentDomain);
-  const isVerified = currentDomainInfo?.status === 'verified';
-  const hasConfigError = !!configError || !currentFromEmail;
+  const hasConfigError = emailStatus && !emailStatus.senderEmailConfigured;
 
   return (
     <Card>
@@ -128,35 +118,36 @@ export function EmailProviderPanel() {
           Email Provider Configuration
         </CardTitle>
         <CardDescription>
-          Manage Resend domain verification and test email delivery
+          Resend email service configuration and domain verification
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Configuration Error Alert */}
-        {hasConfigError && (
+      <CardContent className="space-y-4">
+        {statusLoading && (
+          <div className="text-sm text-muted-foreground">Loading email provider status...</div>
+        )}
+
+        {!statusLoading && hasConfigError && (
           <Alert variant="destructive">
-            <XCircle className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-3">
                 <div>
                   <div className="font-semibold">Email Provider Misconfigured</div>
                   <div className="text-sm mt-1">
-                    {configError || "RESEND_FROM_EMAIL is not configured"}
+                    {!emailStatus.senderEmail 
+                      ? "RESEND_FROM_EMAIL secret is not configured" 
+                      : "Invalid email format in RESEND_FROM_EMAIL"}
                   </div>
                 </div>
                 
-                <div className="bg-background/50 p-3 rounded border space-y-2">
-                  <div className="text-sm font-medium">Required Configuration:</div>
-                  <div className="text-xs space-y-1">
-                    <div className="font-mono bg-background px-2 py-1 rounded">
-                      Secret: <span className="text-blue-400">RESEND_FROM_EMAIL</span>
+                <div className="space-y-2 text-sm">
+                  <div className="font-medium">Required Configuration:</div>
+                  <div className="bg-destructive/10 p-3 rounded border border-destructive/20">
+                    <div className="font-mono text-xs space-y-1">
+                      <div>Secret: <span className="font-semibold">RESEND_FROM_EMAIL</span></div>
+                      <div>Example: <span className="text-green-600">noreply@dailyvibecheck.com</span></div>
+                      <div className="text-yellow-600">⚠️ Must be a valid email address</div>
                     </div>
-                    <div className="font-mono bg-background px-2 py-1 rounded">
-                      Expected value: <span className="text-green-400">noreply@dailyvibecheck.com</span>
-                    </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-2">
-                    The secret should contain ONLY the email address, not the full "Name &lt;email&gt;" format.
                   </div>
                 </div>
 
@@ -164,11 +155,15 @@ export function EmailProviderPanel() {
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    toast.info("Please update RESEND_FROM_EMAIL secret in your Lovable Cloud settings");
-                    window.open("/settings?section=secrets", "_blank");
+                    toast.info("Opening backend settings...");
+                    window.open("#", "_self");
+                    setTimeout(() => {
+                      const event = new CustomEvent('open-backend-settings');
+                      window.dispatchEvent(event);
+                    }, 100);
                   }}
                 >
-                  <AlertTriangle className="h-3 w-3 mr-2" />
+                  <Settings className="h-3 w-3 mr-2" />
                   Update Secret Configuration
                 </Button>
               </div>
@@ -176,218 +171,110 @@ export function EmailProviderPanel() {
           </Alert>
         )}
 
-        {/* Current Configuration */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Current Configuration</h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div className="flex-1">
-                <div className="text-sm font-medium">Sender Email</div>
-                <div className={`text-sm ${hasConfigError ? 'text-red-600 font-mono' : 'text-muted-foreground'}`}>
-                  {currentFromEmail || "Not configured"}
+        {!statusLoading && emailStatus && (
+          <>
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold">Current Configuration</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Sender Email:</span>
+                  <span className={`font-mono ${!emailStatus.senderEmailConfigured ? 'text-red-600' : ''}`}>
+                    {emailStatus.senderEmail || "Not configured"}
+                  </span>
                 </div>
-                {hasConfigError && currentFromEmail && (
-                  <div className="text-xs text-red-500 mt-1">
-                    ⚠️ This appears to be invalid (possibly an API key instead of an email)
-                  </div>
-                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Display Name:</span>
+                  <span className="font-medium">{emailStatus.senderDisplay}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Domain Status:</span>
+                  {getDomainStatusBadge(emailStatus.domainStatus)}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Last Check:</span>
+                  <span className="text-xs">{new Date(emailStatus.lastCheckAt).toLocaleString()}</span>
+                </div>
               </div>
-              {currentFromEmail && !hasConfigError && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => copyToClipboard(currentFromEmail)}
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-              )}
             </div>
 
-            {currentDomain && (
-              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div>
-                    <div className="text-sm font-medium">Domain</div>
-                    <div className="text-sm text-muted-foreground">{currentDomain}</div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadEmailStatus}
+                disabled={statusLoading}
+              >
+                <RefreshCw className={`h-3 w-3 mr-2 ${statusLoading ? "animate-spin" : ""}`} />
+                Refresh Status
+              </Button>
+            </div>
+
+            {emailStatus.domainStatus === "unverified" && (
+              <Alert variant="default" className="border-yellow-200 bg-yellow-50">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-900">
+                  <div className="space-y-2">
+                    <div className="font-semibold">Domain Not Verified</div>
+                    <div className="text-sm">
+                      Verify DNS on Resend (SPF/DKIM) for {emailStatus.resendDomain}, then click Refresh Status.
+                      Visit your Resend dashboard to add the required DNS records.
+                    </div>
                   </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {emailStatus.domainStatus === "blocked" && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="font-semibold">API Key Invalid</div>
+                  <div className="text-sm mt-1">
+                    Your RESEND_API_KEY appears to be invalid or unauthorized. Please update it in the backend settings.
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {emailStatus.senderEmailConfigured && (
+              <div className="space-y-2 pt-4 border-t">
+                <h3 className="text-sm font-semibold">Test Email Delivery</h3>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="test@example.com"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={sendTestEmail} disabled={loading || !testEmail}>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Test
+                  </Button>
                 </div>
-                <Badge variant={isVerified ? "default" : "secondary"}>
-                  {isVerified ? (
-                    <><CheckCircle className="h-3 w-3 mr-1" /> Verified</>
-                  ) : (
-                    <><AlertTriangle className="h-3 w-3 mr-1" /> Unverified</>
-                  )}
-                </Badge>
+                {testResult && (
+                  <Alert variant={testResult.success ? "default" : "destructive"}>
+                    <AlertDescription>
+                      {testResult.success ? (
+                        <div className="flex items-center gap-2 text-green-600">
+                          <CheckCircle className="h-4 w-4" />
+                          Test email sent successfully!
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <XCircle className="h-4 w-4" />
+                            <span className="font-semibold">Test Failed</span>
+                          </div>
+                          <div className="text-sm">{testResult.error}</div>
+                        </div>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
             )}
-          </div>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={loadDomains}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
-            Refresh Status
-          </Button>
-        </div>
-
-        {/* Domain Verification Status */}
-        {!isVerified && currentDomain && currentDomainInfo && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-3">
-                <div>
-                  <div className="font-semibold">Domain Not Verified</div>
-                  <div className="text-sm mt-1">
-                    Your sender domain <strong>{currentDomain}</strong> is not verified. 
-                    Emails will still send but may have reduced deliverability.
-                  </div>
-                </div>
-
-                {currentDomainInfo.records && currentDomainInfo.records.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Required DNS Records:</div>
-                    {currentDomainInfo.records.map((record: any, idx: number) => (
-                      <div key={idx} className="bg-background/50 p-3 rounded border space-y-1">
-                        <div className="grid grid-cols-[80px_1fr] gap-2 text-xs">
-                          <div className="font-medium">Type:</div>
-                          <div className="font-mono">{record.type}</div>
-                          
-                          <div className="font-medium">Name:</div>
-                          <div className="font-mono break-all">{record.name}</div>
-                          
-                          <div className="font-medium">Value:</div>
-                          <div className="font-mono break-all">{record.value}</div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs"
-                          onClick={() => copyToClipboard(record.value)}
-                        >
-                          <Copy className="h-3 w-3 mr-1" />
-                          Copy Value
-                        </Button>
-                      </div>
-                    ))}
-                    <div className="text-xs text-muted-foreground mt-2">
-                      Add these DNS records to your domain registrar, then click Refresh Status above.
-                    </div>
-                  </div>
-                )}
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {isVerified && (
-          <Alert className="border-green-200 bg-green-50">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-900">
-              ✅ Domain <strong>{currentDomain}</strong> is verified and ready for production sending
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Test Email Section */}
-        <div className="space-y-3 pt-4 border-t">
-          <h3 className="text-sm font-semibold">Send Test Email</h3>
-          <p className="text-sm text-muted-foreground">
-            Send a test email to verify your Resend configuration is working correctly
-          </p>
-
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="testEmail">Test Email Address</Label>
-              <Input
-                id="testEmail"
-                type="email"
-                placeholder="admin@example.com"
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-              />
-            </div>
-
-            <Button
-              onClick={sendTestEmail}
-              disabled={testSending || !testEmail}
-              className="w-full"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {testSending ? "Sending..." : "Send Provider Test Email"}
-            </Button>
-          </div>
-
-          {/* Test Result */}
-          {testResult && (
-            <Alert variant={testResult.success ? "default" : "destructive"}>
-              {testResult.success ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <XCircle className="h-4 w-4" />
-              )}
-              <AlertDescription>
-                <div className="space-y-2">
-                  <div className="font-semibold">
-                    {testResult.success ? "✅ Test Email Sent Successfully" : "❌ Test Email Failed"}
-                  </div>
-                  
-                  {testResult.success && (
-                    <div className="text-sm space-y-1">
-                      <div>Message ID: <code className="text-xs">{testResult.messageId}</code></div>
-                      <div>To: {testResult.to}</div>
-                      <div>From: {testResult.from}</div>
-                      <div>Timestamp: {new Date(testResult.timestamp).toLocaleString()}</div>
-                      {!testResult.domainVerified && (
-                        <div className="text-yellow-700 mt-2">
-                          ⚠️ Note: Domain is unverified - email sent but deliverability may be reduced
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {!testResult.success && (
-                    <div className="text-sm space-y-1">
-                      <div>Error: {testResult.error}</div>
-                      {testResult.details && (
-                        <div className="text-xs opacity-80 mt-1">
-                          Details: {testResult.details}
-                        </div>
-                      )}
-                      {testResult.statusCode && (
-                        <div className="text-xs opacity-80">
-                          Status Code: {testResult.statusCode}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-
-        {/* All Domains List */}
-        {domains.length > 0 && (
-          <div className="space-y-3 pt-4 border-t">
-            <h3 className="text-sm font-semibold">All Domains in Resend</h3>
-            <div className="space-y-2">
-              {domains.map((domain) => (
-                <div
-                  key={domain.id}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                >
-                  <div className="text-sm font-medium">{domain.name}</div>
-                  <Badge variant={domain.status === 'verified' ? "default" : "secondary"}>
-                    {domain.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </div>
+          </>
         )}
       </CardContent>
     </Card>
