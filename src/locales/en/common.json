@@ -45,7 +45,8 @@
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?"
   },
-  "settings": {
+  "settings": "Settings",
+  "settingsPage": {
     "language": "Language",
     "changeLanguage": "Change Language",
     "selectLanguage": "Select your preferred language"

@@ -3399,6 +3399,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          account_deletion_enabled: boolean | null
+          created_at: string | null
+          data_export_enabled: boolean | null
+          id: string
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_deletion_enabled?: boolean | null
+          created_at?: string | null
+          data_export_enabled?: boolean | null
+          id?: string
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_deletion_enabled?: boolean | null
+          created_at?: string | null
+          data_export_enabled?: boolean | null
+          id?: string
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       zip_centroids: {
         Row: {
           city: string | null

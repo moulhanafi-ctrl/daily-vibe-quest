@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Globe, Shield, Bell, Target, User } from "lucide-react";
 import { LanguageSelector } from "@/components/settings/LanguageSelector";
-import { DataRights } from "@/components/legal/DataRights";
+import { PrivacySettings } from "@/components/settings/PrivacySettings";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { ParentNotificationSettings } from "@/components/family/ParentNotificationSettings";
 import { PushNotificationSettings } from "@/components/settings/PushNotificationSettings";
@@ -57,7 +57,7 @@ const Settings = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-4xl font-bold mb-8">{t("settings", "Settings")}</h1>
+        <h1 className="text-4xl font-bold mb-8">Settings</h1>
 
         {mfaReason === "enable-mfa" && (
           <Alert className="mb-6">
@@ -139,7 +139,7 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="privacy">
-            <DataRights />
+            <PrivacySettings />
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-4">

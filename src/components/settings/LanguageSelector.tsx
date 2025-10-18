@@ -31,10 +31,10 @@ export const LanguageSelector = () => {
         if (error) throw error;
       }
 
-      toast.success(t('settings.languageUpdated', 'Language updated successfully'));
+      toast.success(t('settingsPage.languageUpdated', 'Language updated successfully'));
     } catch (error) {
       console.error('Error updating language:', error);
-      toast.error(t('settings.languageUpdateFailed', 'Failed to update language'));
+      toast.error(t('settingsPage.languageUpdateFailed', 'Failed to update language'));
     } finally {
       setLoading(false);
     }
@@ -45,10 +45,10 @@ export const LanguageSelector = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Globe className="h-5 w-5" />
-          {t('settings.language')}
+          {t('settingsPage.language')}
         </CardTitle>
         <CardDescription>
-          {t('settings.selectLanguage')}
+          {t('settingsPage.selectLanguage')}
         </CardDescription>
       </CardHeader>
       <CardContent>
