@@ -119,3 +119,12 @@ verify_jwt = true
 
 [functions.admin-email-status]
 verify_jwt = true
+
+[functions.generate-daily-reflection]
+verify_jwt = true
+
+[functions.export-journal]
+verify_jwt = true
+
+[functions.cleanup-stale-push-subscriptions]
+verify_jwt = true

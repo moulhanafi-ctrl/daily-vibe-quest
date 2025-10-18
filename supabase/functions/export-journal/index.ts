@@ -101,7 +101,7 @@ serve(async (req) => {
       </div>
       ${entry.body ? `<div class="entry-body">${entry.body}</div>` : ''}
       ${entry.transcript ? `<div class="entry-body"><strong>Transcript:</strong><br>${entry.transcript}</div>` : ''}
-      ${entry.tags?.length ? `<div class="entry-tags">${entry.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>` : ''}
+      ${entry.tags?.length ? `<div class="entry-tags">${entry.tags.map((tag: string) => `<span class="tag">${tag}</span>`).join('')}</div>` : ''}
     </div>
   `).join('')}
 </body>
