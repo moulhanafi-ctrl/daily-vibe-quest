@@ -39,6 +39,9 @@ interface DiagnosticResult {
     response?: any;
     timestamp?: string;
     verdict?: string;
+    usedFallback?: boolean;
+    originalError?: string;
+    attempts?: number;
   };
 }
 
@@ -409,9 +412,32 @@ export default function EmailDiagnostics() {
                   {result.testSend.verdict && getVerdictBadge(result.testSend.verdict)}
                 </div>
 
+                {result.testSend.usedFallback && (
+                  <Alert variant="default" className="border-blue-500 bg-blue-50">
+                    <AlertTriangle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-900">
+                      <div className="font-semibold mb-1">🔄 Fallback Sender Used</div>
+                      <div className="text-sm">
+                        Primary domain failed verification, so we used <code className="px-1 py-0.5 bg-blue-100 rounded">onboarding@resend.dev</code> as fallback.
+                        <br />
+                        <strong>Original Error:</strong> {result.testSend.originalError}
+                        <br />
+                        <strong>Action Required:</strong> Verify your domain in Resend to use your custom sender.
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="font-medium">Success:</div>
                   <div>{result.testSend.success ? "✅ Yes" : "❌ No"}</div>
+                  
+                  {result.testSend.attempts && (
+                    <>
+                      <div className="font-medium">Attempts:</div>
+                      <div className="font-mono">{result.testSend.attempts}</div>
+                    </>
+                  )}
                   
                   {result.testSend.statusCode && (
                     <>
@@ -454,7 +480,7 @@ export default function EmailDiagnostics() {
                   </Alert>
                 )}
 
-                {result.testSend.success && result.testSend.verdict === "sender_unverified" && (
+                {result.testSend.success && result.testSend.verdict === "sender_unverified" && !result.testSend.usedFallback && (
                   <Alert variant="default" className="border-yellow-500 bg-yellow-50">
                     <AlertTriangle className="h-4 w-4 text-yellow-600" />
                     <AlertDescription className="text-yellow-900">

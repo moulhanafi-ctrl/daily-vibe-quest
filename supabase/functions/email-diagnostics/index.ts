@@ -7,6 +7,7 @@ const corsHeaders = {
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || Deno.env.get("WELCOME_FROM_EMAIL");
+const FALLBACK_FROM_EMAIL = "onboarding@resend.dev";
 
 // Email validation regex
 const EMAIL_REGEX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -128,7 +129,15 @@ serve(async (req) => {
           timestamp: new Date().toISOString()
         };
       } else {
+        let usedFallback = false;
+        let attemptCount = 0;
+        let lastError = "";
+        
+        // Try with primary sender first
         try {
+          attemptCount++;
+          console.log(`[Test Send] Attempt ${attemptCount}: Using primary sender: ${fromValidation.composedFrom}`);
+          
           const response = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -145,32 +154,82 @@ serve(async (req) => {
 
           const responseData = await response.json();
 
-          let verdict = "sent";
-          if (response.status === 200 || response.status === 202) {
-            // Check if domain is verified by examining response
-            if (responseData.warning || (responseData.status && responseData.status.includes('unverified'))) {
-              verdict = "sender_unverified";
-            }
-          } else if (response.status === 401) {
-            verdict = "invalid_key";
-          } else if (response.status === 422 || response.status === 400) {
-            verdict = "invalid_from";
-          }
+          // If 422 domain error, retry with fallback
+          if (response.status === 422 && responseData.message?.includes("domain")) {
+            console.log(`[Test Send] 422 domain error, retrying with fallback sender`);
+            attemptCount++;
+            usedFallback = true;
+            
+            const fallbackFrom = `Mostapha <${FALLBACK_FROM_EMAIL}>`;
+            const fallbackResponse = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: fallbackFrom,
+                to: [testEmail],
+                subject: "✅ Resend test OK (Fallback Sender)",
+                text: `This is a Resend connectivity test using fallback sender.\n\nTimestamp: ${new Date().toISOString()}\nFrom: ${fallbackFrom}\nOriginal From: ${fromValidation.composedFrom}\nRuntime: ${runtime.runtime}\nEnvironment: ${runtime.buildTarget}\n\nNote: Your primary domain is not verified, so we used the fallback sender. Please verify your domain in Resend.`
+              }),
+            });
 
-          testSend = {
-            success: response.status === 200 || response.status === 202,
-            statusCode: response.status,
-            messageId: responseData.id,
-            error: !response.ok ? responseData.message || responseData.error : undefined,
-            response: responseData,
-            verdict,
-            timestamp: new Date().toISOString()
-          };
+            const fallbackData = await fallbackResponse.json();
+            
+            let verdict = "sent";
+            if (fallbackResponse.status === 200 || fallbackResponse.status === 202) {
+              verdict = "sender_unverified_fallback";
+            } else if (fallbackResponse.status === 401) {
+              verdict = "invalid_key";
+            } else if (fallbackResponse.status === 422 || fallbackResponse.status === 400) {
+              verdict = "invalid_from";
+            }
+
+            testSend = {
+              success: fallbackResponse.status === 200 || fallbackResponse.status === 202,
+              statusCode: fallbackResponse.status,
+              messageId: fallbackData.id,
+              error: !fallbackResponse.ok ? fallbackData.message || fallbackData.error : undefined,
+              response: fallbackData,
+              verdict,
+              usedFallback: true,
+              originalError: responseData.message,
+              attempts: attemptCount,
+              timestamp: new Date().toISOString()
+            };
+          } else {
+            // Primary sender worked or different error
+            let verdict = "sent";
+            if (response.status === 200 || response.status === 202) {
+              if (responseData.warning || (responseData.status && responseData.status.includes('unverified'))) {
+                verdict = "sender_unverified";
+              }
+            } else if (response.status === 401) {
+              verdict = "invalid_key";
+            } else if (response.status === 422 || response.status === 400) {
+              verdict = "invalid_from";
+            }
+
+            testSend = {
+              success: response.status === 200 || response.status === 202,
+              statusCode: response.status,
+              messageId: responseData.id,
+              error: !response.ok ? responseData.message || responseData.error : undefined,
+              response: responseData,
+              verdict,
+              usedFallback: false,
+              attempts: attemptCount,
+              timestamp: new Date().toISOString()
+            };
+          }
         } catch (error) {
           testSend = {
             success: false,
             error: error instanceof Error ? error.message : "Network error",
             verdict: "network_error",
+            usedFallback,
+            attempts: attemptCount,
             timestamp: new Date().toISOString()
           };
         }
