@@ -74,7 +74,12 @@ export const MFASettings = () => {
       const factors = await supabase.auth.mfa.listFactors();
       const totpFactor = factors.data?.totp.find((f) => f.status !== "verified");
 
-      if (!totpFactor) throw new Error("No pending MFA enrollment found");
+      if (!totpFactor) {
+        // Enrollment expired or was cleared - reset UI
+        setQrCode(null);
+        setVerifyCode("");
+        throw new Error("MFA setup expired. Please click 'Enable 2FA' to start again.");
+      }
 
       const { error } = await supabase.auth.mfa.challengeAndVerify({
         factorId: totpFactor.id,
@@ -99,6 +104,15 @@ export const MFASettings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetEnrollment = () => {
+    setQrCode(null);
+    setVerifyCode("");
+    toast({
+      title: "Reset",
+      description: "MFA setup cleared. Click 'Enable 2FA' to try again.",
+    });
   };
 
   const unenrollMFA = async () => {
@@ -204,6 +218,14 @@ export const MFASettings = () => {
                   Verify
                 </Button>
               </div>
+              <Button 
+                variant="outline" 
+                onClick={resetEnrollment} 
+                disabled={loading}
+                className="w-full mt-2"
+              >
+                Start Over
+              </Button>
             </div>
           </div>
         )}
