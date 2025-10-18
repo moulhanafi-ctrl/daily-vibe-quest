@@ -142,7 +142,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.stripe-live-status]
-verify_jwt = true
+verify_jwt = false
 
 [functions.stripe-live-diagnostic]
-verify_jwt = true
+verify_jwt = false
