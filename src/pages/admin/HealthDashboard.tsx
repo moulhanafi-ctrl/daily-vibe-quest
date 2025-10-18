@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, PlayCircle, RefreshCw, CheckCircle, XCircle, AlertCircle, Clock, Shield } from "lucide-react";
+import { ArrowLeft, PlayCircle, RefreshCw, CheckCircle, XCircle, AlertCircle, Clock, Shield, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { getAppSettings } from "@/lib/appSettings";
@@ -133,6 +133,64 @@ export default function HealthDashboard() {
         variant: "destructive",
       });
       setIsRunning(false);
+    }
+  };
+
+  const exportSystemLogs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("system_health_results")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "No data",
+          description: "No system logs available to export",
+        });
+        return;
+      }
+
+      // Convert to CSV
+      const headers = Object.keys(data[0]);
+      const csv = [
+        headers.join(","),
+        ...data.map(row => 
+          headers.map(header => {
+            const value = row[header];
+            if (typeof value === "object" && value !== null) {
+              return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+            }
+            if (typeof value === "string") {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          }).join(",")
+        )
+      ].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `system-health-logs-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Export successful",
+        description: `Downloaded ${data.length} log entries`,
+      });
+    } catch (error: any) {
+      console.error("Export failed:", error);
+      toast({
+        title: "Export failed",
+        description: error.message || "Failed to export logs",
+        variant: "destructive",
+      });
     }
   };
 
@@ -284,6 +342,13 @@ export default function HealthDashboard() {
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportSystemLogs}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Logs
               </Button>
               <Button
                 onClick={runHealthCheck}
