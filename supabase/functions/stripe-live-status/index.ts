@@ -96,7 +96,7 @@ serve(async (req) => {
       stripe: null,
       webhook: {
         configured: !!webhookSecret,
-        path: "/api/stripe-webhook",
+        path: "/api/stripe/webhook",
       },
       ok: true,
       errors: [],

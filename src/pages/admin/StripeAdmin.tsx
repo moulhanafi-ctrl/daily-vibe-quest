@@ -1,4 +1,4 @@
-import { StripeModeToggle } from "@/components/admin/StripeModeToggle";
+import { LiveModeStatus } from "@/components/admin/LiveModeStatus";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
@@ -26,7 +26,7 @@ const StripeAdmin = () => {
         </p>
       </div>
 
-      <StripeModeToggle />
+      <LiveModeStatus />
 
       <Card>
         <CardHeader>
