@@ -12,6 +12,8 @@ import confetti from "canvas-confetti";
 import { DEMO_TRIVIA_DATA } from "@/lib/demoTriviaData";
 import { AnswerFeedback } from "@/components/trivia/AnswerFeedback";
 import { YouTubeBreak } from "@/components/trivia/YouTubeBreak";
+import { MotivationalQuote } from "@/components/trivia/MotivationalQuote";
+import { soundEffects } from "@/lib/soundEffects";
 import { TriviaSettings, type TriviaSettings as TriviaSettingsType } from "@/components/trivia/TriviaSettings";
 import {
   Sheet,
@@ -68,6 +70,7 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackCorrect, setFeedbackCorrect] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [showMotivation, setShowMotivation] = useState(false);
   const [settings, setSettings] = useState<TriviaSettingsType>({
     animations_enabled: true,
     sounds_enabled: false,
@@ -219,31 +222,41 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
       setSelectedAnswer(null);
       setShowResult(false);
     } else {
-      // Session complete
+      // Session complete - show motivational quote first
+      setShowMotivation(true);
       await saveSessionProgress();
       
-      if (currentSessionNum < 3) {
-        // Show mental health break
-        const breakVideo = breakVideos.find(v => v.break_position === currentSessionNum);
-        if (breakVideo) {
-          setCurrentBreak(breakVideo);
-          setShowingBreak(true);
-        } else {
-          moveToNextSession();
-        }
-      } else {
-        // All sessions complete!
-        confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.6 }
-        });
-        toast({
-          title: "🎉 All Sessions Complete!",
-          description: "Amazing work! See you next Saturday!",
-        });
-        setCompletedSessions([1, 2, 3]);
+      // Play session complete sound
+      if (settings.sounds_enabled) {
+        soundEffects.playSessionComplete();
       }
+      
+      // Small delay before moving to next step
+      setTimeout(() => {
+        if (currentSessionNum < 3) {
+          // Show mental health break
+          const breakVideo = breakVideos.find(v => v.break_position === currentSessionNum);
+          if (breakVideo) {
+            setCurrentBreak(breakVideo);
+            setShowingBreak(true);
+            setShowMotivation(false);
+          } else {
+            moveToNextSession();
+          }
+        } else {
+          // All sessions complete!
+          confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 }
+          });
+          toast({
+            title: "🎉 All Sessions Complete!",
+            description: "Amazing work! See you next Saturday!",
+          });
+          setCompletedSessions([1, 2, 3]);
+        }
+      }, 3000);
     }
   };
 
@@ -291,6 +304,7 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
     setShowResult(false);
     setShowingBreak(false);
     setCurrentBreak(null);
+    setShowMotivation(false);
   };
 
   if (loading) {
@@ -328,6 +342,7 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
             isCorrect={feedbackCorrect}
             onComplete={handleFeedbackComplete}
             enabled={settings.animations_enabled}
+            soundsEnabled={settings.sounds_enabled}
           />
         )}
 
@@ -394,13 +409,21 @@ export default function SessionTrivia({ mode = 'auto' }: SessionTriviaProps) {
 
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">
-              Session {currentSessionNum} - Question {currentQuestionIdx + 1}/{questions.length}
+            <span className="text-sm font-semibold text-foreground">
+              Session {currentSessionNum} • Question {currentQuestionIdx + 1} of {questions.length}
             </span>
-            <span className="text-sm font-semibold">Score: {sessionScore}</span>
+            <span className="text-sm font-bold px-3 py-1 rounded-full bg-primary/10 text-primary">
+              Score: {sessionScore}
+            </span>
           </div>
-          <Progress value={progress} />
+          <Progress value={progress} className="h-3" />
         </div>
+
+        {showMotivation && (
+          <div className="mb-6">
+            <MotivationalQuote score={sessionScore} total={questions.length} />
+          </div>
+        )}
 
         <Card>
           <CardHeader>
