@@ -122,8 +122,23 @@ const Terms = () => {
             <h2 className="text-2xl font-semibold mb-4">10. Contact</h2>
             <p className="text-muted-foreground">
               Questions about these Terms? Contact us at{" "}
-              <a href="mailto:legal@vibecheck.app" className="text-primary underline">
+              <a 
+                href="mailto:legal@vibecheck.app" 
+                className="text-primary underline hover:text-primary/80"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 legal@vibecheck.app
+              </a>
+            </p>
+            <p className="text-muted-foreground mt-2">
+              For general support: <a 
+                href="mailto:support@vibecheck.app" 
+                className="text-primary underline hover:text-primary/80"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                support@vibecheck.app
               </a>
             </p>
           </section>
