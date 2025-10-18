@@ -3375,6 +3375,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_badges: {
+        Row: {
+          badge_description: string | null
+          badge_name: string
+          badge_type: string
+          earned_at: string | null
+          icon: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_description?: string | null
+          badge_name: string
+          badge_type: string
+          earned_at?: string | null
+          icon?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_description?: string | null
+          badge_name?: string
+          badge_type?: string
+          earned_at?: string | null
+          icon?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           admin_role: Database["public"]["Enums"]["admin_role"] | null
@@ -3424,6 +3454,36 @@ export type Database = {
           data_export_enabled?: boolean | null
           id?: string
           theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_streaks: {
+        Row: {
+          created_at: string | null
+          current_streak: number
+          id: string
+          last_checkin_date: string | null
+          longest_streak: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_streak?: number
+          id?: string
+          last_checkin_date?: string | null
+          longest_streak?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_streak?: number
+          id?: string
+          last_checkin_date?: string | null
+          longest_streak?: number
           updated_at?: string | null
           user_id?: string
         }
@@ -3677,6 +3737,14 @@ export type Database = {
           focus_area_key: string | null
           id: string
           name: string
+        }[]
+      }
+      update_user_streak: {
+        Args: { p_user_id: string }
+        Returns: {
+          badge_earned: boolean
+          current_streak: number
+          longest_streak: number
         }[]
       }
     }

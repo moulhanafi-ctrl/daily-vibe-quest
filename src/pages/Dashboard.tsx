@@ -10,6 +10,9 @@ import { MotivationalContent } from "@/components/dashboard/MotivationalContent"
 import { SaturdayTriviaCard } from "@/components/dashboard/SaturdayTriviaCard";
 import { ArthurSettings } from "@/components/arthur/ArthurSettings";
 import { FocusAreasPopup } from "@/components/dashboard/FocusAreasPopup";
+import { WeeklyVibeChart } from "@/components/dashboard/WeeklyVibeChart";
+import { StreakDisplay } from "@/components/dashboard/StreakDisplay";
+import { BadgesDisplay } from "@/components/dashboard/BadgesDisplay";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Heart, Users, Sparkles, BookOpen, MessageSquare, Settings, ShoppingBag, Book, MapPin, Trophy, Target, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -256,11 +259,16 @@ const Dashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="checkin">
+          <TabsContent value="checkin" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <StreakDisplay />
+              <BadgesDisplay />
+            </div>
             <MoodCheckIn userId={user?.id} ageGroup={profile?.age_group} />
           </TabsContent>
 
-          <TabsContent value="history">
+          <TabsContent value="history" className="space-y-6">
+            <WeeklyVibeChart />
             <MoodHistory userId={user?.id} />
           </TabsContent>
 

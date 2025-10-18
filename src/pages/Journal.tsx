@@ -10,6 +10,7 @@ import { StreakBadge } from "@/components/journal/StreakBadge";
 import { PrivacyNotice } from "@/components/journal/PrivacyNotice";
 import { DailyReflectionModal } from "@/components/journal/DailyReflectionModal";
 import { JournalExport } from "@/components/journal/JournalExport";
+import { MindfulAIAssistant } from "@/components/journal/MindfulAIAssistant";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, BookOpen, Lightbulb, TrendingUp } from "lucide-react";
 
@@ -125,7 +126,8 @@ export default function Journal() {
             <JournalList onSelectEntry={handleSelectEntry} />
           </TabsContent>
 
-          <TabsContent value="prompts">
+          <TabsContent value="prompts" className="space-y-6">
+            <MindfulAIAssistant onPromptSelect={handleSelectPrompt} />
             <JournalPrompts onSelectPrompt={handleSelectPrompt} />
           </TabsContent>
 

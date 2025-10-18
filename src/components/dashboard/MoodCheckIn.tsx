@@ -88,6 +88,45 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
 
       if (moodError) throw moodError;
 
+      // Update streak
+      try {
+        const { data: streakData } = await supabase.rpc("update_user_streak", {
+          p_user_id: userId,
+        });
+
+        if (streakData && streakData.length > 0 && streakData[0].badge_earned) {
+          // Award badge based on current streak
+          const currentStreak = streakData[0].current_streak;
+          const badges: Record<number, { name: string; description: string; icon: string }> = {
+            3: { name: "3-Day Starter", icon: "🔥", description: "Checked in for 3 days straight!" },
+            7: { name: "7-Day Consistency", icon: "⭐", description: "A full week of wellness!" },
+            14: { name: "2-Week Champion", icon: "🏆", description: "Two weeks of dedication!" },
+            30: { name: "Monthly Warrior", icon: "💪", description: "30 days of self-care!" },
+            60: { name: "60-Day Legend", icon: "👑", description: "Two months of commitment!" },
+            100: { name: "Century Club", icon: "💎", description: "100 days! You're unstoppable!" },
+          };
+
+          const badge = badges[currentStreak];
+          if (badge) {
+            await supabase.from("user_badges").insert({
+              user_id: userId,
+              badge_type: "streak",
+              badge_name: badge.name,
+              badge_description: badge.description,
+              icon: badge.icon,
+            });
+
+            toast({
+              title: `🎉 Badge Unlocked: ${badge.name}!`,
+              description: badge.description,
+            });
+          }
+        }
+      } catch (streakError) {
+        console.error("Error updating streak:", streakError);
+        // Don't block the mood checkin if streak update fails
+      }
+
       // Track event
       trackEvent({ 
         eventType: "checkin_submitted", 
