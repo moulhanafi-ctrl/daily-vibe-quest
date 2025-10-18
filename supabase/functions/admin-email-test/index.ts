@@ -71,7 +71,7 @@ serve(async (req) => {
           message = "Invalid/unauthorized API key";
         } else if (response.status === 422) {
           code = "invalid_from_address";
-          message = "Invalid 'from' address format";
+          message = "Invalid 'from' address or unverified domain";
         } else if (response.status === 429) {
           code = "rate_limited";
           message = "Rate limited by Resend";

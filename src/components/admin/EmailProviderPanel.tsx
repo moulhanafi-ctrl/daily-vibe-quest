@@ -93,7 +93,7 @@ export function EmailProviderPanel() {
         to: testEmail,
         success: data?.ok || false,
         error: data?.message || data?.error,
-        errorCode: data?.errorCode,
+        errorCode: data?.code,
         details: data?.details,
       };
 
@@ -122,14 +122,17 @@ export function EmailProviderPanel() {
 
   const getErrorMessage = (code?: string, fallback?: string) => {
     const errorMap: Record<string, string> = {
-      INVALID_SENDER: "Sender email is invalid or not configured",
-      DOMAIN_NOT_VERIFIED: "Email domain not verified in Resend",
-      DOMAIN_NOT_FOUND: "Email domain not found in Resend account",
-      API_KEY_INVALID: "Resend API key is invalid or expired",
-      RATE_LIMIT: "Rate limit exceeded, try again later",
-      NETWORK_ERROR: "Network error connecting to email service",
+      invalid_api_key: "Resend API key is invalid or unauthorized",
+      invalid_from_address: "Sender email address is invalid or domain not verified in Resend",
+      rate_limited: "Rate limit exceeded, try again later",
+      resend_service_issue: "Resend service temporarily unavailable",
+      network_error: "Network error connecting to email service",
+      missing_api_key: "RESEND_API_KEY secret not configured",
+      missing_from_email: "RESEND_FROM_EMAIL secret not configured",
+      missing_recipient: "Recipient email address required",
+      unknown_error: "Unknown error occurred",
     };
-    return errorMap[code || ""] || fallback || "Unknown error occurred";
+    return errorMap[code?.toLowerCase() || ""] || fallback || "Unknown error occurred";
   };
 
   const getDomainStatusBadge = (status: string) => {
