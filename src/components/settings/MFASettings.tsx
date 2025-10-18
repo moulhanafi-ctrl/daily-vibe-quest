@@ -4,8 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, CheckCircle, XCircle, Smartphone } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Shield, CheckCircle, XCircle, Smartphone, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { checkIsAdmin, logAdminAction } from "@/lib/adminUtils";
 
 export const MFASettings = () => {
   const [mfaEnabled, setMfaEnabled] = useState(false);
@@ -13,11 +15,20 @@ export const MFASettings = () => {
   const [verifyCode, setVerifyCode] = useState("");
   const [pendingFactorId, setPendingFactorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
     checkMFAStatus();
+    checkAdminStatus();
   }, []);
+
+  const checkAdminStatus = async () => {
+    const adminStatus = await checkIsAdmin();
+    setIsAdmin(adminStatus);
+  };
 
   const checkMFAStatus = async () => {
     try {
@@ -194,6 +205,75 @@ export const MFASettings = () => {
     }
   };
 
+  const confirmReset2FA = async () => {
+    if (!resetPassword || resetPassword.length < 6) {
+      toast({
+        title: "Password Required",
+        description: "Please enter your password to confirm",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Re-authenticate user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error("No user email found");
+
+      const { error: reAuthError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: resetPassword,
+      });
+
+      if (reAuthError) throw new Error("Password incorrect");
+
+      // List all factors
+      const factors = await supabase.auth.mfa.listFactors();
+      const allFactors = factors.data?.totp || [];
+
+      // Delete all factors
+      let removed = 0;
+      for (const factor of allFactors) {
+        try {
+          await supabase.auth.mfa.unenroll({ factorId: factor.id });
+          removed++;
+        } catch (e) {
+          console.error("Failed to remove factor:", e);
+        }
+      }
+
+      // Log to security audit
+      await logAdminAction("reset_2fa", user.id, {
+        factors_removed: removed,
+        initiated_by: "self",
+      });
+
+      // Reset state
+      setMfaEnabled(false);
+      setQrCode(null);
+      setVerifyCode("");
+      setPendingFactorId(null);
+      setShowResetDialog(false);
+      setResetPassword("");
+
+      toast({
+        title: "2FA Reset Complete",
+        description: `Removed ${removed} factor${removed === 1 ? "" : "s"}. Click 'Enable 2FA' to set up again.`,
+      });
+
+      window.dispatchEvent(new Event('readiness:refresh'));
+    } catch (error: any) {
+      toast({
+        title: "Reset Failed",
+        description: error.message ?? "Could not reset 2FA",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const unenrollMFA = async () => {
     setLoading(true);
     try {
@@ -326,11 +406,60 @@ export const MFASettings = () => {
               </AlertDescription>
             </Alert>
 
-            <Button variant="destructive" onClick={unenrollMFA} disabled={loading}>
-              Disable 2FA
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="destructive" onClick={unenrollMFA} disabled={loading}>
+                Disable 2FA
+              </Button>
+
+              {isAdmin && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowResetDialog(true)} 
+                  disabled={loading}
+                  className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Reset My 2FA
+                </Button>
+              )}
+            </div>
           </div>
         )}
+
+        <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                Reset Two-Factor Authentication
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove all 2FA factors from your account. You'll need to re-enroll after reset.
+                <br /><br />
+                <strong>Enter your password to confirm:</strong>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+              <Input
+                type="password"
+                placeholder="Your account password"
+                value={resetPassword}
+                onChange={(e) => setResetPassword(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setResetPassword("")}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmReset2FA} 
+                disabled={loading || !resetPassword}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                Reset 2FA
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Card>
   );
