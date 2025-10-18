@@ -157,8 +157,8 @@ const Settings = () => {
           {isAdmin && (
             <TabsContent value="security" className="space-y-4">
               <PasswordPolicyCard />
-              <ProductionReadinessChecklist />
               <MFASettings />
+              <ProductionReadinessChecklist />
               <StripeLiveModeVerification />
             </TabsContent>
           )}
