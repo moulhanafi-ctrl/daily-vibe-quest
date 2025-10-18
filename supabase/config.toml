@@ -129,6 +129,9 @@ verify_jwt = true
 [functions.export-journal]
 verify_jwt = true
 
+[functions.execute-account-deletion]
+verify_jwt = true
+
 [functions.mindful-ai-assistant]
 verify_jwt = true
 

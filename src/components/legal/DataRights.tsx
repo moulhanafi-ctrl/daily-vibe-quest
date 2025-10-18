@@ -65,27 +65,41 @@ export const DataRights = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Insert deletion request with 7-day grace period
-      const { error } = await supabase
-        .from("data_deletion_requests")
-        .insert({
-          user_id: user.id,
-          status: "pending"
-        });
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No active session");
 
-      if (error) throw error;
+      // Call edge function to execute full account deletion
+      const { data, error: functionError } = await supabase.functions.invoke(
+        'execute-account-deletion',
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }
+      );
+
+      if (functionError) throw functionError;
+      if (!data?.success) throw new Error(data?.error || "Deletion failed");
 
       trackEvent({ 
-        eventType: "data_delete_requested" as any,
+        eventType: "account_deleted" as any,
         metadata: { user_id: user.id }
       });
 
       toast({
         title: t("dataRights.delete.success"),
-        description: t("dataRights.delete.graceNote", { days: 7 }),
+        description: "Your account and all data have been permanently deleted.",
       });
 
       setShowDeleteDialog(false);
+
+      // Sign out and redirect
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      }, 2000);
+
     } catch (error: any) {
       toast({
         title: t("dataRights.delete.error"),
