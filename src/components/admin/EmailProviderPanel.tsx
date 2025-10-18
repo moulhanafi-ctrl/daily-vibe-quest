@@ -5,25 +5,36 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Mail, CheckCircle, XCircle, AlertCircle, RefreshCw, Send, Settings } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Mail, CheckCircle, XCircle, AlertCircle, RefreshCw, Send, ExternalLink, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 interface EmailStatus {
   senderEmailConfigured: boolean;
   senderEmail: string | null;
   senderDisplay: string;
-  resendDomain: string;
-  domainStatus: "not_found" | "unverified" | "verified" | "blocked";
+  resendDomain?: string;
+  domainStatus: "verified" | "unverified" | "not_found" | "blocked";
   domainVerified: boolean;
   lastCheckAt: string;
+}
+
+interface TestResult {
+  timestamp: string;
+  success: boolean;
+  to: string;
+  error?: string;
+  errorCode?: string;
+  details?: string;
 }
 
 export function EmailProviderPanel() {
   const [loading, setLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
   const [emailStatus, setEmailStatus] = useState<EmailStatus | null>(null);
-  const [testEmail, setTestEmail] = useState<string>("");
-  const [testResult, setTestResult] = useState<any>(null);
+  const [testEmail, setTestEmail] = useState("");
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
 
   useEffect(() => {
     loadCurrentUserEmail();
@@ -48,14 +59,14 @@ export function EmailProviderPanel() {
 
       if (error) {
         console.error("Error loading email status:", error);
-        toast.error("Failed to load email provider status");
+        toast.error("Failed to load email status");
         return;
       }
 
       setEmailStatus(data);
-    } catch (error: any) {
-      console.error("Error in loadEmailStatus:", error);
-      toast.error("Failed to connect to email provider");
+    } catch (error) {
+      console.error("Failed to load email status:", error);
+      toast.error("Failed to connect to email service");
     } finally {
       setStatusLoading(false);
     }
@@ -68,213 +79,367 @@ export function EmailProviderPanel() {
     }
 
     setLoading(true);
-    setTestResult(null);
+    const timestamp = new Date().toISOString();
+    
     try {
       const { data, error } = await supabase.functions.invoke("admin-email-test", {
         body: { to: testEmail },
       });
 
-      if (error) {
-        setTestResult({ success: false, error: error.message });
-        toast.error(`Test email failed: ${error.message}`);
-      } else if (data.ok) {
-        setTestResult({ success: true, data });
-        toast.success("Test email sent successfully!");
+      if (error) throw error;
+
+      const result: TestResult = {
+        timestamp,
+        to: testEmail,
+        success: data?.ok || false,
+        error: data?.message || data?.error,
+        errorCode: data?.errorCode,
+        details: data?.details,
+      };
+
+      setTestResults(prev => [result, ...prev].slice(0, 5));
+
+      if (data?.ok) {
+        toast.success(`Test email sent to ${testEmail}`);
       } else {
-        setTestResult({ success: false, error: data.message });
-        toast.error(`Test failed: ${data.message}`);
+        toast.error(getErrorMessage(data?.errorCode, data?.message));
       }
     } catch (error: any) {
       console.error("Error sending test email:", error);
-      setTestResult({ success: false, error: error.message });
-      toast.error("Network error: Failed to send test email");
+      const result: TestResult = {
+        timestamp,
+        to: testEmail,
+        success: false,
+        error: error.message || "Network error",
+        errorCode: "NETWORK_ERROR",
+      };
+      setTestResults(prev => [result, ...prev].slice(0, 5));
+      toast.error("Failed to send test email");
     } finally {
       setLoading(false);
     }
   };
 
+  const getErrorMessage = (code?: string, fallback?: string) => {
+    const errorMap: Record<string, string> = {
+      INVALID_SENDER: "Sender email is invalid or not configured",
+      DOMAIN_NOT_VERIFIED: "Email domain not verified in Resend",
+      DOMAIN_NOT_FOUND: "Email domain not found in Resend account",
+      API_KEY_INVALID: "Resend API key is invalid or expired",
+      RATE_LIMIT: "Rate limit exceeded, try again later",
+      NETWORK_ERROR: "Network error connecting to email service",
+    };
+    return errorMap[code || ""] || fallback || "Unknown error occurred";
+  };
+
   const getDomainStatusBadge = (status: string) => {
     switch (status) {
       case "verified":
-        return <Badge className="bg-green-600">Domain verified</Badge>;
+        return (
+          <Badge className="bg-green-600 hover:bg-green-700">
+            <CheckCircle className="h-3 w-3 mr-1" /> Verified
+          </Badge>
+        );
       case "unverified":
-        return <Badge variant="outline" className="border-amber-600 text-amber-600">Domain not verified</Badge>;
+        return (
+          <Badge variant="secondary" className="border-amber-600 text-amber-600">
+            <AlertCircle className="h-3 w-3 mr-1" /> Unverified
+          </Badge>
+        );
       case "blocked":
-        return <Badge variant="destructive">API key invalid</Badge>;
-      case "not_found":
-        return <Badge variant="secondary">Domain not found in Resend</Badge>;
+        return (
+          <Badge variant="destructive">
+            <XCircle className="h-3 w-3 mr-1" /> Blocked
+          </Badge>
+        );
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return (
+          <Badge variant="outline">
+            <AlertCircle className="h-3 w-3 mr-1" /> Not Found
+          </Badge>
+        );
     }
   };
 
-  const hasConfigError = emailStatus && !emailStatus.senderEmailConfigured;
+  const getActionButton = () => {
+    if (!emailStatus) return null;
+
+    if (!emailStatus.senderEmailConfigured) {
+      return (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            toast.info("Opening backend settings...");
+            window.open("#", "_self");
+            setTimeout(() => {
+              const event = new CustomEvent('open-backend-settings');
+              window.dispatchEvent(event);
+            }, 100);
+          }}
+        >
+          <Settings className="h-3 w-3 mr-2" />
+          Update Sender Email
+        </Button>
+      );
+    }
+
+    if (emailStatus.domainStatus === "not_found" || emailStatus.domainStatus === "unverified") {
+      return (
+        <Button variant="outline" size="sm" asChild>
+          <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-3 w-3 mr-1" />
+            Open Resend Domains
+          </a>
+        </Button>
+      );
+    }
+
+    if (emailStatus.domainStatus === "blocked") {
+      return (
+        <Button variant="outline" size="sm" asChild>
+          <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-3 w-3 mr-1" />
+            Check API Keys
+          </a>
+        </Button>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          Email Provider Configuration
-        </CardTitle>
-        <CardDescription>
-          Resend email service configuration and domain verification
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Email Provider Status
+            </CardTitle>
+            <CardDescription>
+              Monitor email configuration and test message delivery
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadEmailStatus}
+            disabled={statusLoading}
+          >
+            <RefreshCw className={`h-3 w-3 mr-1 ${statusLoading ? 'animate-spin' : ''}`} />
+            Refresh Status
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {statusLoading && (
-          <div className="text-sm text-muted-foreground">Loading email provider status...</div>
-        )}
-
-        {!statusLoading && hasConfigError && (
+        {/* Status Overview */}
+        {statusLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : !emailStatus ? (
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-3">
-                <div>
-                  <div className="font-semibold">Email Provider Misconfigured</div>
-                  <div className="text-sm mt-1">
-                    {!emailStatus.senderEmail 
-                      ? "RESEND_FROM_EMAIL secret is not configured" 
-                      : "Invalid email format in RESEND_FROM_EMAIL"}
-                  </div>
-                </div>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="font-medium">Required Configuration:</div>
-                  <div className="bg-destructive/10 p-3 rounded border border-destructive/20">
-                    <div className="font-mono text-xs space-y-1">
-                      <div>Secret: <span className="font-semibold">RESEND_FROM_EMAIL</span></div>
-                      <div>Example: <span className="text-green-600">noreply@dailyvibecheck.com</span></div>
-                      <div className="text-yellow-600">⚠️ Must be a valid email address</div>
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    toast.info("Opening backend settings...");
-                    window.open("#", "_self");
-                    setTimeout(() => {
-                      const event = new CustomEvent('open-backend-settings');
-                      window.dispatchEvent(event);
-                    }, 100);
-                  }}
-                >
-                  <Settings className="h-3 w-3 mr-2" />
-                  Update Secret Configuration
-                </Button>
-              </div>
-            </AlertDescription>
+            <XCircle className="h-4 w-4" />
+            <AlertDescription>Failed to load email provider status</AlertDescription>
           </Alert>
-        )}
-
-        {!statusLoading && emailStatus && (
-          <>
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold">Current Configuration</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Sender Email:</span>
-                  <span className={`font-mono ${!emailStatus.senderEmailConfigured ? 'text-red-600' : ''}`}>
-                    {emailStatus.senderEmail || "Not configured"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Display Name:</span>
-                  <span className="font-medium">{emailStatus.senderDisplay}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Domain Status:</span>
-                  {getDomainStatusBadge(emailStatus.domainStatus)}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Last Check:</span>
-                  <span className="text-xs">{new Date(emailStatus.lastCheckAt).toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadEmailStatus}
-                disabled={statusLoading}
-              >
-                <RefreshCw className={`h-3 w-3 mr-2 ${statusLoading ? "animate-spin" : ""}`} />
-                Refresh Status
-              </Button>
-            </div>
-
-            {emailStatus.domainStatus === "unverified" && (
-              <Alert variant="default" className="border-yellow-200 bg-yellow-50">
-                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <AlertDescription className="text-yellow-900">
-                  <div className="space-y-2">
-                    <div className="font-semibold">Domain Not Verified</div>
-                    <div className="text-sm">
-                      Verify DNS on Resend (SPF/DKIM) for {emailStatus.resendDomain}, then click Refresh Status.
-                      Visit your Resend dashboard to add the required DNS records.
-                    </div>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {emailStatus.domainStatus === "blocked" && (
+        ) : (
+          <div className="space-y-4">
+            {/* Configuration Status */}
+            {!emailStatus.senderEmailConfigured ? (
               <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
+                <XCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <div className="font-semibold">API Key Invalid</div>
-                  <div className="text-sm mt-1">
-                    Your RESEND_API_KEY appears to be invalid or unauthorized. Please update it in the backend settings.
+                  <div className="space-y-3">
+                    <div>
+                      <div className="font-semibold">Sender Email Not Configured</div>
+                      <p className="text-sm mt-1">
+                        The sender email (RESEND_FROM_EMAIL) is either missing or invalid. Configure it to enable email sending.
+                      </p>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="font-medium">Required Format:</div>
+                      <div className="bg-destructive/10 p-3 rounded border border-destructive/20">
+                        <div className="font-mono text-xs space-y-1">
+                          <div>Secret: <span className="font-semibold">RESEND_FROM_EMAIL</span></div>
+                          <div>Example: <span className="text-green-600">noreply@dailyvibecheck.com</span></div>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        toast.info("Opening backend settings...");
+                        window.open("#", "_self");
+                        setTimeout(() => {
+                          const event = new CustomEvent('open-backend-settings');
+                          window.dispatchEvent(event);
+                        }, 100);
+                      }}
+                    >
+                      <Settings className="h-3 w-3 mr-2" />
+                      Update Secret Configuration
+                    </Button>
                   </div>
                 </AlertDescription>
               </Alert>
-            )}
-
-            {emailStatus.senderEmailConfigured && (
-              <div className="space-y-2 pt-4 border-t">
-                <h3 className="text-sm font-semibold">Test Email Delivery</h3>
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    placeholder="test@example.com"
-                    value={testEmail}
-                    onChange={(e) => setTestEmail(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={sendTestEmail} disabled={loading || !testEmail}>
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Test
-                  </Button>
-                </div>
-                {testResult && (
-                  <Alert variant={testResult.success ? "default" : "destructive"}>
-                    <AlertDescription>
-                      {testResult.success ? (
-                        <div className="flex items-center gap-2 text-green-600">
-                          <CheckCircle className="h-4 w-4" />
-                          Test email sent successfully!
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <XCircle className="h-4 w-4" />
-                            <span className="font-semibold">Test Failed</span>
-                          </div>
-                          <div className="text-sm">{testResult.error}</div>
+            ) : (
+              <>
+                {/* Sender Info Card */}
+                <div className="p-4 border rounded-lg space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium">Sender Email</div>
+                      <div className="text-sm text-muted-foreground">
+                        {emailStatus.senderDisplay} &lt;{emailStatus.senderEmail}&gt;
+                      </div>
+                      {emailStatus.resendDomain && (
+                        <div className="text-xs text-muted-foreground">
+                          Domain: {emailStatus.resendDomain}
                         </div>
                       )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getDomainStatusBadge(emailStatus.domainStatus)}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="text-xs text-muted-foreground">
+                      Last checked: {new Date(emailStatus.lastCheckAt).toLocaleString()}
+                    </div>
+                    {getActionButton()}
+                  </div>
+                </div>
+
+                {/* Status-specific Alerts */}
+                {emailStatus.domainStatus === "unverified" && (
+                  <Alert className="border-yellow-200 bg-yellow-50">
+                    <AlertCircle className="h-4 w-4 text-yellow-600" />
+                    <AlertDescription className="text-yellow-900">
+                      <div className="space-y-2">
+                        <div className="font-semibold">Domain Verification Required</div>
+                        <p className="text-sm">
+                          Your sender domain is not verified. Add SPF and DKIM DNS records in your domain provider to verify, then click Refresh Status.
+                        </p>
+                      </div>
                     </AlertDescription>
                   </Alert>
                 )}
+
+                {emailStatus.domainStatus === "blocked" && (
+                  <Alert variant="destructive">
+                    <XCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <div className="font-semibold">API Access Blocked</div>
+                        <p className="text-sm">
+                          Your Resend API key (RESEND_API_KEY) is invalid or has been revoked. Generate a new API key and update the secret.
+                        </p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {emailStatus.domainStatus === "not_found" && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <div className="font-semibold">Domain Not Found in Resend</div>
+                        <p className="text-sm">
+                          This domain hasn't been added to your Resend account. Add it in Resend to start sending.
+                        </p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Test Email Section */}
+        {emailStatus?.senderEmailConfigured && (
+          <div className="space-y-3 pt-4 border-t">
+            <div>
+              <h3 className="text-sm font-semibold mb-1">Test Email Delivery</h3>
+              <p className="text-xs text-muted-foreground">
+                Send a test email to verify your configuration
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label htmlFor="test-email" className="sr-only">
+                  Test Email Address
+                </Label>
+                <Input
+                  id="test-email"
+                  type="email"
+                  placeholder="test@example.com"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                />
+              </div>
+              <Button 
+                onClick={sendTestEmail} 
+                disabled={loading || !testEmail}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {loading ? "Sending..." : "Send Test"}
+              </Button>
+            </div>
+
+            {/* Recent Test Results */}
+            {testResults.length > 0 && (
+              <div className="space-y-2 pt-3">
+                <div className="text-xs font-medium text-muted-foreground">
+                  Recent Test Results (Last 5)
+                </div>
+                <div className="space-y-2">
+                  {testResults.map((result, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-3 rounded-lg border text-sm ${
+                        result.success
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-red-50 border-red-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 flex-1">
+                          {result.success ? (
+                            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-medium ${result.success ? 'text-green-900' : 'text-red-900'}`}>
+                              {result.success 
+                                ? `Success → ${result.to}` 
+                                : getErrorMessage(result.errorCode, result.error)}
+                            </div>
+                            {result.details && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {result.details}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(result.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </CardContent>
     </Card>
