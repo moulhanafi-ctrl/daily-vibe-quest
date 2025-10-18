@@ -36,7 +36,7 @@ import LegalAdmin from "./pages/admin/LegalAdmin";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AdminAI from "./pages/admin/AdminAI";
-import ArthurAdmin from "./pages/admin/ArthleAdmin";
+import ArthurAdmin from "./pages/admin/ArthurAdmin";
 import Analytics from "./pages/admin/Analytics";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SubscriberAnalytics from "./pages/admin/SubscriberAnalytics";
@@ -111,9 +111,7 @@ const App = () => (
           <Route path="/trivia/sessions" element={<SessionTrivia mode="auto" />} />
           <Route path="/trivia/demo" element={<SessionTrivia mode="demo" />} />
           <Route path="/policies/shipping" element={<Shipping />} />
-          <Route path="/policies/refunds" element={<Refund
-
-s />} />
+          <Route path="/policies/refunds" element={<Refunds />} />
           <Route path="/legal" element={<LegalIndex />} />
           <Route path="/legal/terms" element={<Terms />} />
           <Route path="/legal/privacy" element={<Privacy />} />
@@ -139,7 +137,7 @@ s />} />
           <Route path="/family/journals" element={<ParentJournalViewer />} />
           <Route path="/family/stories-archive" element={<StoriesArchive />} />
           <Route path="/admin/legal" element={<LegalAdmin />} />
-          <Route path="/admin/trivia" element={<TrivieAdmin />} />
+          <Route path="/admin/trivia" element={<TriviaAdmin />} />
           <Route path="/admin/flags" element={<FeatureFlags />} />
           <Route path="/admin/stripe" element={<StripeAdmin />} />
           <Route path="/admin/ops" element={<OpsAdmin />} />
