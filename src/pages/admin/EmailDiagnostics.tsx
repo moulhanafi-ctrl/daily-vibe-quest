@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Mail, CheckCircle, XCircle, AlertTriangle, RefreshCw, Send, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/AdminGuard";
+import { EmailVerificationBanner } from "@/components/admin/EmailVerificationBanner";
 
 interface DiagnosticResult {
   runtime?: {
@@ -179,6 +180,8 @@ export default function EmailDiagnostics() {
             Comprehensive email provider configuration and testing
           </p>
         </div>
+
+        <EmailVerificationBanner />
 
         {/* Runtime Environment */}
         <Card>

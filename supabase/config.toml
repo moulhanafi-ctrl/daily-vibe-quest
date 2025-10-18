@@ -111,6 +111,9 @@ verify_jwt = false
 [functions.email-diagnostics]
 verify_jwt = true
 
+[functions.check-email-domain-status]
+verify_jwt = true
+
 [functions.get-vapid-key]
 verify_jwt = false
 
