@@ -24,28 +24,17 @@ const Success = () => {
           </div>
           <CardTitle className="text-2xl">Thank you for your purchase! 🎉</CardTitle>
           <CardDescription className="text-base mt-2">
-            Your order has been confirmed and will be processed shortly.
+            Check your email for the receipt.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            You'll receive an email confirmation with your order details.
-          </p>
-          <div className="flex gap-3 flex-col sm:flex-row">
-            <Button 
-              onClick={() => navigate("/orders")} 
-              className="flex-1"
-            >
-              View Orders
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/store")} 
-              className="flex-1"
-            >
-              Continue Shopping
-            </Button>
-          </div>
+          <Button 
+            onClick={() => navigate("/")} 
+            className="w-full"
+            size="lg"
+          >
+            Back to Home
+          </Button>
         </CardContent>
       </Card>
     </div>
