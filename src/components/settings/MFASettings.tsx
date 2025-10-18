@@ -34,19 +34,50 @@ export const MFASettings = () => {
   const enrollMFA = async () => {
     setLoading(true);
     try {
-      // Clean up any existing unverified factors first
+      // 1) Get existing factors
       const factors = await supabase.auth.mfa.listFactors();
-      const unverifiedFactors = factors.data?.totp.filter((f) => f.status !== "verified");
-      
-      // Unenroll any unverified factors to avoid conflicts
-      for (const factor of unverifiedFactors || []) {
-        await supabase.auth.mfa.unenroll({ factorId: factor.id });
+      const allTotp = factors.data?.totp || [];
+      const unverifiedFactors = allTotp.filter((f: any) => f.status !== "verified");
+
+      // 2) Best-effort cleanup of any pending/unverified factors
+      for (const factor of unverifiedFactors) {
+        try {
+          await supabase.auth.mfa.unenroll({ factorId: factor.id });
+        } catch (e) {
+          // ignore cleanup errors
+        }
       }
 
-      const { data, error } = await supabase.auth.mfa.enroll({
+      // 3) Attempt enrollment with the default friendly name
+      let friendlyName = "Admin Account";
+      let { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "Admin Account",
+        friendlyName,
       });
+
+      // 4) Handle name conflict by checking for verified factor or retrying with unique name
+      if (error && (error.message?.includes("friendly name") || (error as any).code === "mfa_factor_name_conflict")) {
+        const refetch = await supabase.auth.mfa.listFactors();
+        const refTotp = refetch.data?.totp || [];
+
+        // If a verified factor already exists with that name, reflect enabled state
+        const alreadyVerified = refTotp.some((f: any) => f.status === "verified" && (f.friendly_name === friendlyName || f.friendlyName === friendlyName));
+        if (alreadyVerified) {
+          setMfaEnabled(true);
+          setQrCode(null);
+          toast({ title: "2FA Already Enabled", description: "Your account already has a verified 2FA factor." });
+          return;
+        }
+
+        // Otherwise, remove any lingering conflicting pending factors and retry with a unique name
+        const conflicting = refTotp.filter((f: any) => (f.friendly_name === friendlyName || f.friendlyName === friendlyName) && f.status !== "verified");
+        for (const f of conflicting) {
+          try { await supabase.auth.mfa.unenroll({ factorId: f.id }); } catch {}
+        }
+
+        friendlyName = `Admin Account ${Date.now()}`;
+        ({ data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName }));
+      }
 
       if (error) throw error;
 
@@ -60,7 +91,7 @@ export const MFASettings = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message ?? "Unable to start MFA enrollment",
         variant: "destructive",
       });
     } finally {
