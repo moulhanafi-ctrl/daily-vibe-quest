@@ -8,7 +8,23 @@ const corsHeaders = {
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || Deno.env.get("WELCOME_FROM_EMAIL") || "Mostapha <notifications@resend.dev>";
+const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || Deno.env.get("WELCOME_FROM_EMAIL");
+const FALLBACK_FROM_EMAIL = "onboarding@resend.dev";
+
+// Email validation regex
+const EMAIL_REGEX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+function validateAndComposeFrom(fromEmail: string | undefined): { valid: boolean; composedFrom: string; error?: string } {
+  if (!fromEmail) {
+    return { valid: false, composedFrom: "", error: "RESEND_FROM_EMAIL not configured" };
+  }
+  
+  if (!EMAIL_REGEX.test(fromEmail)) {
+    return { valid: false, composedFrom: "", error: `Invalid email format: ${fromEmail}` };
+  }
+  
+  return { valid: true, composedFrom: `Mostapha <${fromEmail}>` };
+}
 
 interface ProviderHealthCheck {
   healthy: boolean;
@@ -32,10 +48,10 @@ async function checkDomainVerification(): Promise<{ verified: boolean; domain?: 
   }
 
   try {
-    // Extract domain from RESEND_FROM_EMAIL
-    const emailMatch = RESEND_FROM_EMAIL.match(/<(.+)>/) || [null, RESEND_FROM_EMAIL];
-    const email = emailMatch[1] || RESEND_FROM_EMAIL;
-    const domain = email.split('@')[1];
+    // Extract domain from FROM_EMAIL
+    const emailMatch = FROM_EMAIL?.match(/<(.+)>/) || [null, FROM_EMAIL];
+    const email = emailMatch[1] || FROM_EMAIL;
+    const domain = email?.split('@')[1];
 
     if (!domain) {
       return { verified: false };
@@ -81,7 +97,7 @@ async function checkEmailProvider(): Promise<ProviderHealthCheck> {
     };
   }
 
-  if (!RESEND_FROM_EMAIL || RESEND_FROM_EMAIL.trim() === '') {
+  if (!FROM_EMAIL || FROM_EMAIL.trim() === '') {
     return {
       healthy: false,
       provider: 'resend',
@@ -97,7 +113,7 @@ async function checkEmailProvider(): Promise<ProviderHealthCheck> {
       provider: 'resend',
       error: 'Invalid API key format',
       details: 'RESEND_API_KEY appears to be malformed (should start with re_)',
-      fromEmail: RESEND_FROM_EMAIL
+      fromEmail: FROM_EMAIL
     };
   }
 
@@ -117,7 +133,7 @@ async function checkEmailProvider(): Promise<ProviderHealthCheck> {
         provider: 'resend',
         error: 'API key is invalid or expired',
         details: 'Resend returned 401 Unauthorized. Please rotate the RESEND_API_KEY secret.',
-        fromEmail: RESEND_FROM_EMAIL
+        fromEmail: FROM_EMAIL
       };
     }
 
@@ -128,7 +144,7 @@ async function checkEmailProvider(): Promise<ProviderHealthCheck> {
         provider: 'resend',
         error: `Provider error: ${response.status}`,
         details: errorText,
-        fromEmail: RESEND_FROM_EMAIL
+        fromEmail: FROM_EMAIL
       };
     }
 
@@ -139,7 +155,7 @@ async function checkEmailProvider(): Promise<ProviderHealthCheck> {
       healthy: true,
       provider: 'resend',
       domainVerified: domainCheck.verified,
-      fromEmail: RESEND_FROM_EMAIL,
+      fromEmail: FROM_EMAIL,
       details: domainCheck.verified 
         ? 'Email provider is healthy and domain is verified' 
         : 'Email provider is healthy but sender domain is unverified - deliverability may be reduced'
@@ -150,7 +166,7 @@ async function checkEmailProvider(): Promise<ProviderHealthCheck> {
       provider: 'resend',
       error: 'Network error',
       details: error instanceof Error ? error.message : 'Unknown error connecting to Resend',
-      fromEmail: RESEND_FROM_EMAIL
+      fromEmail: FROM_EMAIL
     };
   }
 }
@@ -199,11 +215,18 @@ async function sendEmailNotification(
   userName: string,
   personalizedGreeting: string,
   message: string,
-  appUrl: string
-): Promise<{ success: boolean; error?: string; statusCode?: number }> {
+  appUrl: string,
+  useFallback: boolean = false
+): Promise<{ success: boolean; error?: string; statusCode?: number; usedFallback?: boolean }> {
   if (!RESEND_API_KEY || RESEND_API_KEY.trim() === '') {
     return { success: false, error: "RESEND_API_KEY not configured", statusCode: 500 };
   }
+
+  console.log(`[EMAIL] Sending to ${email} for user ${userName}${useFallback ? ' (using fallback)' : ''}`);
+
+  // Choose from address based on fallback flag
+  const fromEmail = useFallback ? FALLBACK_FROM_EMAIL : FROM_EMAIL;
+  const composedFrom = `Mostapha <${fromEmail}>`;
 
   const html = `
     <!DOCTYPE html>
@@ -241,11 +264,11 @@ async function sendEmailNotification(
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${RESEND_API_KEY.trim()}`,
+        Authorization: `Bearer ${RESEND_API_KEY!.trim()}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: RESEND_FROM_EMAIL,
+        from: composedFrom,
         to: [email],
         subject: "💌 Message from Mostapha",
         html,
@@ -253,16 +276,26 @@ async function sendEmailNotification(
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error("Resend API error:", error);
+      const errorData = await response.json();
+      console.error(`[EMAIL] Failed for ${email}:`, errorData);
+      
+      // If 422 invalid from field and not already using fallback, retry with fallback
+      if (response.status === 422 && !useFallback && errorData.message?.toLowerCase().includes('from')) {
+        console.log(`[EMAIL] Retrying ${email} with fallback sender`);
+        return sendEmailNotification(email, userName, personalizedGreeting, message, appUrl, true);
+      }
+      
       return { 
         success: false, 
-        error: `Resend API error: ${error}`,
-        statusCode: response.status 
+        error: errorData.message || "Email send failed",
+        statusCode: response.status,
+        usedFallback: useFallback
       };
     }
 
-    return { success: true };
+    const result = await response.json();
+    console.log(`[EMAIL] Successfully sent to ${email}:`, result.id);
+    return { success: true, usedFallback: useFallback };
   } catch (error) {
     console.error("Email send error:", error);
     return { 
@@ -279,6 +312,23 @@ serve(async (req) => {
   }
 
   try {
+    // Validate from email configuration
+    const fromValidation = validateAndComposeFrom(FROM_EMAIL);
+    if (!fromValidation.valid) {
+      console.error("[CONFIG] Invalid FROM_EMAIL:", fromValidation.error);
+      return new Response(
+        JSON.stringify({ 
+          error: "Email configuration invalid",
+          details: fromValidation.error,
+          status: "skipped_misconfigured"
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -331,7 +381,7 @@ serve(async (req) => {
           JSON.stringify({ 
             domains: data.data || [],
             currentDomain: domainCheck.domain,
-            currentFromEmail: RESEND_FROM_EMAIL
+            currentFromEmail: FROM_EMAIL
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -397,7 +447,7 @@ serve(async (req) => {
               <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <p style="color: #333; font-size: 15px; line-height: 1.8; margin: 0;">
                   <strong>Timestamp:</strong> ${new Date().toISOString()}<br/>
-                  <strong>From:</strong> ${RESEND_FROM_EMAIL}<br/>
+                  <strong>From:</strong> ${FROM_EMAIL}<br/>
                   <strong>Domain Verified:</strong> ${emailHealth.domainVerified ? '✅ Yes' : '⚠️ No (see note below)'}
                 </p>
               </div>
@@ -426,7 +476,7 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: RESEND_FROM_EMAIL,
+            from: FROM_EMAIL,
             to: [testEmail],
             subject: "✅ Resend Test OK",
             html: testHtml,
@@ -454,7 +504,7 @@ serve(async (req) => {
           JSON.stringify({ 
             success: true,
             messageId: result.id,
-            from: RESEND_FROM_EMAIL,
+            from: FROM_EMAIL,
             to: testEmail,
             domainVerified: emailHealth.domainVerified,
             timestamp: new Date().toISOString()
@@ -547,7 +597,9 @@ serve(async (req) => {
         user_id: user.id,
         username: user.username,
         channels: {},
-        attempted_at: new Date().toISOString()
+        attempted_at: new Date().toISOString(),
+        metadata: {}
+      };
       };
 
       try {
@@ -686,7 +738,8 @@ serve(async (req) => {
                   firstName,
                   personalizedGreeting,
                   aiMessage,
-                  appUrl
+                  appUrl,
+                  false // Start with primary sender
                 );
 
                 if (emailResult.success) {
@@ -709,6 +762,13 @@ serve(async (req) => {
                     attempts: retries + 1,
                     timestamp: new Date().toISOString()
                   };
+                  
+                  // Track fallback usage
+                  if (emailResult.usedFallback) {
+                    userDelivery.metadata.sender_unverified_fallback = true;
+                    console.log(`[USER ${user.id}] Used fallback sender due to domain verification`);
+                  }
+                  
                   console.log(`Email sent to user ${user.id}`);
                 } else {
                   lastError = emailResult.error || 'Unknown error';
@@ -766,9 +826,13 @@ serve(async (req) => {
           }
         }
 
-        // Only count as user error if ALL channels failed
-        if (channelFailures > 0 && channelSuccesses === 0) {
+        // Count successes and failures for this user
+        if (channelFailures === 0 && channelSuccesses > 0) {
+          usersTargeted++;
+        } else if (channelSuccesses === 0 && channelFailures > 0) {
           usersFullyFailed++;
+        } else if (channelSuccesses > 0) {
+          usersTargeted++;
         }
 
         deliveryDetails.push(userDelivery);
@@ -817,7 +881,7 @@ serve(async (req) => {
         delivery_details: deliveryDetails
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );
   } catch (error) {
@@ -826,7 +890,7 @@ serve(async (req) => {
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );
   }

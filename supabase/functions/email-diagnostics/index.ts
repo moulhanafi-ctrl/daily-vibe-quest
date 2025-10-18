@@ -8,6 +8,21 @@ const corsHeaders = {
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || Deno.env.get("WELCOME_FROM_EMAIL");
 
+// Email validation regex
+const EMAIL_REGEX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+function validateAndComposeFrom(fromEmail: string | undefined): { valid: boolean; composedFrom: string; error?: string } {
+  if (!fromEmail) {
+    return { valid: false, composedFrom: "", error: "RESEND_FROM_EMAIL not configured" };
+  }
+  
+  if (!EMAIL_REGEX.test(fromEmail)) {
+    return { valid: false, composedFrom: "", error: `Invalid email format: ${fromEmail}` };
+  }
+  
+  return { valid: true, composedFrom: `Mostapha <${fromEmail}>` };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -23,13 +38,19 @@ serve(async (req) => {
       runtime: "deno-edge-function"
     };
 
+    // Validate and compose from field
+    const fromValidation = validateAndComposeFrom(RESEND_FROM_EMAIL);
+    
     // Secrets status (safe to expose presence/length, not values)
     const secrets = {
       resendApiKeyPresent: !!RESEND_API_KEY,
       resendApiKeyLength: RESEND_API_KEY?.length || 0,
       resendApiKeyLast4: RESEND_API_KEY ? RESEND_API_KEY.slice(-4) : "N/A",
       resendFromEmailPresent: !!RESEND_FROM_EMAIL,
-      resendFromEmail: RESEND_FROM_EMAIL || "Not configured"
+      resendFromEmail: RESEND_FROM_EMAIL || "Not configured",
+      resendFromEmailValid: fromValidation.valid,
+      resendFromEmailComposed: fromValidation.composedFrom || "Invalid",
+      resendFromEmailError: fromValidation.error
     };
 
     // Health check
@@ -115,10 +136,10 @@ serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: `Mostapha <${RESEND_FROM_EMAIL}>`,
+              from: fromValidation.composedFrom,
               to: [testEmail],
               subject: "✅ Resend test OK",
-              text: `This is a Resend connectivity test.\n\nTimestamp: ${new Date().toISOString()}\nFrom: ${RESEND_FROM_EMAIL}\nRuntime: ${runtime.runtime}\nEnvironment: ${runtime.buildTarget}\n\nIf you received this email, your Resend configuration is working correctly.`
+              text: `This is a Resend connectivity test.\n\nTimestamp: ${new Date().toISOString()}\nFrom: ${fromValidation.composedFrom}\nRuntime: ${runtime.runtime}\nEnvironment: ${runtime.buildTarget}\n\nIf you received this email, your Resend configuration is working correctly.`
             }),
           });
 

@@ -21,6 +21,9 @@ interface DiagnosticResult {
     resendApiKeyLast4?: string;
     resendFromEmailPresent: boolean;
     resendFromEmail?: string;
+    resendFromEmailValid?: boolean;
+    resendFromEmailComposed?: string;
+    resendFromEmailError?: string;
   };
   healthCheck?: {
     statusCode: number;
@@ -237,27 +240,65 @@ export default function EmailDiagnostics() {
                   </div>
                   
                   <div className="font-medium">RESEND_FROM_EMAIL:</div>
-                  <div className="flex items-center gap-2">
-                    {result.secrets.resendFromEmailPresent ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      {result.secrets.resendFromEmailPresent ? (
+                        <>
+                          <Badge className="bg-green-600">Present</Badge>
+                          {showSecrets && (
+                            <span className="font-mono text-xs">
+                              {result.secrets.resendFromEmail}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <Badge variant="destructive">Missing</Badge>
+                      )}
+                    </div>
+                    
+                    {result.secrets.resendFromEmailPresent && (
                       <>
-                        <Badge className="bg-green-600">Present</Badge>
-                        {showSecrets && (
-                          <span className="font-mono text-xs">
-                            {result.secrets.resendFromEmail}
-                          </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-muted-foreground">Valid Format:</span>
+                          {result.secrets.resendFromEmailValid ? (
+                            <Badge variant="outline" className="bg-green-50 text-green-700">✓ Valid</Badge>
+                          ) : (
+                            <Badge variant="destructive">✗ Invalid</Badge>
+                          )}
+                        </div>
+                        
+                        {showSecrets && result.secrets.resendFromEmailComposed && (
+                          <div className="mt-1">
+                            <span className="text-xs text-muted-foreground">Composed From:</span>
+                            <div className="font-mono text-xs bg-muted p-2 rounded mt-1">
+                              {result.secrets.resendFromEmailComposed}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {result.secrets.resendFromEmailError && (
+                          <Alert variant="destructive" className="mt-2">
+                            <XCircle className="h-4 w-4" />
+                            <AlertDescription className="text-xs">
+                              {result.secrets.resendFromEmailError}
+                            </AlertDescription>
+                          </Alert>
                         )}
                       </>
-                    ) : (
-                      <Badge variant="destructive">Missing</Badge>
                     )}
                   </div>
                 </div>
 
-                {(!result.secrets.resendApiKeyPresent || !result.secrets.resendFromEmailPresent) && (
+                {(!result.secrets.resendApiKeyPresent || !result.secrets.resendFromEmailPresent || !result.secrets.resendFromEmailValid) && (
                   <Alert variant="destructive">
                     <XCircle className="h-4 w-4" />
                     <AlertDescription>
-                      Missing required secrets. Configure RESEND_API_KEY and RESEND_FROM_EMAIL in your environment.
+                      <div className="font-semibold mb-1">Configuration Issue</div>
+                      {!result.secrets.resendApiKeyPresent && <div className="text-sm">• RESEND_API_KEY is missing</div>}
+                      {!result.secrets.resendFromEmailPresent && <div className="text-sm">• RESEND_FROM_EMAIL is missing</div>}
+                      {result.secrets.resendFromEmailPresent && !result.secrets.resendFromEmailValid && (
+                        <div className="text-sm">• RESEND_FROM_EMAIL format is invalid (must be a valid email address only, no name/brackets)</div>
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}
