@@ -202,11 +202,15 @@ serve(async (req) => {
             // Primary sender worked or different error
             let verdict = "sent";
             if (response.status === 200 || response.status === 202) {
-              if (responseData.warning || (responseData.status && responseData.status.includes('unverified'))) {
+              if (responseData.warning || (responseData.status && typeof responseData.status === 'string' && responseData.status.includes('unverified'))) {
                 verdict = "sender_unverified";
               }
             } else if (response.status === 401) {
               verdict = "invalid_key";
+            } else if (response.status === 403) {
+              verdict = (typeof responseData.message === 'string' && responseData.message.toLowerCase().includes('only send testing emails'))
+                ? "test_mode_only"
+                : "403_forbidden";
             } else if (response.status === 422 || response.status === 400) {
               verdict = "invalid_from";
             }
@@ -215,7 +219,7 @@ serve(async (req) => {
               success: response.status === 200 || response.status === 202,
               statusCode: response.status,
               messageId: responseData.id,
-              error: !response.ok ? responseData.message || responseData.error : undefined,
+              error: !response.ok ? (responseData.message || responseData.error || "Unknown error") : undefined,
               response: responseData,
               verdict,
               usedFallback: false,

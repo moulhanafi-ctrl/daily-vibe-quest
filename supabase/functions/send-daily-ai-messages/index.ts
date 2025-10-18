@@ -773,6 +773,21 @@ serve(async (req) => {
                   lastError = emailResult.error || 'Unknown error';
                   const statusCode = emailResult.statusCode || 500;
                   
+                  // If account is in test mode or forbidden, skip as misconfigured (do not count as error)
+                  if (statusCode === 403) {
+                    channelsSkipped++;
+                    userDelivery.channels.email = {
+                      status: 'skipped_misconfigured',
+                      reason: 'provider_test_mode_or_forbidden',
+                      error: lastError,
+                      to: email,
+                      attempts: retries + 1,
+                      timestamp: new Date().toISOString()
+                    };
+                    console.log(`Skipping email for ${user.id}: provider 403 (test mode or forbidden)`);
+                    break;
+                  }
+                  
                   // Check if error is retryable (429, 5xx but not 401)
                   const isRetryable = (statusCode === 429 || statusCode >= 500) && statusCode !== 401;
                   

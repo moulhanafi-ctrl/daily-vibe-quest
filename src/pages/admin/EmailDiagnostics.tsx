@@ -153,8 +153,14 @@ export default function EmailDiagnostics() {
         return <Badge className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Sent</Badge>;
       case "sender_unverified":
         return <Badge variant="secondary"><AlertTriangle className="h-3 w-3 mr-1" /> Unverified Sender</Badge>;
+      case "sender_unverified_fallback":
+        return <Badge variant="secondary"><AlertTriangle className="h-3 w-3 mr-1" /> Fallback Sender</Badge>;
+      case "test_mode_only":
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Test Mode Only</Badge>;
       case "invalid_from":
         return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Invalid From</Badge>;
+      case "403_forbidden":
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Forbidden</Badge>;
       case "invalid_key":
         return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Invalid Key</Badge>;
       case "network_error":
@@ -460,6 +466,19 @@ export default function EmailDiagnostics() {
                     </>
                   )}
                 </div>
+
+                {result.testSend.verdict === "test_mode_only" && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="font-semibold mb-1">Account in Test Mode</div>
+                      <div className="text-sm">
+                        Resend currently allows sending only to the account owner's email.
+                        To email your users, verify your domain and set RESEND_FROM_EMAIL to an address on that domain.
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 {result.testSend.response && (
                   <div>
