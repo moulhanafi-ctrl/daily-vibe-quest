@@ -68,6 +68,7 @@ import StripeDiagnostics from "./pages/admin/StripeDiagnostics";
 import Recovery from "./pages/auth/Recovery";
 import VerifyCode from "./pages/auth/VerifyCode";
 import ResetPassword from "./pages/auth/ResetPassword";
+import Success from "./pages/Success";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const App = () => (
           <Route path="/store/:ageGroup" element={<AgeGroupStore />} />
           <Route path="/store/product/:productId" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/success" element={<Success />} />
           <Route path="/library" element={<Library />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/journal" element={<Journal />} />
