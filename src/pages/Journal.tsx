@@ -8,6 +8,8 @@ import { JournalPrompts } from "@/components/journal/JournalPrompts";
 import { JournalProgress } from "@/components/journal/JournalProgress";
 import { StreakBadge } from "@/components/journal/StreakBadge";
 import { PrivacyNotice } from "@/components/journal/PrivacyNotice";
+import { DailyReflectionModal } from "@/components/journal/DailyReflectionModal";
+import { JournalExport } from "@/components/journal/JournalExport";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, BookOpen, Lightbulb, TrendingUp } from "lucide-react";
 
@@ -63,17 +65,22 @@ export default function Journal() {
 
   return (
     <div className="container mx-auto p-4 max-w-6xl">
+      <DailyReflectionModal onSelectPrompt={handleSelectPrompt} />
+      
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold">Journal</h1>
           <StreakBadge />
         </div>
-        {!showComposer && (
-          <Button onClick={() => setShowComposer(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Entry
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {!showComposer && <JournalExport />}
+          {!showComposer && (
+            <Button onClick={() => setShowComposer(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Entry
+            </Button>
+          )}
+        </div>
       </div>
 
       <PrivacyNotice isMinor={isMinor} />
