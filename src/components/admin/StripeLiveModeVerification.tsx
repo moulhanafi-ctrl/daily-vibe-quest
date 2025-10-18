@@ -2,11 +2,30 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, XCircle, AlertTriangle, CreditCard, Zap } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, CreditCard, Zap, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface StripeStatus {
+  ok: boolean;
+  message: string;
+  errors: string[];
+  env?: {
+    publicKey?: { present: boolean; isLive?: boolean; masked?: string };
+    secretKey?: { present: boolean; isLive?: boolean; masked?: string; source?: string };
+    webhookSecret?: { present: boolean; isValid?: boolean; masked?: string; source?: string };
+    liveMode?: { value?: string; isTrue?: boolean };
+  };
+  stripe?: {
+    accountId?: string;
+    livemode?: boolean;
+    country?: string;
+    email?: string;
+  };
+}
 
 export const StripeLiveModeVerification = () => {
-  const [isLiveMode, setIsLiveMode] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<StripeStatus | null>(null);
   const [checking, setChecking] = useState(true);
   const { toast } = useToast();
 
@@ -14,20 +33,39 @@ export const StripeLiveModeVerification = () => {
     checkStripeMode();
   }, []);
 
-  const checkStripeMode = async () => {
+  const checkStripeMode = async (invalidate = false) => {
     setChecking(true);
     try {
-      // Check console logs or edge function response for STRIPE mode indicator
-      const logs = console.log.toString();
-      const isLive = logs.includes("[STRIPE] Using LIVE mode");
-      setIsLiveMode(isLive);
-    } catch (error) {
+      const { data, error } = await supabase.functions.invoke('stripe-live-status', {
+        body: { invalidate },
+      });
+
+      if (error) {
+        console.error("Error checking Stripe mode:", error);
+        toast({
+          title: "Error checking Stripe status",
+          description: error.message,
+          variant: "destructive",
+        });
+        setStatus({ ok: false, message: error.message, errors: [error.message] });
+      } else {
+        setStatus(data as StripeStatus);
+        if (data?.ok) {
+          toast({
+            title: "Stripe status refreshed",
+            description: "Live mode is active and verified",
+          });
+        }
+      }
+    } catch (error: any) {
       console.error("Error checking Stripe mode:", error);
-      setIsLiveMode(false);
+      setStatus({ ok: false, message: error.message, errors: [error.message] });
     } finally {
       setChecking(false);
     }
   };
+
+  const isLiveMode = status?.ok && status?.stripe?.livemode;
 
   return (
     <Card className="p-6">
@@ -59,6 +97,20 @@ export const StripeLiveModeVerification = () => {
             </div>
           )}
         </div>
+
+        {status && !checking && status.errors.length > 0 && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <p className="font-medium mb-2">Issues Found:</p>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                {status.errors.map((error, idx) => (
+                  <li key={idx}>{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {!checking && !isLiveMode && (
           <Alert className="border-orange-500/50 bg-orange-500/10">
@@ -107,10 +159,14 @@ export const StripeLiveModeVerification = () => {
         )}
 
         <div className="flex gap-2">
-          <Button onClick={checkStripeMode} variant="outline" disabled={checking}>
+          <Button onClick={() => checkStripeMode(false)} variant="outline" disabled={checking}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
             Refresh Status
           </Button>
-          <Button asChild variant="secondary">
+          <Button onClick={() => checkStripeMode(true)} variant="secondary" disabled={checking}>
+            Force Recheck
+          </Button>
+          <Button asChild variant="ghost">
             <a
               href="/docs/STRIPE_LIVE_MODE.md"
               target="_blank"
