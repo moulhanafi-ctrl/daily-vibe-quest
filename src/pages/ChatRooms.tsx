@@ -62,10 +62,9 @@ const ChatRooms = () => {
         }
         setCurrentUserId(user.id);
 
-        // Use server-side view for access check (not cached client flags)
+        // Use server-side RPC function for access check (not cached client flags)
         const { data: accessData, error: accessError } = await supabase
-          .from("my_chat_access")
-          .select("allowed, role")
+          .rpc("get_my_chat_access")
           .single();
 
         if (accessError) {

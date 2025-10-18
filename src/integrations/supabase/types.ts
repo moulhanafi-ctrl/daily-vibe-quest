@@ -3464,22 +3464,7 @@ export type Database = {
       }
     }
     Views: {
-      my_chat_access: {
-        Row: {
-          allowed: boolean | null
-          role: string | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      my_subscription_status: {
-        Row: {
-          is_active: boolean | null
-          role: string | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       assign_age_group: {
@@ -3551,6 +3536,22 @@ export type Database = {
           status: Database["public"]["Enums"]["guardian_verification_status"]
           updated_at: string
           verified_at: string
+        }[]
+      }
+      get_my_chat_access: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          allowed: boolean
+          role: string
+          user_id: string
+        }[]
+      }
+      get_my_subscription_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          is_active: boolean
+          role: string
+          user_id: string
         }[]
       }
       get_subscriber_kpi: {

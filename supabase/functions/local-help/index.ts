@@ -2,6 +2,7 @@
 // Deno Edge Function for ZIP/Postal → therapists, crisis centers, and national hotlines (US + Canada)
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,9 +13,13 @@ const corsHeaders = {
 // -------- Config --------
 // Preferred provider: Google (Places + Geocoding). Fallback: Mapbox (Geocoding only) + simple OSM search.
 // Set at least ONE of: GOOGLE_MAPS_API_KEY or MAPBOX_TOKEN in Project Settings → Functions → Environment Variables.
-const GOOGLE_MAPS_API_KEY = "AIzaSyCGajFYBJTVqlCYbKhJCpz7PbkvUy3FY98";
-
+const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") ?? "";
 const MAPBOX_TOKEN = Deno.env.get("MAPBOX_TOKEN") ?? "";
+
+// Validate that at least one geocoding provider is configured
+if (!GOOGLE_MAPS_API_KEY && !MAPBOX_TOKEN) {
+  console.error("ERROR: Neither GOOGLE_MAPS_API_KEY nor MAPBOX_TOKEN configured. Geocoding will fail.");
+}
 
 // In-memory cache per function instance (best-effort). TTL: 24 hours.
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -283,15 +288,45 @@ serve(async (req) => {
       });
     }
 
-    const body = await req.json().catch(() => ({}));
-    let zip_code = String(body?.zip_code ?? "").trim();
-    let radius = Number(body?.radius ?? 20);
+    // Schema validation with Zod
+    const LocalHelpRequestSchema = z.object({
+      zip_code: z.string()
+        .trim()
+        .min(1, "ZIP code required")
+        .max(10, "ZIP code too long")
+        .regex(
+          /^\d{5}(?:-\d{4})?$|^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/,
+          "Invalid ZIP/postal code format (US: 12345 or 12345-6789, Canada: A1A 1A1)"
+        ),
+      radius: z.number()
+        .int()
+        .positive()
+        .refine(val => [25, 50, 75].includes(val), {
+          message: "Radius must be 25, 50, or 75 miles"
+        })
+        .default(25)
+    });
 
-    if (!zip_code) throw new Error("ZIP_REQUIRED");
-    if (!US_ZIP.test(zip_code) && !CA_POSTAL.test(zip_code)) {
-      throw new Error("INVALID_ZIP_OR_POSTAL");
+    let validated: z.infer<typeof LocalHelpRequestSchema>;
+    try {
+      const body = await req.json();
+      validated = LocalHelpRequestSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error("Validation error:", error.errors);
+        return new Response(
+          JSON.stringify({ 
+            ok: false, 
+            error: "VALIDATION_ERROR", 
+            details: error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+          }),
+          { status: 400, headers: { ...corsHeaders, "content-type": "application/json" } }
+        );
+      }
+      throw new Error("INVALID_JSON");
     }
-    if (![25, 50, 75].includes(radius)) radius = 25;
+
+    const { zip_code, radius } = validated;
 
     const normalized = normalizePostal(zip_code);
     const cacheKey = `${normalized}|${radius}`;
