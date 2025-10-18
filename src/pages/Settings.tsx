@@ -19,6 +19,7 @@ import { FocusAreasPopup } from "@/components/dashboard/FocusAreasPopup";
 import { MFASettings } from "@/components/settings/MFASettings";
 import { StripeLiveModeVerification } from "@/components/admin/StripeLiveModeVerification";
 import { ProductionReadinessChecklist } from "@/components/admin/ProductionReadinessChecklist";
+import { PasswordPolicyCard } from "@/components/admin/PasswordPolicyCard";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -155,6 +156,7 @@ const Settings = () => {
 
           {isAdmin && (
             <TabsContent value="security" className="space-y-4">
+              <PasswordPolicyCard />
               <ProductionReadinessChecklist />
               <MFASettings />
               <StripeLiveModeVerification />
