@@ -196,13 +196,6 @@ export type Database = {
             foreignKeyName: "ai_suggestions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "ai_suggestions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -344,13 +337,6 @@ export type Database = {
             foreignKeyName: "arthur_deliveries_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "arthur_deliveries_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -388,13 +374,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "arthur_preferences_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "arthur_preferences_user_id_fkey"
             columns: ["user_id"]
@@ -572,13 +551,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "child_sharing_preferences_child_id_fkey"
-            columns: ["child_id"]
-            isOneToOne: true
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "child_sharing_preferences_child_id_fkey"
             columns: ["child_id"]
@@ -1019,13 +991,6 @@ export type Database = {
             foreignKeyName: "family_groups_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "family_groups_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1073,13 +1038,6 @@ export type Database = {
             foreignKeyName: "family_invites_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "family_invites_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1114,13 +1072,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "family_groups"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "family_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "family_members_user_id_fkey"
@@ -1739,13 +1690,6 @@ export type Database = {
             foreignKeyName: "moods_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "moods_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1820,22 +1764,8 @@ export type Database = {
             foreignKeyName: "notification_events_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "notification_events_child_id_fkey"
-            columns: ["child_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notification_events_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "notification_events_parent_id_fkey"
@@ -2106,13 +2036,6 @@ export type Database = {
             foreignKeyName: "parent_notification_preferences_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: true
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "parent_notification_preferences_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2335,13 +2258,6 @@ export type Database = {
           zipcode?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "profiles_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "profiles_parent_id_fkey"
             columns: ["parent_id"]
@@ -3548,100 +3464,6 @@ export type Database = {
       }
     }
     Views: {
-      active_subscriptions_v1: {
-        Row: {
-          current_period_end: string | null
-          status: string | null
-          user_id: string | null
-        }
-        Insert: {
-          current_period_end?: string | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          current_period_end?: string | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      family_members_view: {
-        Row: {
-          age_group: Database["public"]["Enums"]["age_group"] | null
-          family_id: string | null
-          id: string | null
-          invitee_email: string | null
-          joined_at: string | null
-          member_name: string | null
-          relationship: string | null
-          role: string | null
-          status: string | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "family_members_family_id_fkey"
-            columns: ["family_id"]
-            isOneToOne: false
-            referencedRelation: "family_groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "family_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_subscriptions_v1"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "family_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      guardian_verification_status_view: {
-        Row: {
-          child_id: string | null
-          created_at: string | null
-          guardian_email_masked: string | null
-          id: string | null
-          method: string | null
-          status:
-            | Database["public"]["Enums"]["guardian_verification_status"]
-            | null
-          updated_at: string | null
-          verified_at: string | null
-        }
-        Insert: {
-          child_id?: string | null
-          created_at?: string | null
-          guardian_email_masked?: never
-          id?: string | null
-          method?: string | null
-          status?:
-            | Database["public"]["Enums"]["guardian_verification_status"]
-            | null
-          updated_at?: string | null
-          verified_at?: string | null
-        }
-        Update: {
-          child_id?: string | null
-          created_at?: string | null
-          guardian_email_masked?: never
-          id?: string | null
-          method?: string | null
-          status?:
-            | Database["public"]["Enums"]["guardian_verification_status"]
-            | null
-          updated_at?: string | null
-          verified_at?: string | null
-        }
-        Relationships: []
-      }
       my_chat_access: {
         Row: {
           allowed: boolean | null
@@ -3697,6 +3519,39 @@ export type Database = {
       generate_trivia_room_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_active_subscriptions_v1: {
+        Args: { _user_id?: string }
+        Returns: {
+          current_period_end: string
+          status: string
+          user_id: string
+        }[]
+      }
+      get_family_members_view: {
+        Args: { _family_id?: string }
+        Returns: {
+          age_group: Database["public"]["Enums"]["age_group"]
+          family_id: string
+          id: string
+          invitee_email: string
+          joined_at: string
+          member_name: string
+          relationship: string
+          role: string
+          status: string
+          user_id: string
+        }[]
+      }
+      get_guardian_verification_status: {
+        Args: { _child_id: string }
+        Returns: {
+          child_id: string
+          created_at: string
+          status: Database["public"]["Enums"]["guardian_verification_status"]
+          updated_at: string
+          verified_at: string
+        }[]
       }
       get_subscriber_kpi: {
         Args: Record<PropertyKey, never>
