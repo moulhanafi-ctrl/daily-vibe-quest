@@ -21,6 +21,7 @@ export function EmailProviderPanel() {
   const [domains, setDomains] = useState<DomainInfo[]>([]);
   const [currentDomain, setCurrentDomain] = useState<string>("");
   const [currentFromEmail, setCurrentFromEmail] = useState<string>("");
+  const [configError, setConfigError] = useState<string>("");
   const [testEmail, setTestEmail] = useState("");
   const [testResult, setTestResult] = useState<any>(null);
   const [testSending, setTestSending] = useState(false);
@@ -39,19 +40,37 @@ export function EmailProviderPanel() {
 
   const loadDomains = async () => {
     setLoading(true);
+    setConfigError("");
     try {
       const { data, error } = await supabase.functions.invoke("send-daily-ai-messages", {
         body: { windowType: "get_domains" },
       });
 
-      if (error) throw error;
+      if (error) {
+        setConfigError(error.message || "Failed to load configuration");
+        throw error;
+      }
 
       setDomains(data.domains || []);
       setCurrentDomain(data.currentDomain || "");
       setCurrentFromEmail(data.currentFromEmail || "");
-    } catch (error) {
+      
+      // Validate email format
+      if (data.currentFromEmail) {
+        const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+        if (!emailRegex.test(data.currentFromEmail)) {
+          setConfigError(`Invalid email format detected: ${data.currentFromEmail.substring(0, 50)}...`);
+        }
+      } else {
+        setConfigError("RESEND_FROM_EMAIL not configured");
+      }
+    } catch (error: any) {
       console.error("Error loading domains:", error);
-      toast.error("Failed to load domain information");
+      if (error.message?.includes("Email configuration invalid")) {
+        setConfigError(error.message);
+      } else {
+        toast.error("Failed to load domain information");
+      }
     } finally {
       setLoading(false);
     }
@@ -99,6 +118,7 @@ export function EmailProviderPanel() {
 
   const currentDomainInfo = domains.find(d => d.name === currentDomain);
   const isVerified = currentDomainInfo?.status === 'verified';
+  const hasConfigError = !!configError || !currentFromEmail;
 
   return (
     <Card>
@@ -112,16 +132,67 @@ export function EmailProviderPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Configuration Error Alert */}
+        {hasConfigError && (
+          <Alert variant="destructive">
+            <XCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-3">
+                <div>
+                  <div className="font-semibold">Email Provider Misconfigured</div>
+                  <div className="text-sm mt-1">
+                    {configError || "RESEND_FROM_EMAIL is not configured"}
+                  </div>
+                </div>
+                
+                <div className="bg-background/50 p-3 rounded border space-y-2">
+                  <div className="text-sm font-medium">Required Configuration:</div>
+                  <div className="text-xs space-y-1">
+                    <div className="font-mono bg-background px-2 py-1 rounded">
+                      Secret: <span className="text-blue-400">RESEND_FROM_EMAIL</span>
+                    </div>
+                    <div className="font-mono bg-background px-2 py-1 rounded">
+                      Expected value: <span className="text-green-400">noreply@dailyvibecheck.com</span>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">
+                    The secret should contain ONLY the email address, not the full "Name &lt;email&gt;" format.
+                  </div>
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    toast.info("Please update RESEND_FROM_EMAIL secret in your Lovable Cloud settings");
+                    window.open("/settings?section=secrets", "_blank");
+                  }}
+                >
+                  <AlertTriangle className="h-3 w-3 mr-2" />
+                  Update Secret Configuration
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Current Configuration */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold">Current Configuration</h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div>
+              <div className="flex-1">
                 <div className="text-sm font-medium">Sender Email</div>
-                <div className="text-sm text-muted-foreground">{currentFromEmail || "Not configured"}</div>
+                <div className={`text-sm ${hasConfigError ? 'text-red-600 font-mono' : 'text-muted-foreground'}`}>
+                  {currentFromEmail || "Not configured"}
+                </div>
+                {hasConfigError && currentFromEmail && (
+                  <div className="text-xs text-red-500 mt-1">
+                    ⚠️ This appears to be invalid (possibly an API key instead of an email)
+                  </div>
+                )}
               </div>
-              {currentFromEmail && (
+              {currentFromEmail && !hasConfigError && (
                 <Button
                   size="sm"
                   variant="ghost"
