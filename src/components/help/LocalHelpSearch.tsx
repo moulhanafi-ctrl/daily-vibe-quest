@@ -132,6 +132,9 @@ export default function LocalHelpSearch() {
           className="border rounded-xl px-3 py-2"
           aria-label="ZIP or Postal Code"
         />
+        <p className="text-xs text-muted-foreground italic">
+          Results powered by Google Places + OpenStreetMap
+        </p>
 
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium">Radius:</span>
@@ -234,24 +237,38 @@ export default function LocalHelpSearch() {
                       <p className="text-sm font-medium text-foreground mb-4">
                         {typeof t.distance_miles === "number" && `${t.distance_miles} mi away`}
                       </p>
-                      <div className="flex gap-2">
-                        <a
-                          href={t.directions_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                        >
-                          <Navigation className="h-4 w-4" />
-                          Directions
-                        </a>
-                        {isValidPhone(t.phone) && (
+                       <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
                           <a
-                            href={`tel:${sanitizePhone(t.phone)}`}
-                            aria-label={`Call ${t.name}`}
-                            className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+                            href={t.directions_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
                           >
-                            <PhoneCall className="h-4 w-4" />
-                            Call
+                            <Navigation className="h-4 w-4" />
+                            Directions
+                          </a>
+                          {isValidPhone(t.phone) && (
+                            <a
+                              href={`tel:${sanitizePhone(t.phone)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Call ${t.name}`}
+                              className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+                            >
+                              <PhoneCall className="h-4 w-4" />
+                              Call
+                            </a>
+                          )}
+                        </div>
+                        {t.website && (
+                          <a
+                            href={t.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full text-center px-3 py-2 text-primary hover:text-primary/80 text-sm font-medium underline transition-colors"
+                          >
+                            🌐 Visit Website
                           </a>
                         )}
                       </div>
@@ -299,24 +316,38 @@ export default function LocalHelpSearch() {
                       <p className="text-sm font-medium text-foreground mb-4">
                         {typeof c.distance_miles === "number" && `${c.distance_miles} mi away`}
                       </p>
-                      <div className="flex gap-2">
-                        <a
-                          href={c.directions_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                        >
-                          <Navigation className="h-4 w-4" />
-                          Directions
-                        </a>
-                        {isValidPhone(c.phone) && (
+                       <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
                           <a
-                            href={`tel:${sanitizePhone(c.phone)}`}
-                            aria-label={`Call ${c.name}`}
-                            className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+                            href={c.directions_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
                           >
-                            <PhoneCall className="h-4 w-4" />
-                            Call
+                            <Navigation className="h-4 w-4" />
+                            Directions
+                          </a>
+                          {isValidPhone(c.phone) && (
+                            <a
+                              href={`tel:${sanitizePhone(c.phone)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Call ${c.name}`}
+                              className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+                            >
+                              <PhoneCall className="h-4 w-4" />
+                              Call
+                            </a>
+                          )}
+                        </div>
+                        {c.website && (
+                          <a
+                            href={c.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full text-center px-3 py-2 text-primary hover:text-primary/80 text-sm font-medium underline transition-colors"
+                          >
+                            🌐 Visit Website
                           </a>
                         )}
                       </div>

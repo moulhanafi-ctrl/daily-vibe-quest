@@ -123,7 +123,21 @@ export const HelpLocationCard = ({ location, ageGroup }: HelpLocationCardProps) 
       <CardContent className="p-4 space-y-3" style={{ pointerEvents: 'auto' }}>
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-lg">{location.name}</h3>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">{location.name}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                {location.ratings && location.ratings.avg >= 4.5 && (
+                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-300">
+                    ✓ Verified Center
+                  </Badge>
+                )}
+                {location.ratings && (
+                  <span className="text-sm text-muted-foreground">
+                    {"⭐".repeat(Math.round(location.ratings.avg))} {location.ratings.avg.toFixed(1)}
+                  </span>
+                )}
+              </div>
+            </div>
             {location.type === "crisis" && (
               <Badge variant="destructive" className="shrink-0">Crisis</Badge>
             )}
