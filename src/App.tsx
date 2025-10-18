@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { SkipToContent } from "@/components/layout/SkipToContent";
 import { ArthurNotifications } from "@/components/arthur/ArthurNotifications";
 import { ParentVerificationGate } from "@/components/family/ParentVerificationGate";
@@ -36,7 +36,7 @@ import LegalAdmin from "./pages/admin/LegalAdmin";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AdminAI from "./pages/admin/AdminAI";
-import ArthurAdmin from "./pages/admin/ArthurAdmin";
+import ArthurAdmin from "./pages/admin/ArthleAdmin";
 import Analytics from "./pages/admin/Analytics";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SubscriberAnalytics from "./pages/admin/SubscriberAnalytics";
@@ -64,12 +64,12 @@ import ProductionDashboard from "./pages/admin/ProductionDashboard";
 import AIDigestsAdmin from "./pages/admin/AIDigestsAdmin";
 import DailyAIMessagesAdmin from "./pages/admin/DailyAIMessagesAdmin";
 import EmailDiagnostics from "./pages/admin/EmailDiagnostics";
+import StripeDiagnostics from "./pages/admin/StripeDiagnostics";
 import Recovery from "./pages/auth/Recovery";
 import VerifyCode from "./pages/auth/VerifyCode";
 import ResetPassword from "./pages/auth/ResetPassword";
 
 const queryClient = new QueryClient();
-
 
 const TriviaRedirect = () => {
   const location = useLocation();
@@ -97,9 +97,9 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chat" element={<Navigate to="/chat-rooms" replace />} />
           <Route path="/chat-rooms" element={<ChatRooms />} />
-          <Route path="/chat-rooms/:focusAreaKey" element={<ChatRoom />} />
+          <Route path="/chat-rooms/:focusArea" element={<ChatRoom />} />
           <Route path="/chat/:roomId" element={<ChatRoom />} />
-          <Route path="/chat/focus/:focusArea" element={<ChatRoom />} />
+          <Route path="/chat/:focusArea/:roomId" element={<ChatRoom />} />
           <Route path="/store" element={<Store />} />
           <Route path="/store/:ageGroup" element={<AgeGroupStore />} />
           <Route path="/store/product/:productId" element={<ProductDetail />} />
@@ -111,18 +111,20 @@ const App = () => (
           <Route path="/trivia/sessions" element={<SessionTrivia mode="auto" />} />
           <Route path="/trivia/demo" element={<SessionTrivia mode="demo" />} />
           <Route path="/policies/shipping" element={<Shipping />} />
-          <Route path="/policies/refunds" element={<Refunds />} />
+          <Route path="/policies/refunds" element={<Refund
+
+s />} />
           <Route path="/legal" element={<LegalIndex />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/community-guidelines" element={<CommunityGuidelines />} />
-          <Route path="/crisis" element={<Crisis />} />
-          <Route path="/inclusion" element={<Inclusion />} />
+          <Route path="/legal/terms" element={<Terms />} />
+          <Route path="/legal/privacy" element={<Privacy />} />
+          <Route path="/legal/community-guidelines" element={<CommunityGuidelines />} />
+          <Route path="/legal/crisis" element={<Crisis />} />
+          <Route path="/legal/inclusion" element={<Inclusion />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/ai" element={<AdminAI />} />
           <Route path="/admin/arthur" element={<ArthurAdmin />} />
           <Route path="/admin/analytics" element={<Analytics />} />
-          <Route path="/admin/analytics/subscribers" element={<SubscriberAnalytics />} />
+          <Route path="/admin/subscriber-analytics" element={<SubscriberAnalytics />} />
           <Route path="/admin/store" element={<StoreAdmin />} />
           <Route path="/admin/help" element={<HelpAdmin />} />
           <Route path="/admin/help-locations" element={<HelpLocationsAdmin />} />
@@ -137,21 +139,21 @@ const App = () => (
           <Route path="/family/journals" element={<ParentJournalViewer />} />
           <Route path="/family/stories-archive" element={<StoriesArchive />} />
           <Route path="/admin/legal" element={<LegalAdmin />} />
-          <Route path="/admin/trivia" element={<TriviaAdmin />} />
+          <Route path="/admin/trivia" element={<TrivieAdmin />} />
           <Route path="/admin/flags" element={<FeatureFlags />} />
           <Route path="/admin/stripe" element={<StripeAdmin />} />
           <Route path="/admin/ops" element={<OpsAdmin />} />
           <Route path="/admin/publish" element={<PublishReadiness />} />
           <Route path="/admin/production" element={<ProductionDashboard />} />
           <Route path="/admin/ai-digests" element={<AIDigestsAdmin />} />
-          <Route path="/admin/daily-ai-messages" element={<DailyAIMessagesAdmin />} />
+          <Route path="/admin/daily-messages" element={<DailyAIMessagesAdmin />} />
           <Route path="/admin/email-diagnostics" element={<EmailDiagnostics />} />
+          <Route path="/admin/stripe-diagnostics" element={<StripeDiagnostics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help" element={<HelpNearby />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
           <Route path="/help/therapists" element={<TherapistsNearby />} />
           <Route path="/help/national" element={<NationalHotlines />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
