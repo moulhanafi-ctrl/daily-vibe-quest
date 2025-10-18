@@ -1,10 +1,27 @@
 User-agent: *
 Allow: /
+
+# Sitemap location
+Sitemap: https://dailyvibecheck.com/sitemap.xml
+
+# Disallow private/authenticated areas
 Disallow: /admin/
 Disallow: /settings/
-Disallow: /dashboard/
-Disallow: /journal/
-Disallow: /cart/
-Disallow: /orders/
+Disallow: /api/
 
-Sitemap: https://dailyvibecheck.com/sitemap.xml
+# Crawl delay (helps reduce server load)
+Crawl-delay: 1
+
+# Common search engines
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /settings/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /settings/
+
+User-agent: Slurp
+Allow: /
