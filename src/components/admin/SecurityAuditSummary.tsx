@@ -73,45 +73,59 @@ export function SecurityAuditSummary() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-900 dark:text-blue-100">
-              The following view warnings are <strong>false positives</strong>. These are standard PostgreSQL views, 
-              not SECURITY DEFINER functions. RLS is enforced on their underlying tables.
+          <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-900 dark:text-green-100">
+              <strong>✅ Security Hardening Complete:</strong> All security definer views converted to 
+              RPC functions with explicit search_path. Type-safe API wrappers now available.
             </AlertDescription>
           </Alert>
 
           <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <Badge variant="outline" className="mt-0.5 shrink-0">View</Badge>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+              <Badge variant="outline" className="mt-0.5 shrink-0 bg-green-100 text-green-800 border-green-300">Fixed</Badge>
               <div className="flex-1">
-                <div className="font-medium font-mono text-sm">active_subscriptions_v1</div>
+                <div className="font-medium font-mono text-sm">get_active_subscriptions_v1()</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  Filters profiles for active/trialing subscriptions. Uses underlying profiles table RLS.
+                  Replaced view with SECURITY DEFINER function. Proper search_path and schema qualification.
                 </div>
                 <code className="text-xs mt-2 block text-muted-foreground">
-                  SELECT id, subscription_status, subscription_expires_at FROM profiles WHERE ...
+                  import &#123; getActiveSubscriptions &#125; from '@/lib/api/subscriptions'
                 </code>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <Badge variant="outline" className="mt-0.5 shrink-0">View</Badge>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+              <Badge variant="outline" className="mt-0.5 shrink-0 bg-green-100 text-green-800 border-green-300">Fixed</Badge>
               <div className="flex-1">
-                <div className="font-medium font-mono text-sm">guardian_verification_status_view</div>
+                <div className="font-medium font-mono text-sm">get_family_members_view()</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  Masks guardian emails for privacy. Uses guardian_links table RLS.
+                  Replaced view with parameterized function. Explicit schema qualification.
                 </div>
                 <code className="text-xs mt-2 block text-muted-foreground">
-                  SELECT id, child_id, status, CASE WHEN auth.uid() = child_id THEN '**@...' ELSE guardian_email END ...
+                  import &#123; getFamilyMembers &#125; from '@/lib/api/family'
+                </code>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+              <Badge variant="outline" className="mt-0.5 shrink-0 bg-green-100 text-green-800 border-green-300">Fixed</Badge>
+              <div className="flex-1">
+                <div className="font-medium font-mono text-sm">get_guardian_verification_status()</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Replaced view with secure function. Protected guardian email privacy maintained.
+                </div>
+                <code className="text-xs mt-2 block text-muted-foreground">
+                  import &#123; getGuardianVerificationStatus &#125; from '@/lib/api/guardians'
                 </code>
               </div>
             </div>
           </div>
 
-          <div className="text-xs text-muted-foreground pt-2 border-t">
-            <strong>Why safe?</strong> These views don't use SECURITY DEFINER. They inherit the caller's permissions 
-            and rely on RLS policies on <code>profiles</code> and <code>guardian_links</code> tables.
+          <div className="text-xs text-muted-foreground pt-3 border-t">
+            <strong>Migration Complete:</strong> All RPC functions use <code className="px-1 bg-muted rounded">SET search_path = public</code> 
+            and explicit schema qualification (<code className="px-1 bg-muted rounded">public.table_name</code>). 
+            CI checks prevent regression to insecure patterns.
           </div>
         </CardContent>
       </Card>

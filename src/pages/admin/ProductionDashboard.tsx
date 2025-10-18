@@ -4,6 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import { ProductionReadinessChecklist } from "@/components/admin/ProductionReadinessChecklist";
 import { MFASettings } from "@/components/settings/MFASettings";
 import { StripeLiveModeVerification } from "@/components/admin/StripeLiveModeVerification";
+import { PasswordPolicyCard } from "@/components/admin/PasswordPolicyCard";
+import { RpcMigrationBanner } from "@/components/admin/RpcMigrationBanner";
 
 const ProductionDashboard = () => {
   const navigate = useNavigate();
@@ -30,7 +32,13 @@ const ProductionDashboard = () => {
           </p>
         </div>
 
+        {/* RPC Migration Success Banner */}
+        <RpcMigrationBanner />
+
         <ProductionReadinessChecklist />
+        
+        {/* Security: Password Policy Configuration */}
+        <PasswordPolicyCard />
 
         <div className="grid md:grid-cols-2 gap-6">
           <MFASettings />

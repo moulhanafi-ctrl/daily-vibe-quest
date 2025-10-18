@@ -9,16 +9,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import vibeCheckLogo from "@/assets/vibe-check-logo.png";
 import { z } from "zod";
+import { passwordSchema, evaluatePasswordStrength } from "@/lib/validation/passwordPolicy";
+import { Progress } from "@/components/ui/progress";
 
-// SECURITY: Input validation schema for signup
+// SECURITY: Enhanced input validation schema for signup with strong password policy
 const SignupSchema = z.object({
   email: z.string()
     .email("Please enter a valid email address")
     .max(255, "Email must be less than 255 characters")
     .trim(),
-  password: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .max(72, "Password must be less than 72 characters"),
+  password: passwordSchema, // Now enforces: 12 chars, upper/lower/number/symbol
   username: z.string()
     .min(3, "Username must be at least 3 characters")
     .max(30, "Username must be less than 30 characters")
@@ -37,6 +37,17 @@ const Auth = () => {
   const [ageGroup, setAgeGroup] = useState<"child" | "teen" | "adult">("adult");
   const [loading, setLoading] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: "", meetsPolicy: false });
+
+  // Real-time password strength evaluation
+  useEffect(() => {
+    if (!isLogin && !isForgotPassword && password) {
+      const strength = evaluatePasswordStrength(password);
+      setPasswordStrength(strength);
+    } else {
+      setPasswordStrength({ score: 0, feedback: "", meetsPolicy: false });
+    }
+  }, [password, isLogin, isForgotPassword]);
 
   // Detect Safari Private Mode
   useEffect(() => {
@@ -235,15 +246,45 @@ const Auth = () => {
             </div>
             {!isForgotPassword && (
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">
+                  Password {!isLogin && <span className="text-xs text-muted-foreground">(min 12 characters)</span>}
+                </Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={isLogin ? 6 : 12}
+                  aria-describedby={!isLogin ? "password-strength" : undefined}
                 />
+                
+                {/* Password strength indicator for signup */}
+                {!isLogin && password.length > 0 && (
+                  <div id="password-strength" className="space-y-2 mt-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Password strength:</span>
+                      <span className={passwordStrength.meetsPolicy ? "text-green-600 font-medium" : "text-amber-600"}>
+                        {passwordStrength.meetsPolicy ? "Strong ✓" : "Needs improvement"}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={(passwordStrength.score / 5) * 100} 
+                      className="h-2"
+                    />
+                    {!passwordStrength.meetsPolicy && (
+                      <p className="text-xs text-muted-foreground">
+                        {passwordStrength.feedback}
+                      </p>
+                    )}
+                    {passwordStrength.meetsPolicy && (
+                      <p className="text-xs text-green-600">
+                        ✓ Meets all security requirements
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 {isLogin && (
                   <button
                     type="button"

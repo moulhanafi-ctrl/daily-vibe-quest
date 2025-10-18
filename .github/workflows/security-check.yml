@@ -1,0 +1,144 @@
+name: Security Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  check-deprecated-views:
+    name: Check for Deprecated View Usage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for deprecated view queries
+        run: |
+          echo "🔍 Checking for deprecated view usage..."
+          
+          # Search for direct queries to removed views
+          DEPRECATED_VIEWS=(
+            "active_subscriptions_v1"
+            "family_members_view"
+            "guardian_verification_status_view"
+          )
+          
+          FOUND_ISSUES=0
+          
+          for view in "${DEPRECATED_VIEWS[@]}"; do
+            echo "Checking for: from('$view') or from(\"$view\")"
+            
+            # Search in TypeScript/JavaScript files
+            if grep -r --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" \
+              -E "from\(['\"]$view['\"]\)" src/; then
+              echo "❌ ERROR: Found deprecated view query for '$view'"
+              echo "   Please use the RPC function wrapper from src/lib/api/*.ts instead"
+              FOUND_ISSUES=$((FOUND_ISSUES + 1))
+            fi
+          done
+          
+          if [ $FOUND_ISSUES -gt 0 ]; then
+            echo ""
+            echo "❌ Found $FOUND_ISSUES deprecated view usage(s)"
+            echo ""
+            echo "Migration Guide:"
+            echo "  • active_subscriptions_v1 → import { getActiveSubscriptions } from '@/lib/api/subscriptions'"
+            echo "  • family_members_view → import { getFamilyMembers } from '@/lib/api/family'"
+            echo "  • guardian_verification_status_view → import { getGuardianVerificationStatus } from '@/lib/api/guardians'"
+            echo ""
+            exit 1
+          fi
+          
+          echo "✅ No deprecated view queries found"
+
+  check-password-policy:
+    name: Verify Password Policy Implementation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check password validation exists
+        run: |
+          echo "🔍 Checking password policy implementation..."
+          
+          # Check if password policy file exists
+          if [ ! -f "src/lib/validation/passwordPolicy.ts" ]; then
+            echo "❌ ERROR: Password policy validation file missing"
+            exit 1
+          fi
+          
+          # Check for minimum requirements in password policy
+          if ! grep -q "min(12" src/lib/validation/passwordPolicy.ts; then
+            echo "❌ ERROR: Password policy missing 12-character minimum"
+            exit 1
+          fi
+          
+          if ! grep -q "regex.*[A-Z]" src/lib/validation/passwordPolicy.ts; then
+            echo "❌ ERROR: Password policy missing uppercase requirement"
+            exit 1
+          fi
+          
+          if ! grep -q "regex.*[a-z]" src/lib/validation/passwordPolicy.ts; then
+            echo "❌ ERROR: Password policy missing lowercase requirement"
+            exit 1
+          fi
+          
+          if ! grep -q "regex.*[0-9]" src/lib/validation/passwordPolicy.ts; then
+            echo "❌ ERROR: Password policy missing number requirement"
+            exit 1
+          fi
+          
+          if ! grep -q "regex.*\[^A-Za-z0-9\]" src/lib/validation/passwordPolicy.ts; then
+            echo "❌ ERROR: Password policy missing special character requirement"
+            exit 1
+          fi
+          
+          echo "✅ Password policy implementation verified"
+
+  check-search-path-sql:
+    name: Verify SQL Functions Use search_path
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check migration files for search_path
+        run: |
+          echo "🔍 Checking SQL migrations for search_path..."
+          
+          # Find recent migration files
+          MIGRATIONS=$(find supabase/migrations -name "*.sql" -type f -mtime -7 2>/dev/null || echo "")
+          
+          if [ -z "$MIGRATIONS" ]; then
+            echo "ℹ️  No recent migrations found"
+            exit 0
+          fi
+          
+          MISSING_SEARCH_PATH=0
+          
+          for migration in $MIGRATIONS; do
+            echo "Checking: $migration"
+            
+            # Check if file contains function definitions
+            if grep -q "CREATE.*FUNCTION" "$migration"; then
+              # Check if it has search_path set
+              if ! grep -q "SET search_path" "$migration"; then
+                echo "⚠️  WARNING: Migration missing 'SET search_path': $migration"
+                MISSING_SEARCH_PATH=$((MISSING_SEARCH_PATH + 1))
+              fi
+            fi
+          done
+          
+          if [ $MISSING_SEARCH_PATH -gt 0 ]; then
+            echo ""
+            echo "⚠️  Found $MISSING_SEARCH_PATH migration(s) potentially missing search_path"
+            echo "   This is a warning, not a failure, but should be reviewed"
+          else
+            echo "✅ All recent migrations include search_path configuration"
+          fi
