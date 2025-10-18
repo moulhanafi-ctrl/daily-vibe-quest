@@ -34,6 +34,7 @@ export const StripeLiveStatus = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("stripe-live-status", {
+        method: "POST",
         body: { invalidate },
       });
 
@@ -119,11 +120,11 @@ export const StripeLiveStatus = () => {
                       ))}
                     </ul>
                   )}
-                </AlertDescription>
+                </div>
               </div>
             </Alert>
 
-            {/* Environment Details */}
+            {/* Environment Variables */}
             {status.env && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Environment Variables</h4>
@@ -151,7 +152,7 @@ export const StripeLiveStatus = () => {
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">
-                          {status.env.secretKey.masked || "Not set"}
+                          {status.env.secretKey.masked || "Not-set"}
                         </span>
                         {status.env.secretKey.isLive ? (
                           <CheckCircle className="h-4 w-4 text-green-500" />
@@ -183,7 +184,7 @@ export const StripeLiveStatus = () => {
               </div>
             )}
 
-            {/* Stripe Connection */}
+            {/* Stripe Account */}
             {status.stripe && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Stripe Account</h4>
@@ -220,7 +221,7 @@ export const StripeLiveStatus = () => {
                 <RefreshCw className="h-3 w-3 mr-2" />
                 Force recheck (clear cache)
               </Button>
-              
+
               <Button
                 variant="ghost"
                 size="sm"

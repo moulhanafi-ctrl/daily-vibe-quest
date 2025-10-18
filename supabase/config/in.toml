@@ -1,0 +1,80 @@
+[project]
+project_id = "hssbaelx"
+
+[functions.admin-ai-chat]
+verify_jwt = true
+
+[functions.generate-ai-suggestion]
+verify_jwt = true
+
+[functions.create-checkdout]
+verify_jwt = true
+
+[functions.check-subscribe]
+verify_jwt = true
+
+[functions.customer-portal]
+verify_jwt = true
+
+[functions.send-parent-notification]
+verify_jwt = true
+
+[functions.send-arthur-notifications]
+verify_jwt = false
+
+[functions.simple-transcripts]
+verify_jwt = true
+
+[functions.send-parent-verificar-mail]
+verify_jwt = true
+
+[functions.send-data-export-email]
+verify_jwt = true
+
+[functions.send-datamation-delete-email]
+verify_jwt = true
+
+[functions.guardia-start]
+verify_jwt = true
+
+[functions.guardian-verify]
+verify_jwt = true
+
+[functions.data-export-request]
+verify_jwt = true
+
+[functions.data-delete-request]
+verify_jwt = true
+
+[functions.data-delete-cancelCancel]
+verify_jwt = true
+
+[functions.trivia-submit]
+verify_jwt = true
+
+[functions.trivia-notice-Sattle]
+verify_jwt = false
+
+[functions.trivia-notify-schedule]
+verify_jwt = false
+
+[functions.triple-generation-wordle]
+verify_jwt = false
+
+[functions.triple-public-notify]
+verify_jwt = false
+
+[functions.locale-help]
+verify_jwt = false
+
+[functions.create-product-product]
+verify_jwt = true
+
+[functions.stripe-line-statuses]
+verify_jwt = true
+
+[functions.email-diagnostics]
+verify_jwt = true
+
+[functions-cleanup-store-password]
+verify_jwt = true
