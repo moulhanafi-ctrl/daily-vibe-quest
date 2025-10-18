@@ -600,7 +600,6 @@ serve(async (req) => {
         attempted_at: new Date().toISOString(),
         metadata: {}
       };
-      };
 
       try {
         const { data: userData } = await supabase.auth.admin.getUserById(user.id);
