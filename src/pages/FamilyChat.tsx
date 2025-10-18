@@ -1,16 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MessageSquare, Video, Users } from "lucide-react";
+import { ArrowLeft, MessageSquare, Video, Users, UserPlus, Archive } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FamilyStories } from "@/components/family/FamilyStories";
 import ChatComingSoonModal from "@/components/family/ChatComingSoonModal";
+import { AddFamilyMemberModal } from "@/components/family/AddFamilyMemberModal";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function FamilyChat() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("stories");
   const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [isParent, setIsParent] = useState(false);
+
+  useEffect(() => {
+    const checkParentStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_parent")
+        .eq("id", user.id)
+        .single();
+
+      setIsParent(profile?.is_parent || false);
+    };
+
+    checkParentStatus();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -24,10 +45,34 @@ export default function FamilyChat() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
-          <h1 className="text-4xl md:text-5xl font-bold mb-2">Family Connection</h1>
-          <p className="text-muted-foreground text-sm">
-            Share moments and stay connected with your loved ones
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-2">Family Connection</h1>
+              <p className="text-muted-foreground text-sm">
+                Share moments and stay connected with your loved ones
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowInviteModal(true)}
+                variant="outline"
+                size="sm"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite Family
+              </Button>
+              {isParent && (
+                <Button 
+                  onClick={() => navigate("/family/stories-archive")}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Archive className="h-4 w-4 mr-2" />
+                  Memories Archive
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -107,6 +152,14 @@ export default function FamilyChat() {
       <ChatComingSoonModal 
         open={showNotifyModal}
         onOpenChange={setShowNotifyModal}
+      />
+
+      <AddFamilyMemberModal
+        open={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onSuccess={() => {
+          setShowInviteModal(false);
+        }}
       />
     </div>
   );

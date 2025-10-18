@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Video } from "lucide-react";
+import { Video, Info } from "lucide-react";
 import FamilyStoryCard from "./FamilyStoryCard";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Story {
   id: string;
@@ -47,13 +48,24 @@ export default function FamilyStoriesGrid({
               Share your first 45-second memory with your family. Stories disappear after 24 hours.
             </p>
           </div>
-          <Button 
-            onClick={onUploadClick}
-            className="mt-2 rounded-xl px-6 h-11"
-            size="lg"
-          >
-            Post a Story
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  onClick={onUploadClick}
+                  className="mt-2 rounded-xl px-6 h-11"
+                  size="lg"
+                >
+                  Post a Story
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-sm">
+                  📹 Stories are 45 seconds max and disappear after 24 hours. Share your authentic moments with family!
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </Card>
     );
@@ -62,14 +74,34 @@ export default function FamilyStoriesGrid({
   return (
     <div className="space-y-6">
       {/* Upload button */}
-      <Button 
-        onClick={onUploadClick}
-        className="w-full rounded-xl h-12"
-        size="lg"
-      >
-        <Video className="h-5 w-5 mr-2" />
-        Post a Story
-      </Button>
+      <TooltipProvider>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={onUploadClick}
+            className="flex-1 rounded-xl h-12"
+            size="lg"
+          >
+            <Video className="h-5 w-5 mr-2" />
+            Post a Story
+          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="h-12 w-12 rounded-xl"
+              >
+                <Info className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-xs">
+              <p className="text-sm">
+                📹 Stories are 45 seconds max and disappear after 24 hours. Share your authentic moments with family!
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
 
       {/* Stories grid - mobile first: 2 cols, desktop: 3-4 cols */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
