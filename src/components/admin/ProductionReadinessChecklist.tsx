@@ -34,6 +34,13 @@ export const ProductionReadinessChecklist = () => {
     checkAllStatus();
   }, []);
 
+  // Listen for cross-component refresh requests (e.g., after enabling 2FA)
+  useEffect(() => {
+    const handler = () => checkAllStatus();
+    window.addEventListener('readiness:refresh', handler);
+    return () => window.removeEventListener('readiness:refresh', handler);
+  }, []);
+
   const checkAllStatus = async () => {
     setChecking(true);
     

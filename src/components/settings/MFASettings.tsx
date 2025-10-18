@@ -135,6 +135,7 @@ export const MFASettings = () => {
         title: "Success!",
         description: "Two-factor authentication is now enabled",
       });
+      window.dispatchEvent(new Event('readiness:refresh'));
     } catch (error: any) {
       toast({
         title: "Verification Failed",
@@ -153,6 +154,39 @@ export const MFASettings = () => {
       title: "Reset",
       description: "MFA setup cleared. Click 'Enable 2FA' to try again.",
     });
+  };
+
+  // Troubleshooting: remove all existing TOTP factors and start fresh
+  const fixDuplicateFactors = async () => {
+    setLoading(true);
+    try {
+      const factors = await supabase.auth.mfa.listFactors();
+      const totp = factors.data?.totp || [];
+      let removed = 0;
+      for (const f of totp) {
+        try {
+          await supabase.auth.mfa.unenroll({ factorId: f.id });
+          removed++;
+        } catch (e) {
+          // ignore
+        }
+      }
+      setQrCode(null);
+      setVerifyCode("");
+      toast({
+        title: "Cleaned 2FA factors",
+        description: `Removed ${removed} old factor${removed === 1 ? "" : "s"}. Generating a fresh QR...`,
+      });
+      await enrollMFA();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message ?? "Could not clean 2FA factors",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const unenrollMFA = async () => {
@@ -174,6 +208,7 @@ export const MFASettings = () => {
         title: "MFA Disabled",
         description: "Two-factor authentication has been disabled",
       });
+      window.dispatchEvent(new Event('readiness:refresh'));
     } catch (error: any) {
       toast({
         title: "Error",
@@ -221,9 +256,14 @@ export const MFASettings = () => {
         )}
 
         {!mfaEnabled && !qrCode && (
-          <Button onClick={enrollMFA} disabled={loading}>
-            Enable 2FA with Google Authenticator
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={enrollMFA} disabled={loading}>
+              Enable 2FA with Google Authenticator
+            </Button>
+            <Button variant="outline" onClick={fixDuplicateFactors} disabled={loading}>
+              Troubleshoot 2FA
+            </Button>
+          </div>
         )}
 
         {qrCode && (
