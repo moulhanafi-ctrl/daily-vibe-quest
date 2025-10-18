@@ -11,6 +11,7 @@ export const MFASettings = () => {
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [verifyCode, setVerifyCode] = useState("");
+  const [pendingFactorId, setPendingFactorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -83,6 +84,7 @@ export const MFASettings = () => {
 
       if (data) {
         setQrCode(data.totp.qr_code);
+        setPendingFactorId((data as any).id ?? (data as any).factor?.id ?? null);
         toast({
           title: "MFA Setup Started",
           description: "Scan the QR code with Google Authenticator",
@@ -112,9 +114,10 @@ export const MFASettings = () => {
     setLoading(true);
     try {
       const factors = await supabase.auth.mfa.listFactors();
-      const totpFactor = factors.data?.totp.find((f) => f.status !== "verified");
+      const fallback = factors.data?.totp.find((f) => f.status !== "verified");
+      const factorId = pendingFactorId ?? fallback?.id;
 
-      if (!totpFactor) {
+      if (!factorId) {
         // Enrollment expired or was cleared - reset UI
         setQrCode(null);
         setVerifyCode("");
@@ -122,7 +125,7 @@ export const MFASettings = () => {
       }
 
       const { error } = await supabase.auth.mfa.challengeAndVerify({
-        factorId: totpFactor.id,
+        factorId,
         code: verifyCode,
       });
 
@@ -131,6 +134,7 @@ export const MFASettings = () => {
       setMfaEnabled(true);
       setQrCode(null);
       setVerifyCode("");
+      setPendingFactorId(null);
       toast({
         title: "Success!",
         description: "Two-factor authentication is now enabled",
@@ -150,6 +154,7 @@ export const MFASettings = () => {
   const resetEnrollment = () => {
     setQrCode(null);
     setVerifyCode("");
+    setPendingFactorId(null);
     toast({
       title: "Reset",
       description: "MFA setup cleared. Click 'Enable 2FA' to try again.",
@@ -204,6 +209,7 @@ export const MFASettings = () => {
       if (error) throw error;
 
       setMfaEnabled(false);
+      setPendingFactorId(null);
       toast({
         title: "MFA Disabled",
         description: "Two-factor authentication has been disabled",
