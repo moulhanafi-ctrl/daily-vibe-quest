@@ -177,6 +177,18 @@ export const PushNotificationSettings = () => {
           </Alert>
         )}
 
+        {!isSubscribed && support.supported && support.permission !== 'denied' && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <p className="text-sm">
+                <strong>Domain Change Notice:</strong> After the recent domain update to vibecheckapps.com, 
+                you'll need to re-enable push notifications on this device.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label htmlFor="push-enabled" className="flex items-center gap-2">
