@@ -5,6 +5,7 @@ import { ShoppingCart, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Product {
   id: string;
@@ -24,6 +25,7 @@ interface ProductCardProps {
 export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   const [loading, setLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [showCartAnimation, setShowCartAnimation] = useState(false);
   const navigate = useNavigate();
 
   const handleAddToCart = async (e: React.MouseEvent) => {
@@ -48,6 +50,10 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
 
       if (error) throw error;
 
+      // Show animation
+      setShowCartAnimation(true);
+      setTimeout(() => setShowCartAnimation(false), 1000);
+      
       toast.success(`Added to cart! 🛒 ${product.name} has been added to your cart`);
       onAddToCart();
     } catch (error: any) {
@@ -59,9 +65,30 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
 
   return (
     <Card 
-      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" 
+      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer relative" 
       onClick={() => navigate(`/store/product/${product.id}`)}
     >
+      {/* Add to Cart Animation */}
+      <AnimatePresence>
+        {showCartAnimation && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-sm rounded-lg"
+          >
+            <motion.div
+              initial={{ y: 0 }}
+              animate={{ y: -100, opacity: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-primary text-primary-foreground rounded-full p-4 shadow-lg"
+            >
+              <ShoppingCart className="h-8 w-8" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="aspect-square bg-secondary/20 flex items-center justify-center relative">
         {product.image_url ? (
           <>

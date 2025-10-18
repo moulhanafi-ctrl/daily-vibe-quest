@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ProductCard } from "@/components/store/ProductCard";
 import { ProductSkeleton } from "@/components/store/ProductSkeleton";
-import { ArrowLeft, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface Product {
@@ -48,8 +50,12 @@ const AgeGroupStore = () => {
   const { ageGroup } = useParams<{ ageGroup: string }>();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
 
   const info = ageGroup ? AGE_GROUP_INFO[ageGroup] : null;
 
@@ -57,6 +63,41 @@ const AgeGroupStore = () => {
     loadProducts();
     loadCartCount();
   }, [ageGroup]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [products, searchQuery, priceFilter, typeFilter]);
+
+  const applyFilters = () => {
+    let filtered = [...products];
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Price filter
+    if (priceFilter !== "all") {
+      if (priceFilter === "under-20") {
+        filtered = filtered.filter((p) => p.price < 20);
+      } else if (priceFilter === "20-50") {
+        filtered = filtered.filter((p) => p.price >= 20 && p.price <= 50);
+      } else if (priceFilter === "over-50") {
+        filtered = filtered.filter((p) => p.price > 50);
+      }
+    }
+
+    // Type filter
+    if (typeFilter !== "all") {
+      filtered = filtered.filter((p) => p.product_type === typeFilter);
+    }
+
+    setFilteredProducts(filtered);
+  };
 
   const loadProducts = async () => {
     if (!ageGroup || !info) return;
@@ -184,6 +225,62 @@ const AgeGroupStore = () => {
           </p>
         </div>
 
+        {/* Search and Filters */}
+        <div className="mb-8 max-w-4xl mx-auto space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex gap-4 flex-wrap">
+            <Select value={priceFilter} onValueChange={setPriceFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Price Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Prices</SelectItem>
+                <SelectItem value="under-20">Under $20</SelectItem>
+                <SelectItem value="20-50">$20 - $50</SelectItem>
+                <SelectItem value="over-50">Over $50</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Product Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="physical">Physical</SelectItem>
+                <SelectItem value="digital">Digital</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(searchQuery || priceFilter !== "all" || typeFilter !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("");
+                  setPriceFilter("all");
+                  setTypeFilter("all");
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            Showing {filteredProducts.length} of {products.length} products
+          </p>
+        </div>
+
         {loading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -199,9 +296,24 @@ const AgeGroupStore = () => {
               Browse Other Categories
             </Button>
           </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-xl text-muted-foreground mb-4">
+              No products match your filters
+            </p>
+            <Button
+              onClick={() => {
+                setSearchQuery("");
+                setPriceFilter("all");
+                setTypeFilter("all");
+              }}
+            >
+              Clear Filters
+            </Button>
+          </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}

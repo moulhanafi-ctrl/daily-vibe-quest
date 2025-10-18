@@ -1,10 +1,46 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ShoppingBag, ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Store = () => {
   const navigate = useNavigate();
+  const [thumbnails, setThumbnails] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    loadThumbnails();
+  }, []);
+
+  const loadThumbnails = async () => {
+    const ageGroupMap = {
+      kids: "child",
+      teens: "teen",
+      adults: "adult",
+      elders: "elder",
+    };
+
+    const thumbData: Record<string, string[]> = {};
+
+    for (const [key, dbValue] of Object.entries(ageGroupMap)) {
+      const { data } = await supabase
+        .from("products")
+        .select("images, image_url")
+        .eq("age_group", dbValue as any)
+        .eq("active", true)
+        .limit(3);
+
+      if (data) {
+        thumbData[key] = data
+          .map((p: any) => p.images?.[0] || p.image_url)
+          .filter(Boolean)
+          .slice(0, 3);
+      }
+    }
+
+    setThumbnails(thumbData);
+  };
 
   const ageGroups = [
     {
@@ -94,6 +130,25 @@ const Store = () => {
               <div className="space-y-3">
                 <h3 className="text-2xl font-bold">{group.title}</h3>
                 <p className="text-muted-foreground">{group.description}</p>
+                
+                {/* Product Thumbnails */}
+                {thumbnails[group.id]?.length > 0 && (
+                  <div className="flex gap-2 py-2">
+                    {thumbnails[group.id].map((thumb, idx) => (
+                      <div
+                        key={idx}
+                        className="w-16 h-16 rounded-lg overflow-hidden border-2 border-background shadow-sm"
+                      >
+                        <img
+                          src={thumb}
+                          alt={`Product ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 <Button variant="outline" className="w-full">
                   Explore Collection →
                 </Button>
