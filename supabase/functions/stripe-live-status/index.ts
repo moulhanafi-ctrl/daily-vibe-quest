@@ -17,11 +17,14 @@ const maskKey = (key: string): string => {
 };
 
 serve(async (req) => {
+  console.log("[STRIPE-LIVE-STATUS] Function invoked", { method: req.method, url: req.url });
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log("[STRIPE-LIVE-STATUS] Processing request");
     const url = new URL(req.url);
     let invalidate = url.searchParams.get("invalidate") === "1";
     
@@ -45,11 +48,23 @@ serve(async (req) => {
     }
 
     // Get environment variables
+    console.log("[STRIPE-LIVE-STATUS] Reading environment variables");
     const publicKey = Deno.env.get("STRIPE_PUBLIC_KEY");
     const secretKey = Deno.env.get("STRIPE_LIVE_SECRET_KEY") || Deno.env.get("STRIPE_SECRET_KEY");
     const webhookSecret = Deno.env.get("STRIPE_LIVE_WEBHOOK_SECRET") || Deno.env.get("STRIPE_WEBHOOK_SECRET");
     const liveMode = Deno.env.get("STRIPE_LIVE_MODE");
     const liveModeBool = (liveMode?.toLowerCase() === "true" || liveMode === "1");
+    
+    console.log("[STRIPE-LIVE-STATUS] Env check", {
+      hasPublicKey: !!publicKey,
+      publicKeyPrefix: publicKey?.substring(0, 7),
+      hasSecretKey: !!secretKey,
+      secretKeyPrefix: secretKey?.substring(0, 7),
+      hasWebhookSecret: !!webhookSecret,
+      webhookSecretPrefix: webhookSecret?.substring(0, 6),
+      liveMode,
+      liveModeBool
+    });
 
     const result: any = {
       env: {
@@ -121,6 +136,7 @@ serve(async (req) => {
     // If keys are valid, test Stripe connectivity
     if (secretKey && secretKey.startsWith("sk_live_")) {
       try {
+        console.log("[STRIPE-LIVE-STATUS] Attempting Stripe API connection");
         const stripe = new Stripe(secretKey, {
           apiVersion: "2025-08-27.basil",
         });
@@ -129,6 +145,11 @@ serve(async (req) => {
           stripe.accounts.retrieve(),
           new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000)),
         ]);
+
+        console.log("[STRIPE-LIVE-STATUS] Stripe account retrieved", { 
+          accountId: (account as any).id,
+          livemode: (account as any).livemode 
+        });
 
         result.stripe = {
           accountId: (account as any).id,
@@ -142,6 +163,7 @@ serve(async (req) => {
           result.ok = false;
         }
       } catch (error: any) {
+        console.error("[STRIPE-LIVE-STATUS] Stripe API error", error);
         result.errors.push(`Stripe API error: ${error.message}`);
         result.ok = false;
       }
@@ -158,19 +180,22 @@ serve(async (req) => {
     if (result.ok) {
       cacheData = result;
       cacheTime = Date.now();
+      console.log("[STRIPE-LIVE-STATUS] Result cached successfully");
     }
 
+    console.log("[STRIPE-LIVE-STATUS] Returning result", { ok: result.ok, errorCount: result.errors.length });
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: result.ok ? 200 : 400,
     });
 
   } catch (error: any) {
-    console.error("[STRIPE-LIVE-STATUS] Error:", error);
+    console.error("[STRIPE-LIVE-STATUS] Top-level error:", error);
     return new Response(JSON.stringify({
       ok: false,
       message: `Server error: ${error.message}`,
       errors: [error.message],
+      stack: error.stack,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
