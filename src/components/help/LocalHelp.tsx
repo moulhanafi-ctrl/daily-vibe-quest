@@ -106,11 +106,15 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
             Enter ZIP Code
           </Button>
         </div>
-        <ZipCodeModal
-          open={zipModalOpen}
-          onOpenChange={setZipModalOpen}
-          onZipSaved={handleZipSaved}
-        />
+        {zipModalOpen && (
+          <div className="mt-4 p-4 border rounded-lg bg-card">
+            <h3 className="text-lg font-semibold mb-2">Enter Your Location</h3>
+            <ZipCodeModal onSave={(zip) => {
+              handleZipSaved(zip);
+              setZipModalOpen(false);
+            }} />
+          </div>
+        )}
       </div>
     );
   }
@@ -293,11 +297,15 @@ export const LocalHelp = ({ embedded = false, ageGroup }: LocalHelpProps) => {
         </div>
       )}
 
-      <ZipCodeModal
-        open={zipModalOpen}
-        onOpenChange={setZipModalOpen}
-        onZipSaved={handleZipSaved}
-      />
+      {zipModalOpen && (
+        <div className="mt-4 p-4 border rounded-lg bg-card">
+          <h3 className="text-lg font-semibold mb-2">Enter Your Location</h3>
+          <ZipCodeModal onSave={(zip) => {
+            handleZipSaved(zip);
+            setZipModalOpen(false);
+          }} />
+        </div>
+      )}
     </div>
   );
 };
