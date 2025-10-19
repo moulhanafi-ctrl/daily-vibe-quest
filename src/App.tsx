@@ -65,6 +65,7 @@ import AIDigestsAdmin from "./pages/admin/AIDigestsAdmin";
 import DailyAIMessagesAdmin from "./pages/admin/DailyAIMessagesAdmin";
 import EmailDiagnostics from "./pages/admin/EmailDiagnostics";
 import StripeDiagnostics from "./pages/admin/StripeDiagnostics";
+import E2ETestDashboard from "./pages/admin/E2ETestDashboard";
 import Recovery from "./pages/auth/Recovery";
 import VerifyCode from "./pages/auth/VerifyCode";
 import ResetPassword from "./pages/auth/ResetPassword";
@@ -151,6 +152,7 @@ const App = () => (
           <Route path="/admin/daily-messages" element={<DailyAIMessagesAdmin />} />
           <Route path="/admin/email-diagnostics" element={<EmailDiagnostics />} />
           <Route path="/admin/stripe-diagnostics" element={<StripeDiagnostics />} />
+          <Route path="/admin/e2e-tests" element={<E2ETestDashboard />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help" element={<HelpNearby />} />
           <Route path="/help/nearby" element={<HelpNearby />} />
