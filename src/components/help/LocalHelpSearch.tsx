@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Brain, Ambulance, Phone, Navigation, PhoneCall, ArrowRight } from "lucide-react";
+import { Loader2, Brain, Ambulance, Phone, Navigation, PhoneCall, ArrowRight, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { trackEvent } from "@/lib/analytics";
 const US_ZIP = /^\d{5}(?:-\d{4})?$/;
@@ -106,15 +106,21 @@ export default function LocalHelpSearch() {
     if (!resp) return null;
     const hasTher = (resp.therapists ?? []).length > 0;
     const hasCrisis = (resp.crisis_centers ?? []).length > 0;
-    if (hasTher || hasCrisis) return null;
-    return (
-      <div className="mt-2 text-sm">
-        No results within {resp.query?.radius_miles} miles.{" "}
-        <button className="underline" onClick={() => runSearch(resp.query?.zip || zip, 75)}>
-          Try 75 miles
-        </button>
-      </div>
-    );
+    const totalResults = (resp.therapists ?? []).length + (resp.crisis_centers ?? []).length;
+    
+    // Show "Try wider radius" only if NO results at all
+    if (!hasTher && !hasCrisis) {
+      return (
+        <div className="mt-2 text-sm">
+          No results within {resp.query?.radius_miles} miles.{" "}
+          <button className="underline" onClick={() => runSearch(resp.query?.zip || zip, 75)}>
+            Try 75 miles
+          </button>
+        </div>
+      );
+    }
+    
+    return null;
   }
 
   return (
@@ -361,49 +367,113 @@ export default function LocalHelpSearch() {
             <QuickActions />
           </div>
 
-          {/* National Hotlines Section */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Phone className="h-6 w-6 text-[#FFC107]" />
-              <h3 className="text-xl font-bold text-foreground">National hotlines</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-              {(resp.hotlines ?? []).map((h, i) => (
-                <div
-                  key={i}
-                  className="bg-card rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in border border-border"
-                  style={{ animationDelay: `${i * 0.1}s` }}
+          {/* National Hotlines Section - Always show when we have results, or show when <3 local results */}
+          {((resp.therapists ?? []).length + (resp.crisis_centers ?? []).length < 3 || 
+            (resp.therapists ?? []).length > 0 || 
+            (resp.crisis_centers ?? []).length > 0) && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-6 w-6 text-[#FFC107]" />
+                  <h3 className="text-xl font-bold text-foreground">National hotlines & resources</h3>
+                </div>
+                <a
+                  href="https://www.nationalhelpline.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
                 >
-                  <div className="h-2 bg-[#FFC107]"></div>
-                  <div className="p-4">
-                    <h4 className="font-semibold text-lg text-foreground mb-2">{h.label}</h4>
-                    <div className="space-y-2">
-                      {h.call && (
-                        <a
-                          href={`tel:${h.call}`}
-                          className="flex items-center gap-2 text-sm text-primary hover:underline"
-                        >
-                          <PhoneCall className="h-4 w-4" />
-                          {h.call}
-                        </a>
-                      )}
-                      {h.text && <p className="text-sm text-muted-foreground">{h.text}</p>}
-                      {h.url && (
-                        <a
-                          href={h.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block text-sm text-primary hover:underline"
-                        >
-                          Learn more →
-                        </a>
-                      )}
+                  More Resources <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
+              
+              {(resp.therapists ?? []).length + (resp.crisis_centers ?? []).length < 3 && (
+                <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                    <strong>Limited local results found.</strong> We're showing national resources that can help you immediately.
+                  </p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                {(resp.hotlines ?? []).map((h, i) => (
+                  <div
+                    key={i}
+                    className="bg-card rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in border border-border"
+                    style={{ animationDelay: `${i * 0.1}s` }}
+                  >
+                    <div className="h-2 bg-[#FFC107]"></div>
+                    <div className="p-4">
+                      <h4 className="font-semibold text-lg text-foreground mb-3">{h.label}</h4>
+                      <div className="space-y-2">
+                        {h.call && (
+                          <a
+                            href={`tel:${h.call}`}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors w-full justify-center"
+                            onClick={() => {
+                              trackEvent({ 
+                                eventType: "help_viewed", 
+                                metadata: { hotline: h.label, number: h.call, action: "call" } 
+                              });
+                            }}
+                          >
+                            <PhoneCall className="h-4 w-4" />
+                            Call {h.call}
+                          </a>
+                        )}
+                        {h.text && <p className="text-sm text-muted-foreground text-center">{h.text}</p>}
+                        {h.url && (
+                          <a
+                            href={h.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors w-full mt-2"
+                            onClick={() => {
+                              trackEvent({ 
+                                eventType: "help_viewed", 
+                                metadata: { hotline: h.label, url: h.url, action: "website" } 
+                              });
+                            }}
+                          >
+                            🌐 Visit Website
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
+                ))}
+                
+                {/* National Helpline Directory Card */}
+                <div
+                  className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in border border-blue-200 dark:border-blue-800"
+                  style={{ animationDelay: `${(resp.hotlines ?? []).length * 0.1}s` }}
+                >
+                  <div className="h-2 bg-blue-500"></div>
+                  <div className="p-4">
+                    <h4 className="font-semibold text-lg text-foreground mb-2">National Helpline Directory</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Find specialized support for substance abuse, mental health, and more
+                    </p>
+                    <a
+                      href="https://www.nationalhelpline.org"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors w-full"
+                      onClick={() => {
+                        trackEvent({ 
+                          eventType: "help_viewed",
+                          metadata: { action: "national_helpline_directory_clicked" }
+                        });
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Visit National Helpline
+                    </a>
+                  </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

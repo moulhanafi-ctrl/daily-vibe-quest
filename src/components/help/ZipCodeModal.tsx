@@ -18,8 +18,13 @@ export const ZipCodeModal = ({ open, onOpenChange, onZipSaved }: ZipCodeModalPro
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    if (!/^\d{5}$/.test(zip)) {
-      toast.error("Please enter a valid 5-digit ZIP code");
+    // Support both US ZIP codes (12345 or 12345-6789) and Canadian postal codes (A1A 1A1)
+    const trimmed = zip.trim();
+    const isUSZip = /^\d{5}(?:-\d{4})?$/.test(trimmed);
+    const isCAPostal = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/i.test(trimmed);
+    
+    if (!isUSZip && !isCAPostal) {
+      toast.error("Please enter a valid US ZIP code (12345) or Canadian postal code (A1A 1A1)");
       return;
     }
 
@@ -57,19 +62,21 @@ export const ZipCodeModal = ({ open, onOpenChange, onZipSaved }: ZipCodeModalPro
             Find Local Help
           </DialogTitle>
           <DialogDescription>
-            Enter your ZIP code to see crisis resources and licensed mental health professionals near you.
+            Enter your ZIP code (US) or postal code (Canada) to see crisis resources and licensed mental health professionals near you.
             Your location is private and only used to show nearby help.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="zip">ZIP Code</Label>
+            <Label htmlFor="zip">ZIP / Postal Code</Label>
             <Input
               id="zip"
-              placeholder="12345"
+              placeholder="12345 or A1A 1A1"
               value={zip}
-              onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
-              maxLength={5}
+              onChange={(e) => setZip(e.target.value.toUpperCase().slice(0, 10))}
+              maxLength={10}
+              inputMode="text"
+              aria-label="ZIP or Postal Code"
             />
           </div>
           <Button onClick={handleSave} disabled={loading} className="w-full">
