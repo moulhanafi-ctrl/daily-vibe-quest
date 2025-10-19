@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Phone, ExternalLink, Loader2, AlertCircle, Activity, MapPin } from "lucide-react";
+import { Phone, ExternalLink, Loader2, AlertCircle, Activity, MapPin, Globe, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
 import { ZipCodeModal } from "./ZipCodeModal";
@@ -23,6 +23,7 @@ interface Provider {
   distanceMi: number;
   type?: string;
   address?: string | null;
+  rating?: number | null;
   openNow?: boolean | null;
 }
 
@@ -309,15 +310,28 @@ const LocalHelpSearch = () => {
               <Card key={idx} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1 min-w-0">
+                    <div className="space-y-1.5 min-w-0">
                       <CardTitle className="text-base sm:text-lg leading-tight break-words">
                         {provider.name}
                       </CardTitle>
-                      {provider.type && (
-                        <Badge variant="outline" className="text-xs">
-                          {provider.type}
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {provider.type && (
+                          <Badge variant="outline" className="text-xs">
+                            {provider.type === "therapist" ? "Therapy" : "Crisis"}
+                          </Badge>
+                        )}
+                        {provider.rating && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
+                            <span className="font-medium">{provider.rating.toFixed(1)}</span>
+                          </div>
+                        )}
+                        {provider.openNow !== null && (
+                          <Badge variant={provider.openNow ? "default" : "secondary"} className="text-xs">
+                            {provider.openNow ? "Open" : "Closed"}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <Badge variant="outline" className="whitespace-nowrap">
@@ -331,13 +345,15 @@ const LocalHelpSearch = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {provider.address && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">{provider.address}</p>
+                    <p className="text-xs text-muted-foreground flex items-start gap-1.5 line-clamp-2">
+                      <MapPin className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-primary" />
+                      <span>{provider.address}</span>
+                    </p>
                   )}
                   
                   <div className="flex flex-wrap gap-2">
                     {provider.phone && (
                       <Button
-                        variant="outline"
                         size="sm"
                         asChild
                         className="flex-1 sm:flex-none"
@@ -369,7 +385,7 @@ const LocalHelpSearch = () => {
                         }
                       >
                         <a href={provider.website} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
+                          <Globe className="h-4 w-4 mr-2" />
                           Website
                         </a>
                       </Button>
@@ -383,16 +399,16 @@ const LocalHelpSearch = () => {
       )}
       
       {/* Empty state when no locals found */}
-      {!loading && zipCode && locals.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="pt-6 text-center space-y-2">
-            <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-            <p className="font-medium">No local providers found</p>
+      {!loading && zipCode && locals.length === 0 && nationals.length > 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="space-y-2">
+            <p className="font-medium">Showing national helplines — no local results found nearby.</p>
             <p className="text-sm text-muted-foreground">
-              We couldn't find nearby locations. Try a larger radius or call a national hotline below.
+              Try expanding your search radius or checking your ZIP code spelling. You can also browse broader categories below.
             </p>
-          </CardContent>
-        </Card>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* National Resources - Always visible when search is done */}
@@ -431,7 +447,7 @@ const LocalHelpSearch = () => {
                         >
                           <a href={`tel:${hotline.phone}`}>
                             <Phone className="h-4 w-4 mr-2" />
-                            Call {hotline.phone}
+                            <span className="font-mono">{hotline.phone}</span>
                           </a>
                         </Button>
                       )}
@@ -450,7 +466,7 @@ const LocalHelpSearch = () => {
                           }
                         >
                           <a href={hotline.website} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-2" />
+                            <Globe className="h-4 w-4 mr-2" />
                             Website
                           </a>
                         </Button>

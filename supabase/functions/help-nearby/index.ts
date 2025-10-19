@@ -260,25 +260,60 @@ async function searchGooglePlaces(
   
   for (const keyword of keywords) {
     try {
+      const startTime = Date.now();
       const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${center.lat},${center.lng}&radius=${radiusM}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_API_KEY}`;
       const res = await withTimeout(fetch(url), TIMEOUT_MS);
       const json = await res.json();
+      const tookMs = Date.now() - startTime;
       
       if (json.status !== "OK") {
-        console.error("[google-places] FAILED", JSON.stringify({
+        console.error(JSON.stringify({
+          source: "GooglePlaces",
+          status: "ERROR",
+          error_code: json.status,
+          reason: json.error_message || "Unknown error",
           keyword,
-          status: json.status,
-          error: json.error_message
+          tookMs
         }));
+        continue;
       }
+      
+      console.log(JSON.stringify({
+        source: "GooglePlaces",
+        status: "OK",
+        keyword,
+        results: json.results?.length || 0,
+        tookMs
+      }));
       
       if (json.results) {
         for (const r of json.results) {
+          // Get place details for phone and website
+          let phone = null;
+          let website = null;
+          
+          if (r.place_id) {
+            try {
+              const detailUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${r.place_id}&fields=formatted_phone_number,website,business_status&key=${GOOGLE_MAPS_API_KEY}`;
+              const detailRes = await withTimeout(fetch(detailUrl), TIMEOUT_MS);
+              const detailJson = await detailRes.json();
+              
+              if (detailJson.status === "OK" && detailJson.result) {
+                phone = detailJson.result.formatted_phone_number || null;
+                website = detailJson.result.website || null;
+              }
+            } catch (e) {
+              console.warn(`[google-places-details] ${r.place_id}:`, (e as Error).message);
+            }
+          }
+          
           results.push({
             name: r.name,
             lat: r.geometry?.location?.lat,
             lng: r.geometry?.location?.lng,
-            address: r.vicinity,
+            address: r.vicinity || r.formatted_address,
+            phone,
+            website,
             rating: r.rating,
             openNow: r.opening_hours?.open_now,
             type,
@@ -286,7 +321,14 @@ async function searchGooglePlaces(
         }
       }
     } catch (e) {
-      console.warn(`[google-places] ${keyword}:`, (e as Error).message);
+      console.error(JSON.stringify({
+        source: "GooglePlaces",
+        status: "ERROR",
+        error_code: "EXCEPTION",
+        reason: (e as Error).message,
+        keyword,
+        tookMs: 0
+      }));
     }
   }
   
@@ -299,8 +341,27 @@ async function findProviders(
   filters: HelpRequest["filters"],
 ) {
   const radiusM = radiusKm * 1000;
-  const therapistKeywords = ["therapist", "psychologist", "counselor", "mental health"];
-  const crisisKeywords = ["crisis center", "suicide prevention", "behavioral health urgent care"];
+  const therapistKeywords = [
+    "therapist",
+    "psychologist",
+    "mental health clinic",
+    "counseling center",
+    "behavioral health",
+    "social services"
+  ];
+  const crisisKeywords = [
+    "suicide prevention",
+    "mental health crisis",
+    "hospital",
+    "emergency",
+    "community health center",
+    "crisis hotline",
+    "rehabilitation center",
+    "addiction treatment",
+    "support group",
+    "recovery center",
+    "wellness center"
+  ];
   
   let allPlaces: Place[] = [];
   
@@ -330,12 +391,21 @@ async function findProviders(
     uniquePlaces = uniquePlaces.filter((p) => p.openNow === true);
   }
   
-  // Sort by distance and rating
+  // Sort by distance first, then rating
   uniquePlaces.sort((a, b) => {
     const da = haversineKm(center.lat, center.lng, a.lat, a.lng);
     const db = haversineKm(center.lat, center.lng, b.lat, b.lng);
-    if (Math.abs(da - db) > 0.1) return da - db;
-    return (b.rating || 0) - (a.rating || 0);
+    
+    // If distances are significantly different (>5km), sort by distance
+    if (Math.abs(da - db) > 5) return da - db;
+    
+    // Otherwise sort by rating
+    const ratingA = a.rating || 0;
+    const ratingB = b.rating || 0;
+    if (Math.abs(ratingA - ratingB) > 0.1) return ratingB - ratingA;
+    
+    // If ratings are similar, prefer closer location
+    return da - db;
   });
   
   return uniquePlaces;
@@ -401,6 +471,7 @@ serve(async (req) => {
       phone: p.phone || null,
       website: p.website || null,
       address: p.address || null,
+      rating: p.rating || null,
       openNow: p.openNow ?? null,
     }));
     
