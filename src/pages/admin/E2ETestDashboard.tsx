@@ -25,6 +25,13 @@ export default function E2ETestDashboard() {
     { name: "Postal H2Y 1C6 (Montreal)", status: "pending" },
     { name: "Invalid ABC12345", status: "pending" },
   ]);
+  const [stripeCheckoutUrl, setStripeCheckoutUrl] = useState<string | null>(null);
+  const [stripeTestRunning, setStripeTestRunning] = useState(false);
+  const [stripeTestResult, setStripeTestResult] = useState<{
+    status: "pending" | "checkout_created" | "payment_completed" | "webhook_verified" | "failed";
+    message?: string;
+    sessionId?: string;
+  }>({ status: "pending" });
 
   const updateTest = (index: number, updates: Partial<TestResult>) => {
     setTests(prev => prev.map((t, i) => i === index ? { ...t, ...updates } : t));
@@ -149,6 +156,66 @@ export default function E2ETestDashboard() {
     await runZipTest("M5V 2T6", 3, "Toronto area");
     await runZipTest("H2Y 1C6", 4, "Montreal area");
     await runZipTest("ABC12345", 5, "Invalid");
+  };
+
+  const runStripeTest = async () => {
+    setStripeTestRunning(true);
+    setStripeTestResult({ status: "pending" });
+    
+    try {
+      // Create a test checkout for $1
+      const { data, error } = await supabase.functions.invoke("create-product-checkout", {
+        body: { 
+          productId: "test-product-e2e",
+          quantity: 1,
+          testMode: true
+        }
+      });
+
+      if (error) {
+        setStripeTestResult({ 
+          status: "failed", 
+          message: error.message 
+        });
+        toast({ 
+          title: "Checkout Failed", 
+          description: error.message,
+          variant: "destructive" 
+        });
+        setStripeTestRunning(false);
+        return;
+      }
+
+      if (data?.url) {
+        const sessionId = new URL(data.url).searchParams.get("session_id") || "unknown";
+        setStripeCheckoutUrl(data.url);
+        setStripeTestResult({ 
+          status: "checkout_created", 
+          message: "Checkout session created. Opening in new tab...",
+          sessionId
+        });
+        
+        // Open checkout in new tab
+        window.open(data.url, "_blank");
+        
+        toast({ 
+          title: "Checkout Created", 
+          description: "Complete payment in the new tab, then check webhook logs" 
+        });
+      }
+    } catch (error: any) {
+      setStripeTestResult({ 
+        status: "failed", 
+        message: error.message 
+      });
+      toast({ 
+        title: "Error", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+    
+    setStripeTestRunning(false);
   };
 
   const webhookUrl = "https://hssrytzedacchvkrxgnq.supabase.co/functions/v1/stripe-webhook";
@@ -324,34 +391,120 @@ export default function E2ETestDashboard() {
           <CardHeader>
             <CardTitle>Stripe $1 Test Purchase</CardTitle>
             <CardDescription>
-              After fixing webhook URL, test live mode checkout
+              Automated test with real-time tracking
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Alert>
-              <AlertDescription>
-                <p className="font-semibold mb-2">Pre-requisites:</p>
-                <ol className="text-sm space-y-1 list-decimal list-inside">
-                  <li>Fix webhook URL (see card above)</li>
-                  <li>Verify STRIPE_LIVE_MODE=true in environment</li>
-                  <li>Ensure live secret key is configured</li>
-                </ol>
-              </AlertDescription>
-            </Alert>
+            {stripeTestResult.status === "pending" && (
+              <Alert>
+                <AlertDescription>
+                  <p className="font-semibold mb-2">This will:</p>
+                  <ol className="text-sm space-y-1 list-decimal list-inside">
+                    <li>Create a test checkout session</li>
+                    <li>Open Stripe checkout in new tab</li>
+                    <li>Track webhook delivery after payment</li>
+                  </ol>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {stripeTestResult.status === "checkout_created" && (
+              <Alert className="border-blue-500/50">
+                <AlertDescription>
+                  <p className="font-semibold text-blue-600">✓ Checkout Created</p>
+                  <p className="text-sm mt-2">{stripeTestResult.message}</p>
+                  {stripeTestResult.sessionId && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Session: {stripeTestResult.sessionId}
+                    </p>
+                  )}
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm font-medium">Next steps:</p>
+                    <ol className="text-sm space-y-1 list-decimal list-inside">
+                      <li>Complete payment in the new tab (4242 4242 4242 4242)</li>
+                      <li>After success, check webhook logs in Stripe</li>
+                      <li>Verify order in database (orders table)</li>
+                    </ol>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {stripeTestResult.status === "failed" && (
+              <Alert className="border-red-500/50">
+                <AlertDescription>
+                  <p className="font-semibold text-red-600">✗ Test Failed</p>
+                  <p className="text-sm mt-2">{stripeTestResult.message}</p>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {stripeCheckoutUrl && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Checkout URL:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-muted p-2 rounded text-xs truncate">
+                    {stripeCheckoutUrl}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(stripeCheckoutUrl)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open(stripeCheckoutUrl, "_blank")}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">Test card (Stripe test mode):</p>
+              <p className="text-sm font-medium">Test card:</p>
               <code className="block bg-muted p-2 rounded text-sm">
                 4242 4242 4242 4242 | Any future date | Any 3 digits
               </code>
             </div>
 
             <Button 
-              onClick={() => window.location.href = "/store"}
+              onClick={runStripeTest}
               className="w-full"
+              disabled={stripeTestRunning}
             >
-              Go to Store
+              {stripeTestRunning ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Checkout...
+                </>
+              ) : (
+                "Run $1 Test Purchase"
+              )}
             </Button>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => window.open("https://dashboard.stripe.com/test/webhooks", "_blank")}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                View Webhook Logs
+                <ExternalLink className="h-4 w-4 ml-2" />
+              </Button>
+              <Button 
+                onClick={() => window.location.href = "/orders"}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                View Orders
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
