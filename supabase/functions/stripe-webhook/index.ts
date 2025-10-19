@@ -1,13 +1,65 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 import { createStripeClient, getStripeConfig } from "../_shared/stripe-config.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Track processed events for idempotency
 const processedEvents = new Set<string>();
+
+async function sendOrderConfirmationEmail(
+  customerEmail: string,
+  productName: string,
+  amountTotal: number,
+  currency: string
+) {
+  if (!resend) {
+    console.warn("[WEBHOOK] Resend not configured, skipping email");
+    return { success: false, reason: "resend_not_configured" };
+  }
+
+  try {
+    const formattedAmount = (amountTotal / 100).toFixed(2);
+    
+    await resend.emails.send({
+      from: "Daily Vibe Check <support@dailyvibecheck.com>",
+      to: [customerEmail],
+      subject: "Thank you for your purchase!",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #333;">Payment Successful!</h1>
+          <p>Your payment to <strong>Daily Vibe Check</strong> was successful.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #555; margin-top: 0;">Order Details</h2>
+            <p><strong>Product:</strong> ${productName}</p>
+            <p><strong>Amount:</strong> $${formattedAmount} ${currency.toUpperCase()}</p>
+          </div>
+          
+          <p>You can access your product or dashboard here:</p>
+          <a href="https://dailyvibecheck.com/dashboard" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 10px 0;">Go to Dashboard</a>
+          
+          <p style="color: #666; font-size: 14px; margin-top: 30px;">
+            Thank you for supporting Daily Vibe Check!<br>
+            Questions? Reply to this email or visit our support page.
+          </p>
+        </div>
+      `,
+    });
+
+    console.log(`[WEBHOOK] Order confirmation email sent to: ${customerEmail}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[WEBHOOK] Error sending email:", error.message);
+    // Don't fail the webhook if email fails
+    return { success: false, error: error.message };
+  }
+}
 
 async function processCheckoutCompleted(
   stripe: Stripe,
@@ -23,101 +75,71 @@ async function processCheckoutCompleted(
     return { error: "No customer email" };
   }
 
-  // Find user by email
-  const { data: { users }, error: userError } = await supabase.auth.admin.listUsers();
-  const user = users?.find((u: any) => u.email === customerEmail);
-  
-  if (!user) {
-    console.error(`[WEBHOOK] User not found for email: ${customerEmail}`);
-    return { error: "User not found" };
-  }
+  // Get line items to extract product details
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+  const productName = lineItems.data[0]?.description || "Product";
+  const amountTotal = session.amount_total || 0;
+  const currency = session.currency || "usd";
 
-  // Update order status
-  const { error: orderError } = await supabase
-    .from("orders")
-    .update({
-      status: "paid",
-      stripe_payment_id: session.payment_intent as string,
-    })
-    .eq("stripe_session_id", session.id);
+  // Save order to database
+  try {
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        session_id: session.id,
+        customer_email: customerEmail,
+        product_name: productName,
+        amount_total: amountTotal,
+        currency: currency,
+        payment_status: "paid",
+      })
+      .select()
+      .single();
 
-  if (orderError) {
-    console.error("[WEBHOOK] Error updating order:", orderError);
-    return { error: orderError.message };
-  }
-
-  // Track purchase success
-  await supabase.from("analytics_events").insert({
-    user_id: user.id,
-    event_type: "purchase_succeeded",
-    event_metadata: {
-      sessionId: session.id,
-      paymentIntentId: session.payment_intent,
-      amountTotal: session.amount_total,
-      currency: session.currency,
-      webhookEventId: eventId,
-    },
-    page_url: "/checkout/success",
-  });
-
-  // Get order details
-  const { data: order } = await supabase
-    .from("orders")
-    .select(`
-      id,
-      order_items (
-        product_id,
-        products (
-          product_type
-        )
-      )
-    `)
-    .eq("stripe_session_id", session.id)
-    .single();
-
-  if (!order) {
-    console.error("[WEBHOOK] Order not found");
-    return { error: "Order not found" };
-  }
-
-  // Create entitlements for digital products
-  const digitalProducts = order.order_items
-    .filter((item: any) => item.products?.product_type === "digital")
-    .map((item: any) => ({
-      user_id: user.id,
-      product_id: item.product_id,
-      order_id: order.id,
-      status: "active",
-    }));
-
-  if (digitalProducts.length > 0) {
-    const { error: entitlementError } = await supabase
-      .from("entitlements")
-      .upsert(digitalProducts, { onConflict: "user_id,product_id" });
-
-    if (entitlementError) {
-      console.error("[WEBHOOK] Error creating entitlements:", entitlementError);
-    } else {
-      console.log(`[WEBHOOK] Created ${digitalProducts.length} entitlements`);
-      
-      // Track entitlement grants
-      for (const product of digitalProducts) {
-        await supabase.from("analytics_events").insert({
-          user_id: user.id,
-          event_type: "entitlement_granted",
-          event_metadata: {
-            productId: product.product_id,
-            orderId: product.order_id,
-            webhookEventId: eventId,
-          },
-          page_url: "/library",
-        });
+    if (orderError) {
+      // Check if it's a duplicate session_id error (order already exists)
+      if (orderError.code === "23505") {
+        console.log(`[WEBHOOK] Order already exists for session: ${session.id}`);
+        return { success: true, duplicate: true };
       }
+      console.error("[WEBHOOK] Error saving order:", orderError);
+      throw orderError;
     }
-  }
 
-  console.log(`[WEBHOOK] Order completed successfully for user: ${user.id}`);
-  return { success: true };
+    console.log(`[WEBHOOK] Order saved: ${order.id}`);
+
+    // Send confirmation email (non-blocking - don't fail if this fails)
+    const emailResult = await sendOrderConfirmationEmail(
+      customerEmail,
+      productName,
+      amountTotal,
+      currency
+    );
+
+    if (!emailResult.success) {
+      console.warn("[WEBHOOK] Email send failed but continuing:", emailResult);
+    }
+
+    // Track analytics
+    await supabase.from("analytics_events").insert({
+      event_type: "purchase_succeeded",
+      event_metadata: {
+        sessionId: session.id,
+        paymentIntentId: session.payment_intent,
+        amountTotal: amountTotal,
+        currency: currency,
+        productName: productName,
+        webhookEventId: eventId,
+      },
+      page_url: "/checkout/success",
+    });
+
+    console.log(`[WEBHOOK] Order processed successfully: ${session.id}`);
+    return { success: true, order_id: order.id, email_sent: emailResult.success };
+  } catch (error: any) {
+    console.error("[WEBHOOK] Error in processCheckoutCompleted:", error);
+    return { error: error.message };
+  }
 }
 
 async function processRefund(
@@ -131,7 +153,7 @@ async function processRefund(
   // Find the order by payment intent
   const { data: order } = await supabase
     .from("orders")
-    .select("*, order_items(product_id)")
+    .select("*")
     .eq("stripe_payment_id", charge.payment_intent)
     .single();
 
@@ -143,90 +165,10 @@ async function processRefund(
   // Update order status
   await supabase
     .from("orders")
-    .update({ status: "refunded" })
+    .update({ payment_status: "refunded" })
     .eq("id", order.id);
 
-  // Revoke entitlements for digital products
-  const productIds = order.order_items.map((item: any) => item.product_id);
-  
-  const { error: revokeError } = await supabase
-    .from("entitlements")
-    .update({ status: "revoked" })
-    .eq("order_id", order.id)
-    .in("product_id", productIds);
-
-  if (revokeError) {
-    console.error("[WEBHOOK] Error revoking entitlements:", revokeError);
-  } else {
-    console.log(`[WEBHOOK] Revoked entitlements for order: ${order.id}`);
-    
-    // Track entitlement revocation
-    for (const productId of productIds) {
-      await supabase.from("analytics_events").insert({
-        user_id: order.user_id,
-        event_type: "entitlement_revoked",
-        event_metadata: {
-          productId,
-          orderId: order.id,
-          reason: "refund",
-          webhookEventId: eventId,
-        },
-      });
-    }
-  }
-
-  return { success: true };
-}
-
-async function processDisputeCreated(
-  stripe: Stripe,
-  dispute: Stripe.Dispute,
-  supabase: any,
-  eventId: string
-) {
-  console.log(`[WEBHOOK] Processing dispute for charge: ${dispute.charge}`);
-
-  // Find order by charge ID
-  const { data: order } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("stripe_payment_id", dispute.charge)
-    .single();
-
-  if (!order) {
-    console.error("[WEBHOOK] Order not found for dispute");
-    return { error: "Order not found" };
-  }
-
-  // Update order status
-  await supabase
-    .from("orders")
-    .update({ status: "disputed" })
-    .eq("id", order.id);
-
-  // Revoke entitlements immediately on dispute
-  const { error: revokeError } = await supabase
-    .from("entitlements")
-    .update({ status: "revoked" })
-    .eq("order_id", order.id);
-
-  if (revokeError) {
-    console.error("[WEBHOOK] Error revoking entitlements on dispute:", revokeError);
-  } else {
-    console.log(`[WEBHOOK] Revoked entitlements due to dispute for order: ${order.id}`);
-    
-    await supabase.from("analytics_events").insert({
-      user_id: order.user_id,
-      event_type: "entitlement_revoked",
-      event_metadata: {
-        orderId: order.id,
-        reason: "dispute",
-        disputeId: dispute.id,
-        webhookEventId: eventId,
-      },
-    });
-  }
-
+  console.log(`[WEBHOOK] Order refunded: ${order.id}`);
   return { success: true };
 }
 
@@ -281,31 +223,21 @@ serve(async (req) => {
         );
         break;
 
-      case "charge.dispute.created":
-        result = await processDisputeCreated(
-          stripe,
-          event.data.object as Stripe.Dispute,
-          supabase,
-          event.id
-        );
-        break;
-
       default:
         console.log(`[WEBHOOK] Unhandled event type: ${event.type}`);
         result = { success: true, unhandled: true };
     }
 
+    // Always return 200 OK to Stripe, even if there were errors
+    // This prevents Stripe from retrying on non-retriable errors
     if (result.error) {
-      // Don't mark as processed if there was an error - allow retry
       console.error(`[WEBHOOK] Error processing ${event.type}:`, result.error);
-      return new Response(JSON.stringify({ error: result.error }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      // Still mark as processed and return 200 to prevent retries
+      processedEvents.add(event.id);
+    } else {
+      // Mark as successfully processed
+      processedEvents.add(event.id);
     }
-
-    // Mark as successfully processed
-    processedEvents.add(event.id);
     
     // Clean up old processed events (keep last 1000)
     if (processedEvents.size > 1000) {
@@ -319,8 +251,9 @@ serve(async (req) => {
     });
   } catch (error: any) {
     console.error("[WEBHOOK] Error:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
+    // Still return 200 to prevent Stripe retries on signature/parsing errors
+    return new Response(JSON.stringify({ error: error.message, received: true }), {
+      status: 200,
       headers: { "Content-Type": "application/json" },
     });
   }

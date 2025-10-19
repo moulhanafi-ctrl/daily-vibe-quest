@@ -1963,8 +1963,14 @@ export type Database = {
       }
       orders: {
         Row: {
+          amount_total: number | null
           created_at: string | null
+          currency: string | null
+          customer_email: string | null
           id: string
+          payment_status: string | null
+          product_name: string | null
+          session_id: string | null
           shipping_address: Json | null
           status: Database["public"]["Enums"]["order_status"]
           stripe_payment_id: string | null
@@ -1974,8 +1980,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          amount_total?: number | null
           created_at?: string | null
+          currency?: string | null
+          customer_email?: string | null
           id?: string
+          payment_status?: string | null
+          product_name?: string | null
+          session_id?: string | null
           shipping_address?: Json | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_id?: string | null
@@ -1985,8 +1997,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          amount_total?: number | null
           created_at?: string | null
+          currency?: string | null
+          customer_email?: string | null
           id?: string
+          payment_status?: string | null
+          product_name?: string | null
+          session_id?: string | null
           shipping_address?: Json | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_id?: string | null
