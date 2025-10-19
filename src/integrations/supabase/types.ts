@@ -1967,6 +1967,7 @@ export type Database = {
           created_at: string | null
           currency: string | null
           customer_email: string | null
+          emailed: boolean | null
           id: string
           payment_status: string | null
           product_name: string | null
@@ -1984,6 +1985,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           customer_email?: string | null
+          emailed?: boolean | null
           id?: string
           payment_status?: string | null
           product_name?: string | null
@@ -2001,6 +2003,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           customer_email?: string | null
+          emailed?: boolean | null
           id?: string
           payment_status?: string | null
           product_name?: string | null

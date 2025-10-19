@@ -7,6 +7,8 @@ import { createStripeClient, getStripeConfig } from "../_shared/stripe-config.ts
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
+const fromEmail = Deno.env.get("FROM_EMAIL") || "support@dailyvibecheck.com";
+const appDashboardUrl = Deno.env.get("APP_DASHBOARD_URL") || "https://dailyvibecheck.com/";
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Track processed events for idempotency
@@ -25,28 +27,29 @@ async function sendOrderConfirmationEmail(
 
   try {
     const formattedAmount = (amountTotal / 100).toFixed(2);
+    const firstName = customerEmail.split('@')[0];
+    const greeting = firstName || 'friend';
     
     await resend.emails.send({
-      from: "Daily Vibe Check <support@dailyvibecheck.com>",
+      from: `Daily Vibe Check <${fromEmail}>`,
       to: [customerEmail],
       subject: "Thank you for your purchase!",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Payment Successful!</h1>
-          <p>Your payment to <strong>Daily Vibe Check</strong> was successful.</p>
+          <h2 style="color: #333;">Payment successful — thank you for supporting Daily Vibe Check!</h2>
+          <p>Hi ${greeting}, your payment was successful.</p>
           
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="color: #555; margin-top: 0;">Order Details</h2>
-            <p><strong>Product:</strong> ${productName}</p>
-            <p><strong>Amount:</strong> $${formattedAmount} ${currency.toUpperCase()}</p>
-          </div>
+          <ul style="list-style: none; padding: 0;">
+            <li style="margin: 10px 0;"><strong>Product:</strong> ${productName}</li>
+            <li style="margin: 10px 0;"><strong>Amount:</strong> $${formattedAmount} ${currency.toUpperCase()}</li>
+          </ul>
           
-          <p>You can access your product or dashboard here:</p>
-          <a href="https://dailyvibecheck.com/dashboard" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 10px 0;">Go to Dashboard</a>
+          <p style="margin: 20px 0;">
+            <a href="${appDashboardUrl}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">Open your dashboard</a>
+          </p>
           
           <p style="color: #666; font-size: 14px; margin-top: 30px;">
-            Thank you for supporting Daily Vibe Check!<br>
-            Questions? Reply to this email or visit our support page.
+            If you have questions, just reply to this email.
           </p>
         </div>
       `,
@@ -71,8 +74,8 @@ async function processCheckoutCompleted(
 
   const customerEmail = session.customer_email || session.customer_details?.email;
   if (!customerEmail) {
-    console.error("[WEBHOOK] No customer email found");
-    return { error: "No customer email" };
+    console.warn("[WEBHOOK] No customer email found - skipping order creation");
+    return { success: true, warning: "no_email" };
   }
 
   // Get line items to extract product details
@@ -81,43 +84,55 @@ async function processCheckoutCompleted(
   const amountTotal = session.amount_total || 0;
   const currency = session.currency || "usd";
 
-  // Save order to database
+  // Save order to database (idempotent upsert)
   try {
+    // Upsert order - update if exists, insert if new
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .insert({
-        session_id: session.id,
-        customer_email: customerEmail,
-        product_name: productName,
-        amount_total: amountTotal,
-        currency: currency,
-        payment_status: "paid",
-      })
+      .upsert(
+        {
+          session_id: session.id,
+          customer_email: customerEmail,
+          product_name: productName,
+          amount_total: amountTotal,
+          currency: currency,
+          payment_status: "paid",
+        },
+        { onConflict: "session_id" }
+      )
       .select()
       .single();
 
     if (orderError) {
-      // Check if it's a duplicate session_id error (order already exists)
-      if (orderError.code === "23505") {
-        console.log(`[WEBHOOK] Order already exists for session: ${session.id}`);
-        return { success: true, duplicate: true };
-      }
-      console.error("[WEBHOOK] Error saving order:", orderError);
+      console.error("[WEBHOOK] Error upserting order:", orderError);
       throw orderError;
     }
 
-    console.log(`[WEBHOOK] Order saved: ${order.id}`);
+    console.log(`[WEBHOOK] Order upserted: ${order.id}, emailed: ${order.emailed}`);
 
-    // Send confirmation email (non-blocking - don't fail if this fails)
-    const emailResult = await sendOrderConfirmationEmail(
-      customerEmail,
-      productName,
-      amountTotal,
-      currency
-    );
+    // Send confirmation email only if not already sent
+    let emailSent = false;
+    if (!order.emailed && customerEmail) {
+      const emailResult = await sendOrderConfirmationEmail(
+        customerEmail,
+        productName,
+        amountTotal,
+        currency
+      );
 
-    if (!emailResult.success) {
-      console.warn("[WEBHOOK] Email send failed but continuing:", emailResult);
+      if (emailResult.success) {
+        // Mark as emailed
+        await supabase
+          .from("orders")
+          .update({ emailed: true })
+          .eq("id", order.id);
+        emailSent = true;
+        console.log(`[WEBHOOK] Email sent and marked for session: ${session.id}`);
+      } else {
+        console.warn("[WEBHOOK] Email send failed:", emailResult);
+      }
+    } else {
+      console.log(`[WEBHOOK] Email already sent for session: ${session.id}, skipping`);
     }
 
     // Track analytics
@@ -134,10 +149,96 @@ async function processCheckoutCompleted(
       page_url: "/checkout/success",
     });
 
-    console.log(`[WEBHOOK] Order processed successfully: ${session.id}`);
-    return { success: true, order_id: order.id, email_sent: emailResult.success };
+    // Summary log
+    console.log(JSON.stringify({
+      eventType: "checkout.session.completed",
+      session_id: session.id,
+      email: customerEmail,
+      amount_total: amountTotal,
+      emailed: order.emailed || emailSent
+    }));
+
+    return { success: true, order_id: order.id, email_sent: emailSent };
   } catch (error: any) {
     console.error("[WEBHOOK] Error in processCheckoutCompleted:", error);
+    return { error: error.message };
+  }
+}
+
+async function processPaymentIntentSucceeded(
+  stripe: Stripe,
+  paymentIntent: Stripe.PaymentIntent,
+  supabase: any,
+  eventId: string
+) {
+  console.log(`[WEBHOOK] Processing payment_intent.succeeded: ${paymentIntent.id}`);
+
+  const customerEmail = paymentIntent.receipt_email;
+  if (!customerEmail) {
+    console.warn("[WEBHOOK] No receipt email found on payment_intent - skipping");
+    return { success: true, warning: "no_email" };
+  }
+
+  const amountTotal = paymentIntent.amount;
+  const currency = paymentIntent.currency || "usd";
+  const productName = paymentIntent.description || "Product";
+
+  // Upsert order using payment_intent id as session_id fallback
+  try {
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .upsert(
+        {
+          session_id: paymentIntent.id,
+          customer_email: customerEmail,
+          product_name: productName,
+          amount_total: amountTotal,
+          currency: currency,
+          payment_status: "paid",
+        },
+        { onConflict: "session_id" }
+      )
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error("[WEBHOOK] Error upserting order from payment_intent:", orderError);
+      throw orderError;
+    }
+
+    console.log(`[WEBHOOK] Order upserted from payment_intent: ${order.id}`);
+
+    // Send email if not already sent
+    let emailSent = false;
+    if (!order.emailed && customerEmail) {
+      const emailResult = await sendOrderConfirmationEmail(
+        customerEmail,
+        productName,
+        amountTotal,
+        currency
+      );
+
+      if (emailResult.success) {
+        await supabase
+          .from("orders")
+          .update({ emailed: true })
+          .eq("id", order.id);
+        emailSent = true;
+        console.log(`[WEBHOOK] Email sent for payment_intent: ${paymentIntent.id}`);
+      }
+    }
+
+    console.log(JSON.stringify({
+      eventType: "payment_intent.succeeded",
+      session_id: paymentIntent.id,
+      email: customerEmail,
+      amount_total: amountTotal,
+      emailed: order.emailed || emailSent
+    }));
+
+    return { success: true, order_id: order.id, email_sent: emailSent };
+  } catch (error: any) {
+    console.error("[WEBHOOK] Error in processPaymentIntentSucceeded:", error);
     return { error: error.message };
   }
 }
@@ -209,6 +310,15 @@ serve(async (req) => {
         result = await processCheckoutCompleted(
           stripe,
           event.data.object as Stripe.Checkout.Session,
+          supabase,
+          event.id
+        );
+        break;
+
+      case "payment_intent.succeeded":
+        result = await processPaymentIntentSucceeded(
+          stripe,
+          event.data.object as Stripe.PaymentIntent,
           supabase,
           event.id
         );
