@@ -79,25 +79,34 @@ function validateAndNormalize(code: string, hint?: string | null): { valid: bool
 
 // ============= National Hotlines =============
 function getNationalHotlines(country: "US" | "CA") {
-  if (country === "CA") {
-    return [
-      { name: "988 Suicide Crisis Helpline", phone: "988", website: "https://988.ca" },
-      { name: "Talk Suicide Canada", phone: "1-833-456-4566", website: "https://talksuicide.ca" },
-      { name: "Kids Help Phone", phone: "1-800-668-6868", website: "https://kidshelpphone.ca" },
-      { name: "211 Canada", phone: "211", website: "https://211.ca" },
-      { name: "Hope for Wellness Helpline", phone: "1-855-242-3310", website: "https://www.hopeforwellness.ca" },
-    ];
-  }
-  
-  return [
+  const hotlines = country === "CA" ? [
+    { name: "988 Suicide Crisis Helpline", phone: "988", website: "https://988.ca" },
+    { name: "Talk Suicide Canada", phone: "1-833-456-4566", website: "https://talksuicide.ca" },
+    { name: "Kids Help Phone", phone: "1-800-668-6868", website: "https://kidshelpphone.ca" },
+    { name: "211 Canada", phone: "211", website: "https://211.ca" },
+    { name: "Hope for Wellness Helpline", phone: "1-855-242-3310", website: "https://www.hopeforwellness.ca" },
+  ] : [
     { name: "988 Suicide & Crisis Lifeline", phone: "988", website: "https://988lifeline.org" },
-    { name: "Crisis Text Line", phone: "741741", website: "https://www.crisistextline.org/" },
+    { name: "Crisis Text Line", phone: "Text HOME to 741741", website: "https://www.crisistextline.org/" },
     { name: "211 Community Resources", phone: "211", website: "https://www.211.org" },
     { name: "The Trevor Project", phone: "1-866-488-7386", website: "https://www.thetrevorproject.org" },
     { name: "National Domestic Violence Hotline", phone: "1-800-799-7233", website: "https://www.thehotline.org" },
     { name: "Veterans Crisis Line", phone: "988", website: "https://www.veteranscrisisline.net" },
     { name: "SAMHSA National Helpline", phone: "1-800-662-4357", website: "https://www.samhsa.gov/find-help/national-helpline" },
   ];
+  
+  // Format as Provider objects for consistency
+  return hotlines.map(h => ({
+    name: h.name,
+    phone: h.phone,
+    website: h.website,
+    distanceKm: 0,
+    distanceMi: 0,
+    address: null,
+    rating: null,
+    openNow: null,
+    type: "crisis" as const,
+  }));
 }
 
 // ============= Geocoding =============
