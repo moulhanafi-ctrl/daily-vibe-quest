@@ -48,7 +48,7 @@ const RequestSchema = z.object({
   code: z.string().trim().min(1).max(10),
   countryHint: z.enum(["US", "CA"]).nullable().optional(),
   radiusKm: z.number().int().positive().max(100).default(40),
-  limit: z.number().int().positive().max(50).default(20),
+  limit: z.number().int().positive().max(50).default(30),
   filters: z.object({
     openNow: z.boolean().default(false),
     type: z.enum(["all", "therapists", "crisis"]).default("all"),
@@ -344,23 +344,24 @@ async function findProviders(
   const therapistKeywords = [
     "therapist",
     "psychologist",
-    "mental health clinic",
     "counseling center",
-    "behavioral health",
-    "social services"
+    "behavioral health clinic",
+    "mental health services",
+    "social services",
+    "psychiatrist",
+    "therapy center",
+    "wellness clinic"
   ];
   const crisisKeywords = [
     "suicide prevention",
     "mental health crisis",
-    "hospital",
-    "emergency",
+    "emergency mental health",
+    "rehabilitation center",
+    "recovery program",
+    "addiction treatment",
     "community health center",
     "crisis hotline",
-    "rehabilitation center",
-    "addiction treatment",
-    "support group",
-    "recovery center",
-    "wellness center"
+    "support group"
   ];
   
   let allPlaces: Place[] = [];
@@ -480,6 +481,8 @@ serve(async (req) => {
     const tookMs = Date.now() - startTime;
     
     const response = {
+      status: "ok",
+      geocoder: geo.source,
       where: {
         lat: geo.lat,
         lng: geo.lng,
@@ -487,8 +490,10 @@ serve(async (req) => {
         region: geo.region || null,
         country: geo.country,
       },
-      locals,
-      nationals,
+      localResults: locals,
+      nationalResults: nationals,
+      fallback: geo.source !== "google",
+      error: null,
       meta: {
         radiusKm: validated.radiusKm,
         source: geo.source,
@@ -535,13 +540,16 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({
+        status: "error",
+        geocoder: "unknown",
         error: err.message,
         message: userMessage,
-        locals: [],
-        nationals,
+        localResults: [],
+        nationalResults: nationals,
+        fallback: true,
         meta: { tookMs: Date.now() - startTime, cache: "MISS" },
       }),
-      { status, headers: { ...corsHeaders, "content-type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "content-type": "application/json" } }
     );
   }
 });

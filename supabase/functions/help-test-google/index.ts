@@ -1,81 +1,113 @@
-// Test Google Maps API configuration
+// Diagnostic endpoint to test Google Maps API configuration
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
+
+const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") ?? "";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const GOOGLE_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY");
-  
-  const results = {
-    apiKeyConfigured: !!GOOGLE_API_KEY,
-    apiKeyLength: GOOGLE_API_KEY?.length || 0,
-    tests: {} as any,
+  const diagnostics: any = {
+    timestamp: new Date().toISOString(),
+    apiKey: {
+      configured: !!GOOGLE_MAPS_API_KEY,
+      length: GOOGLE_MAPS_API_KEY.length,
+      preview: GOOGLE_MAPS_API_KEY ? `${GOOGLE_MAPS_API_KEY.slice(0, 8)}...` : "NOT SET",
+    },
+    tests: {
+      geocoding: { status: "pending", latency: 0, error: null as any },
+      places: { status: "pending", latency: 0, error: null as any },
+    },
   };
 
-  if (!GOOGLE_API_KEY) {
-    return new Response(JSON.stringify({
-      ...results,
-      error: "GOOGLE_MAPS_API_KEY not configured in secrets"
-    }), {
-      headers: { ...corsHeaders, "content-type": "application/json" },
-    });
-  }
-
-  // Test 1: Geocoding API
+  // Test Geocoding API
   try {
-    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=90210&key=${GOOGLE_API_KEY}`;
+    const geocodeStart = Date.now();
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=90210&key=${GOOGLE_MAPS_API_KEY}`;
     const geocodeRes = await fetch(geocodeUrl);
     const geocodeJson = await geocodeRes.json();
+    diagnostics.tests.geocoding.latency = Date.now() - geocodeStart;
     
-    results.tests.geocoding = {
-      status: geocodeJson.status,
-      success: geocodeJson.status === "OK",
-      error: geocodeJson.error_message || null,
-    };
+    if (geocodeJson.status === "OK") {
+      diagnostics.tests.geocoding.status = "OK";
+    } else {
+      diagnostics.tests.geocoding.status = "ERROR";
+      diagnostics.tests.geocoding.error = {
+        code: geocodeJson.status,
+        message: geocodeJson.error_message || "Unknown error",
+      };
+    }
   } catch (e) {
-    results.tests.geocoding = {
-      status: "ERROR",
-      success: false,
-      error: (e as Error).message,
+    diagnostics.tests.geocoding.status = "ERROR";
+    diagnostics.tests.geocoding.error = {
+      code: "EXCEPTION",
+      message: (e as Error).message,
     };
   }
 
-  // Test 2: Places API
+  // Test Places API
   try {
-    const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=34.0522,-118.2437&radius=5000&keyword=therapist&key=${GOOGLE_API_KEY}`;
+    const placesStart = Date.now();
+    const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=34.0522,-118.2437&radius=5000&keyword=therapist&key=${GOOGLE_MAPS_API_KEY}`;
     const placesRes = await fetch(placesUrl);
     const placesJson = await placesRes.json();
+    diagnostics.tests.places.latency = Date.now() - placesStart;
     
-    results.tests.places = {
-      status: placesJson.status,
-      success: placesJson.status === "OK",
-      error: placesJson.error_message || null,
-      resultsCount: placesJson.results?.length || 0,
-    };
+    if (placesJson.status === "OK") {
+      diagnostics.tests.places.status = "OK";
+      diagnostics.tests.places.resultsCount = placesJson.results?.length || 0;
+    } else {
+      diagnostics.tests.places.status = "ERROR";
+      diagnostics.tests.places.error = {
+        code: placesJson.status,
+        message: placesJson.error_message || "Unknown error",
+      };
+    }
   } catch (e) {
-    results.tests.places = {
-      status: "ERROR",
-      success: false,
-      error: (e as Error).message,
+    diagnostics.tests.places.status = "ERROR";
+    diagnostics.tests.places.error = {
+      code: "EXCEPTION",
+      message: (e as Error).message,
     };
   }
 
-  const allSuccess = results.tests.geocoding?.success && results.tests.places?.success;
+  // Determine overall status
+  const allTestsPass = 
+    diagnostics.tests.geocoding.status === "OK" && 
+    diagnostics.tests.places.status === "OK";
+  
+  diagnostics.overallStatus = allTestsPass ? "HEALTHY" : "UNHEALTHY";
+  
+  // Add recommendations
+  if (!GOOGLE_MAPS_API_KEY) {
+    diagnostics.recommendation = "Configure GOOGLE_MAPS_API_KEY in Edge Function Secrets";
+  } else if (!allTestsPass) {
+    const errors = [];
+    if (diagnostics.tests.geocoding.error?.code === "REQUEST_DENIED") {
+      errors.push("Geocoding API: Enable in Google Cloud Console and check API restrictions");
+    }
+    if (diagnostics.tests.places.error?.code === "REQUEST_DENIED") {
+      errors.push("Places API: Enable in Google Cloud Console and check API restrictions");
+    }
+    if (diagnostics.tests.geocoding.error?.code === "OVER_QUERY_LIMIT") {
+      errors.push("Geocoding API: Quota exceeded - check billing");
+    }
+    if (diagnostics.tests.places.error?.code === "OVER_QUERY_LIMIT") {
+      errors.push("Places API: Quota exceeded - check billing");
+    }
+    diagnostics.recommendation = errors.length > 0 ? errors.join("; ") : "Check API key validity and restrictions in Google Cloud Console";
+  } else {
+    diagnostics.recommendation = "All systems operational";
+  }
 
-  return new Response(JSON.stringify({
-    ...results,
-    overall: allSuccess ? "✅ All APIs working" : "❌ Some APIs failed",
-    recommendation: allSuccess 
-      ? "Your Google Maps setup is working correctly!"
-      : "Check Google Cloud Console: Enable Geocoding API + Places API, ensure billing is active, and remove HTTP referrer restrictions",
-  }), {
+  return new Response(JSON.stringify(diagnostics, null, 2), {
     headers: { ...corsHeaders, "content-type": "application/json" },
   });
 });

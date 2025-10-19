@@ -27,23 +27,26 @@ interface Provider {
   openNow?: boolean | null;
 }
 
-interface GeoLookupResponse {
-  locals: Provider[];
-  nationals: Provider[];
-  location?: {
+interface HelpResponse {
+  status: string;
+  geocoder: string;
+  where?: {
     lat: number;
     lng: number;
     city?: string;
     region?: string;
-    country?: string;
+    country: string;
   };
-  country?: string;
-  geocoder?: string;
-  latencyMs?: number;
-  localCount?: number;
-  nationalCount?: number;
-  error?: string;
-  cached?: boolean;
+  localResults: Provider[];
+  nationalResults: Provider[];
+  fallback: boolean;
+  error: string | null;
+  meta: {
+    radiusKm?: number;
+    source: string;
+    tookMs: number;
+    cache: string;
+  };
 }
 
 const LocalHelpSearch = () => {
@@ -80,12 +83,13 @@ const LocalHelpSearch = () => {
     const startTime = Date.now();
 
     try {
-      const { data, error: functionError } = await supabase.functions.invoke(
+      const { data, error: functionError } = await supabase.functions.invoke<HelpResponse>(
         "help-nearby",
         {
           body: { 
             code,
             radiusKm,
+            limit: 30,
             filters: {
               openNow,
               type: filterType,
@@ -100,32 +104,34 @@ const LocalHelpSearch = () => {
         throw functionError;
       }
 
-      if (data.error) {
-        setError(data.message || data.error);
+      if (data?.error) {
+        setError(data.error);
       }
 
-      setLocals(data.locals || []);
-      setNationals(data.nationals || []);
-      setWhereInfo(data.where || null);
+      setLocals(data?.localResults || []);
+      setNationals(data?.nationalResults || []);
+      setWhereInfo(data?.where || null);
       
       setDiagnostics({
-        format: data.where?.country || "Unknown",
-        geocoder: data.meta?.source || "none",
-        serverLatency: data.meta?.tookMs || 0,
+        format: data?.where?.country || "Unknown",
+        geocoder: data?.meta?.source || "none",
+        serverLatency: data?.meta?.tookMs || 0,
         totalLatency,
-        localCount: data.locals?.length || 0,
-        nationalCount: data.nationals?.length || 0,
-        cached: data.meta?.cache === "HIT",
-        location: data.where
+        localCount: data?.localResults?.length || 0,
+        nationalCount: data?.nationalResults?.length || 0,
+        cached: data?.meta?.cache === "HIT",
+        location: data?.where,
+        fallback: data?.fallback,
+        status: data?.status,
       });
 
       trackEvent({
         eventType: "help_search",
         metadata: { 
           code, 
-          localCount: data.locals?.length || 0,
-          nationalCount: data.nationals?.length || 0,
-          geocoder: data.meta?.source,
+          localCount: data?.localResults?.length || 0,
+          nationalCount: data?.nationalResults?.length || 0,
+          geocoder: data?.meta?.source,
           latency: totalLatency,
           radiusKm,
           filterType,
@@ -255,10 +261,13 @@ const LocalHelpSearch = () => {
               <CardContent className="space-y-2 text-xs">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <strong>Format:</strong> {diagnostics.format}
+                    <strong>Status:</strong> {diagnostics.status}
                   </div>
                   <div>
                     <strong>Geocoder:</strong> {diagnostics.geocoder}
+                  </div>
+                  <div>
+                    <strong>Fallback Used:</strong> {diagnostics.fallback ? "Yes" : "No"}
                   </div>
                   <div>
                     <strong>Server Latency:</strong> {diagnostics.serverLatency}ms
@@ -267,17 +276,17 @@ const LocalHelpSearch = () => {
                     <strong>Total Latency:</strong> {diagnostics.totalLatency}ms
                   </div>
                   <div>
+                    <strong>Cached:</strong> {diagnostics.cached ? "Yes" : "No"}
+                  </div>
+                  <div>
                     <strong>Local Results:</strong> {diagnostics.localCount}
                   </div>
                   <div>
                     <strong>National Results:</strong> {diagnostics.nationalCount}
                   </div>
-                  <div>
-                    <strong>Cached:</strong> {diagnostics.cached ? "Yes" : "No"}
-                  </div>
                   {diagnostics.location && (
                     <div className="col-span-2">
-                      <strong>Location:</strong> {diagnostics.location.city}, {diagnostics.location.region}
+                      <strong>Location:</strong> {diagnostics.location.city}, {diagnostics.location.region} ({diagnostics.location.country})
                     </div>
                   )}
                 </div>
@@ -403,27 +412,29 @@ const LocalHelpSearch = () => {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="space-y-2">
-            <p className="font-medium">Showing national helplines — no local results found nearby.</p>
-            <p className="text-sm text-muted-foreground">
-              Try expanding your search radius or checking your ZIP code spelling. You can also browse broader categories below.
-            </p>
+            <p className="font-medium">No local providers found in this area.</p>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+              <li>Try increasing your search radius (currently {radiusKm} km)</li>
+              <li>Select "All" categories for broader results</li>
+              <li>Verify your ZIP/postal code is correct</li>
+            </ul>
+            <p className="text-sm">National helplines are available 24/7 below.</p>
           </AlertDescription>
         </Alert>
       )}
 
       {/* National Resources - Always visible when search is done */}
-      {(nationals.length > 0 || locals.length === 0) && !loading && zipCode && (
+      {nationals.length > 0 && !loading && zipCode && (
         <Card className="border-primary/50 bg-primary/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Phone className="h-5 w-5" />
               National Hotlines & Resources
             </CardTitle>
-            {locals.length > 0 && locals.length < 5 && (
-              <CardDescription>
-                Limited local results. National resources are available 24/7.
-              </CardDescription>
-            )}
+            <CardDescription>
+              Available 24/7 across {whereInfo?.country === "CA" ? "Canada" : "the United States"}
+              {locals.length > 0 && locals.length < 5 && " — Additional support options"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {nationals.map((hotline, idx) => (
