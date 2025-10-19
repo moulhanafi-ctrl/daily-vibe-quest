@@ -18,7 +18,8 @@ import {
   MessageSquare,
   Package,
   Bell,
-  Activity
+  Activity,
+  ShoppingCart
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -318,6 +319,19 @@ export default function AdminDashboard() {
               <CardDescription>Manage daily support messages from Mostapha</CardDescription>
               <Button variant="outline" size="sm" className="w-full mt-4">
                 Manage Messages
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/orders")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Orders</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <CardDescription>Monitor purchases and email receipts</CardDescription>
+              <Button variant="outline" size="sm" className="w-full mt-4">
+                View Orders
               </Button>
             </CardContent>
           </Card>
