@@ -1,0 +1,49 @@
+[
+  {
+    "name": "National Alliance on Mental Illness (NAMI)",
+    "country": "US",
+    "phone": "1-800-950-6264",
+    "website": "https://www.nami.org",
+    "description": "Education, support and advocacy for people affected by mental illness",
+    "type": "crisis",
+    "tags": ["advocacy", "education", "support"]
+  },
+  {
+    "name": "Mental Health America",
+    "country": "US",
+    "website": "https://www.mhanational.org",
+    "description": "Community-based nonprofit dedicated to addressing mental health needs",
+    "type": "crisis",
+    "tags": ["community", "advocacy"]
+  },
+  {
+    "name": "Crisis Services Canada",
+    "country": "CA",
+    "phone": "1-833-456-4566",
+    "website": "https://www.crisisservicescanada.ca",
+    "description": "Network of distress, crisis and suicide prevention services",
+    "type": "crisis",
+    "tags": ["crisis", "suicide-prevention"]
+  },
+  {
+    "name": "Canadian Mental Health Association",
+    "country": "CA",
+    "website": "https://cmha.ca",
+    "description": "Nationwide voluntary organization promoting mental health",
+    "type": "crisis",
+    "tags": ["advocacy", "education", "support"]
+  },
+  {
+    "name": "Centre for Addiction and Mental Health (CAMH)",
+    "country": "CA",
+    "region": "ON",
+    "city": "Toronto",
+    "phone": "1-800-463-2338",
+    "website": "https://www.camh.ca",
+    "description": "Canada's largest mental health teaching hospital",
+    "type": "therapist",
+    "lat": 43.6532,
+    "lng": -79.4163,
+    "tags": ["hospital", "treatment", "research"]
+  }
+]

@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Phone, ExternalLink, Loader2, AlertCircle, Activity } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Phone, ExternalLink, Loader2, AlertCircle, Activity, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
 import { ZipCodeModal } from "./ZipCodeModal";
@@ -13,11 +17,13 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 interface Provider {
   name: string;
   description?: string;
-  website: string;
-  phone: string;
+  website: string | null;
+  phone: string | null;
   distanceKm: number;
   distanceMi: number;
   type?: string;
+  address?: string | null;
+  openNow?: boolean | null;
 }
 
 interface GeoLookupResponse {
@@ -49,6 +55,12 @@ const LocalHelpSearch = () => {
   const [diagnostics, setDiagnostics] = useState<any>(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const { isAdmin } = useAdminCheck();
+  
+  // New filter states
+  const [filterType, setFilterType] = useState<"all" | "therapists" | "crisis">("all");
+  const [openNow, setOpenNow] = useState(false);
+  const [radiusKm, setRadiusKm] = useState(40);
+  const [whereInfo, setWhereInfo] = useState<any>(null);
 
   useEffect(() => {
     const zip = searchParams.get("zip");
@@ -62,14 +74,22 @@ const LocalHelpSearch = () => {
     setLoading(true);
     setError(null);
     setDiagnostics(null);
+    setWhereInfo(null);
 
     const startTime = Date.now();
 
     try {
       const { data, error: functionError } = await supabase.functions.invoke(
-        "geo-lookup",
+        "help-nearby",
         {
-          body: { code },
+          body: { 
+            code,
+            radiusKm,
+            filters: {
+              openNow,
+              type: filterType,
+            },
+          },
         }
       );
 
@@ -79,22 +99,23 @@ const LocalHelpSearch = () => {
         throw functionError;
       }
 
-      if (data.error && data.locals.length === 0) {
-        setError(data.error);
+      if (data.error) {
+        setError(data.message || data.error);
       }
 
       setLocals(data.locals || []);
       setNationals(data.nationals || []);
+      setWhereInfo(data.where || null);
       
       setDiagnostics({
-        format: data.country || "Unknown",
-        geocoder: data.geocoder || "none",
-        serverLatency: data.latencyMs || 0,
+        format: data.where?.country || "Unknown",
+        geocoder: data.meta?.source || "none",
+        serverLatency: data.meta?.tookMs || 0,
         totalLatency,
-        localCount: data.localCount || 0,
-        nationalCount: data.nationalCount || 0,
-        cached: data.cached || false,
-        location: data.location
+        localCount: data.locals?.length || 0,
+        nationalCount: data.nationals?.length || 0,
+        cached: data.meta?.cache === "HIT",
+        location: data.where
       });
 
       trackEvent({
@@ -103,8 +124,11 @@ const LocalHelpSearch = () => {
           code, 
           localCount: data.locals?.length || 0,
           nationalCount: data.nationals?.length || 0,
-          geocoder: data.geocoder,
-          latency: totalLatency
+          geocoder: data.meta?.source,
+          latency: totalLatency,
+          radiusKm,
+          filterType,
+          openNow,
         },
       });
     } catch (err: any) {
@@ -156,7 +180,55 @@ const LocalHelpSearch = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <ZipCodeModal onSave={handleSearch} />
+          <div className="space-y-4">
+            <ZipCodeModal onSave={handleSearch} />
+            
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <Label htmlFor="type-filter" className="text-sm font-medium mb-2 block">
+                  Type
+                </Label>
+                <Tabs value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="therapists">Therapists</TabsTrigger>
+                    <TabsTrigger value="crisis">Crisis</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              
+              <div className="flex-1">
+                <Label htmlFor="radius-select" className="text-sm font-medium mb-2 block">
+                  Radius
+                </Label>
+                <Select value={radiusKm.toString()} onValueChange={(v) => setRadiusKm(parseInt(v))}>
+                  <SelectTrigger id="radius-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 km (6 mi)</SelectItem>
+                    <SelectItem value="25">25 km (16 mi)</SelectItem>
+                    <SelectItem value="40">40 km (25 mi)</SelectItem>
+                    <SelectItem value="80">80 km (50 mi)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-end">
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="open-now" 
+                    checked={openNow} 
+                    onCheckedChange={setOpenNow}
+                  />
+                  <Label htmlFor="open-now" className="text-sm cursor-pointer">
+                    Open now
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <QuickActions />
 
@@ -167,7 +239,7 @@ const LocalHelpSearch = () => {
             </div>
           )}
 
-          {error && (
+          {error && !loading && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
@@ -215,37 +287,60 @@ const LocalHelpSearch = () => {
       </Card>
 
       {/* Local Providers */}
-      {locals.length > 0 && (
+      {locals.length > 0 && whereInfo && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">
-              Local Providers near {zipCode}
-            </h3>
+            <div>
+              <h3 className="text-lg font-semibold">
+                Local Providers near {zipCode}
+              </h3>
+              {whereInfo.city && whereInfo.region && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {whereInfo.city}, {whereInfo.region}
+                </p>
+              )}
+            </div>
+            <Badge variant="secondary">{locals.length} found</Badge>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
             {locals.map((provider, idx) => (
               <Card key={idx} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle className="text-lg">{provider.name}</CardTitle>
-                      {provider.description && (
-                        <p className="text-sm text-muted-foreground">{provider.description}</p>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1 min-w-0">
+                      <CardTitle className="text-base sm:text-lg leading-tight break-words">
+                        {provider.name}
+                      </CardTitle>
+                      {provider.type && (
+                        <Badge variant="outline" className="text-xs">
+                          {provider.type}
+                        </Badge>
                       )}
                     </div>
-                    <Badge variant="outline" className="ml-2">
-                      {provider.distanceMi.toFixed(1)} mi
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge variant="outline" className="whitespace-nowrap">
+                        {provider.distanceMi} mi
+                      </Badge>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {provider.distanceKm} km
+                      </span>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {provider.address && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">{provider.address}</p>
+                  )}
+                  
                   <div className="flex flex-wrap gap-2">
-                    {provider.phone && provider.phone !== "Information not available" && (
+                    {provider.phone && (
                       <Button
                         variant="outline"
                         size="sm"
                         asChild
+                        className="flex-1 sm:flex-none"
                         onClick={() =>
                           trackEvent({
                             eventType: "help_viewed",
@@ -255,7 +350,7 @@ const LocalHelpSearch = () => {
                       >
                         <a href={`tel:${provider.phone}`}>
                           <Phone className="h-4 w-4 mr-2" />
-                          {provider.phone}
+                          Call
                         </a>
                       </Button>
                     )}
@@ -265,6 +360,7 @@ const LocalHelpSearch = () => {
                         variant="outline"
                         size="sm"
                         asChild
+                        className="flex-1 sm:flex-none"
                         onClick={() =>
                           trackEvent({
                             eventType: "help_viewed",
@@ -285,6 +381,19 @@ const LocalHelpSearch = () => {
           </div>
         </div>
       )}
+      
+      {/* Empty state when no locals found */}
+      {!loading && zipCode && locals.length === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="pt-6 text-center space-y-2">
+            <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+            <p className="font-medium">No local providers found</p>
+            <p className="text-sm text-muted-foreground">
+              We couldn't find nearby locations. Try a larger radius or call a national hotline below.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* National Resources - Always visible when search is done */}
       {(nationals.length > 0 || locals.length === 0) && !loading && zipCode && (
@@ -294,13 +403,10 @@ const LocalHelpSearch = () => {
               <Phone className="h-5 w-5" />
               National Hotlines & Resources
             </CardTitle>
-            {locals.length < 3 && locals.length > 0 && (
-              <Alert className="mt-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Limited local results found. Here are national resources that can help immediately.
-                </AlertDescription>
-              </Alert>
+            {locals.length > 0 && locals.length < 5 && (
+              <CardDescription>
+                Limited local results. National resources are available 24/7.
+              </CardDescription>
             )}
           </CardHeader>
           <CardContent className="space-y-3">
@@ -308,34 +414,33 @@ const LocalHelpSearch = () => {
               <Card key={idx} className="border-2">
                 <CardContent className="pt-4">
                   <div className="space-y-3">
-                    <div>
-                      <h4 className="font-semibold text-lg">{hotline.name}</h4>
-                      {hotline.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{hotline.description}</p>
-                      )}
-                    </div>
+                    <h4 className="font-semibold text-base sm:text-lg">{hotline.name}</h4>
                     
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="lg"
-                        asChild
-                        onClick={() =>
-                          trackEvent({
-                            eventType: "help_viewed",
-                            metadata: { action: "call", hotline: hotline.name },
-                          })
-                        }
-                      >
-                        <a href={`tel:${hotline.phone}`}>
-                          <Phone className="h-4 w-4 mr-2" />
-                          Call {hotline.phone}
-                        </a>
-                      </Button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      {hotline.phone && (
+                        <Button
+                          size="lg"
+                          className="flex-1"
+                          asChild
+                          onClick={() =>
+                            trackEvent({
+                              eventType: "help_viewed",
+                              metadata: { action: "call", hotline: hotline.name },
+                            })
+                          }
+                        >
+                          <a href={`tel:${hotline.phone}`}>
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call {hotline.phone}
+                          </a>
+                        </Button>
+                      )}
 
                       {hotline.website && (
                         <Button
                           variant="outline"
                           size="lg"
+                          className="flex-1"
                           asChild
                           onClick={() =>
                             trackEvent({
@@ -346,7 +451,7 @@ const LocalHelpSearch = () => {
                         >
                           <a href={hotline.website} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4 mr-2" />
-                            Visit Website
+                            Website
                           </a>
                         </Button>
                       )}
@@ -355,29 +460,6 @@ const LocalHelpSearch = () => {
                 </CardContent>
               </Card>
             ))}
-
-            <Card className="border-dashed">
-              <CardContent className="pt-4">
-                <div className="text-center space-y-2">
-                  <p className="text-sm font-medium">Need more options?</p>
-                  <Button
-                    variant="outline"
-                    asChild
-                    onClick={() =>
-                      trackEvent({
-                        eventType: "help_viewed",
-                        metadata: { action: "national_helpline_directory_clicked" },
-                      })
-                    }
-                  >
-                    <a href="https://www.nationalhelpline.org" target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      National Helpline Directory
-                    </a>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </CardContent>
         </Card>
       )}
