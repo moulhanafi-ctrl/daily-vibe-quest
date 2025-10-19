@@ -146,3 +146,6 @@ verify_jwt = false
 
 [functions.stripe-live-diagnostic]
 verify_jwt = false
+
+[functions.help-test-google]
+verify_jwt = false

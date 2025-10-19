@@ -132,7 +132,10 @@ async function geocodeMapbox(code: string, country: string): Promise<{ lat: numb
 }
 
 async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; city?: string; region?: string; country: "US" | "CA" } | null> {
-  if (!GOOGLE_MAPS_API_KEY) return null;
+  if (!GOOGLE_MAPS_API_KEY) {
+    console.log("[geocode-google] No API key configured");
+    return null;
+  }
   
   try {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(code)}&components=country:US|country:CA&key=${GOOGLE_MAPS_API_KEY}`;
@@ -140,7 +143,11 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
     const json = await res.json();
     
     if (json.status !== "OK" || !json.results?.length) {
-      console.warn("[geocode-google]", json.status, json.error_message);
+      console.error("[geocode-google] FAILED", JSON.stringify({ 
+        status: json.status, 
+        error: json.error_message,
+        code: code 
+      }));
       return null;
     }
     
@@ -244,7 +251,10 @@ async function searchGooglePlaces(
   keywords: string[],
   type: "therapist" | "crisis",
 ): Promise<Place[]> {
-  if (!GOOGLE_MAPS_API_KEY) return [];
+  if (!GOOGLE_MAPS_API_KEY) {
+    console.log("[google-places] No API key configured");
+    return [];
+  }
   
   const results: Place[] = [];
   
@@ -253,6 +263,14 @@ async function searchGooglePlaces(
       const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${center.lat},${center.lng}&radius=${radiusM}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_API_KEY}`;
       const res = await withTimeout(fetch(url), TIMEOUT_MS);
       const json = await res.json();
+      
+      if (json.status !== "OK") {
+        console.error("[google-places] FAILED", JSON.stringify({
+          keyword,
+          status: json.status,
+          error: json.error_message
+        }));
+      }
       
       if (json.results) {
         for (const r of json.results) {
