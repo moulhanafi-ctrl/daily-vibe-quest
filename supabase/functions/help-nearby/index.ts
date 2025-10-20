@@ -175,8 +175,8 @@ async function geocodeMapbox(code: string, country: string): Promise<{ lat: numb
 }
 
 async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; city?: string; region?: string; country: "US" | "CA" } | null> {
-  if (!GOOGLE_MAPS_API_KEY) {
-    console.log("[geocode-google] No API key configured");
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.length < 10) {
+    console.log("[geocode-google] No valid API key configured");
     return null;
   }
   
@@ -189,7 +189,8 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
       console.error("[geocode-google] FAILED", JSON.stringify({ 
         status: json.status, 
         error: json.error_message,
-        code: code 
+        code: code,
+        keyLength: GOOGLE_MAPS_API_KEY?.length || 0
       }));
       return null;
     }
@@ -294,8 +295,8 @@ async function searchGooglePlaces(
   keywords: string[],
   type: "therapist" | "crisis",
 ): Promise<Place[]> {
-  if (!GOOGLE_MAPS_API_KEY) {
-    console.log("[google-places] No API key configured");
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.length < 10) {
+    console.log("[google-places] No valid API key configured");
     return [];
   }
   
@@ -322,7 +323,7 @@ async function searchGooglePlaces(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+          'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY || '',
           'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.currentOpeningHours.openNow,places.nationalPhoneNumber,places.websiteUri'
         },
         body: JSON.stringify(requestBody)

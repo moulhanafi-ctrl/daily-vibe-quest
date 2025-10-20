@@ -147,6 +147,9 @@ verify_jwt = false
 [functions.stripe-live-diagnostic]
 verify_jwt = false
 
+[functions.check-google-key]
+verify_jwt = false
+
 [functions.help-nearby]
 verify_jwt = false
 
