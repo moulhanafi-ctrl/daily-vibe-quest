@@ -41,8 +41,6 @@ interface TriviaRound {
 export default function TriviaAdmin() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
   const [questions, setQuestions] = useState<TriviaQuestion[]>([]);
   const [rounds, setRounds] = useState<TriviaRound[]>([]);
   const [editingQuestion, setEditingQuestion] = useState<TriviaQuestion | null>(null);
@@ -77,52 +75,12 @@ export default function TriviaAdmin() {
   });
 
   useEffect(() => {
-    checkAdminAccess();
+    loadQuestions();
+    loadRounds();
+    loadStats();
+    loadGenerationLogs();
+    loadWellnessVideos();
   }, []);
-
-  useEffect(() => {
-    if (hasAccess) {
-      loadQuestions();
-      loadRounds();
-      loadStats();
-      loadGenerationLogs();
-      loadWellnessVideos();
-    }
-  }, [hasAccess]);
-
-  const checkAdminAccess = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-
-      const { data: roles, error } = await supabase
-        .from("user_roles")
-        .select("role, admin_role")
-        .eq("user_id", session.user.id)
-        .single();
-
-      if (error || !roles || (!["admin"].includes(roles.role) && !["owner", "moderator"].includes(roles.admin_role))) {
-        toast({
-          title: "Access Denied",
-          description: "You need admin privileges to access this page.",
-          variant: "destructive",
-        });
-        navigate("/dashboard");
-        return;
-      }
-
-      setHasAccess(true);
-    } catch (error) {
-      console.error("Access check error:", error);
-      navigate("/dashboard");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const loadQuestions = async () => {
     try {
@@ -441,18 +399,6 @@ export default function TriviaAdmin() {
     const newOptions = formData.options.filter((_, i) => i !== index);
     setFormData({ ...formData, options: newOptions });
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return null;
-  }
 
   return (
     <AdminGuard>
