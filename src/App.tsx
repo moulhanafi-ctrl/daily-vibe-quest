@@ -57,6 +57,7 @@ import HelpNearby from "./pages/help/HelpNearby";
 import NationalHotlines from "./pages/help/NationalHotlines";
 import HelpResources from "./pages/help/HelpResources";
 import TherapistsNearby from "./pages/help/TherapistsNearby";
+import TestGoogleAPI from "./pages/help/TestGoogleAPI";
 import LanguagePicker from "./pages/welcome/LanguagePicker";
 import OpsAdmin from "./pages/admin/OpsAdmin";
 import PublishReadiness from "./pages/admin/PublishReadiness";
@@ -160,6 +161,7 @@ const App = () => (
           <Route path="/help/nearby" element={<HelpNearby />} />
           <Route path="/help/therapists" element={<TherapistsNearby />} />
           <Route path="/help/national" element={<NationalHotlines />} />
+          <Route path="/help/test-google" element={<TestGoogleAPI />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -22,8 +22,11 @@ export default function TestGoogleAPI() {
         
         if (!apiKey) {
           setMapsJsTest({ 
-            status: "ERROR", 
-            error: { code: "MISSING_KEY", message: "VITE_GOOGLE_MAPS_API_KEY not configured" }
+            status: "WARNING", 
+            error: { 
+              code: "KEY_NOT_SET", 
+              message: "VITE_GOOGLE_MAPS_API_KEY not configured in frontend environment. Set this to the same value as GOOGLE_MAPS_API_KEY for Maps JavaScript API to work." 
+            }
           });
           return;
         }
@@ -35,7 +38,7 @@ export default function TestGoogleAPI() {
         const loadPromise = new Promise((resolve, reject) => {
           script.onload = resolve;
           script.onerror = reject;
-          setTimeout(() => reject(new Error('Timeout')), 10000);
+          setTimeout(() => reject(new Error('Timeout loading API')), 10000);
         });
 
         document.head.appendChild(script);
@@ -45,7 +48,8 @@ export default function TestGoogleAPI() {
         if (typeof (window as any).google !== 'undefined' && (window as any).google.maps) {
           setMapsJsTest({ 
             status: "OK",
-            message: "Maps JavaScript API loaded successfully"
+            message: "Maps JavaScript API loaded successfully",
+            latency: 0
           });
         } else {
           setMapsJsTest({ 
@@ -112,8 +116,10 @@ export default function TestGoogleAPI() {
                       <span className="font-medium">Maps JavaScript API</span>
                       {mapsJsTest.status === "OK" ? (
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      ) : mapsJsTest.status === "testing" ? (
+                      ) : mapsJsTest.status === "testing" || mapsJsTest.status === "pending" ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : mapsJsTest.status === "WARNING" ? (
+                        <AlertCircle className="h-4 w-4 text-yellow-600" />
                       ) : (
                         <XCircle className="h-4 w-4 text-red-600" />
                       )}
@@ -145,17 +151,17 @@ export default function TestGoogleAPI() {
           {results && (
             <div className="space-y-4">
               <Alert variant={
-                results.overallStatus === "HEALTHY" && mapsJsTest.status === "OK" 
+                results.overallStatus === "HEALTHY" && (mapsJsTest.status === "OK" || mapsJsTest.status === "WARNING")
                   ? "default" 
                   : "destructive"
               }>
                 <AlertDescription className="font-medium flex items-center gap-2">
-                  {results.overallStatus === "HEALTHY" && mapsJsTest.status === "OK" ? (
+                  {results.overallStatus === "HEALTHY" && (mapsJsTest.status === "OK" || mapsJsTest.status === "WARNING") ? (
                     <CheckCircle2 className="h-5 w-5 text-green-600" />
                   ) : (
                     <XCircle className="h-5 w-5 text-red-600" />
                   )}
-                  {results.overallStatus === "HEALTHY" && mapsJsTest.status === "OK"
+                  {results.overallStatus === "HEALTHY" && (mapsJsTest.status === "OK" || mapsJsTest.status === "WARNING")
                     ? "✅ All Google Maps APIs are operational" 
                     : "❌ Google Maps API issues detected"}
                 </AlertDescription>
@@ -299,10 +305,10 @@ export default function TestGoogleAPI() {
           <p className="font-medium">If tests are failing:</p>
           <ol className="list-decimal list-inside space-y-1 ml-2">
             <li>Go to Google Cloud Console</li>
-            <li>Enable these APIs: <strong>Geocoding API</strong> and <strong>Places API (New)</strong></li>
+            <li>Enable these APIs: <strong>Maps JavaScript API</strong>, <strong>Geocoding API</strong>, and <strong>Places API (New)</strong></li>
             <li>Disable the old "Places API" (legacy)</li>
             <li>Ensure billing is enabled (required for API calls)</li>
-            <li>Update API key restrictions to include "Places API (New)"</li>
+            <li>Update API key restrictions to include all three APIs</li>
             <li>Add your domains to HTTP referrer restrictions:
               <ul className="list-disc list-inside ml-4 mt-1 text-xs">
                 <li>https://dailyvibecheck.com/*</li>
@@ -311,6 +317,7 @@ export default function TestGoogleAPI() {
                 <li>localhost (for local testing)</li>
               </ul>
             </li>
+            <li className="mt-2"><strong>Important:</strong> Set both <code className="bg-muted px-1 py-0.5 rounded">GOOGLE_MAPS_API_KEY</code> (for backend) and <code className="bg-muted px-1 py-0.5 rounded">VITE_GOOGLE_MAPS_API_KEY</code> (for frontend) secrets to the same API key value</li>
           </ol>
         </CardContent>
       </Card>
