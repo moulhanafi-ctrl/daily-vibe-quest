@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -9,6 +9,63 @@ import { supabase } from "@/integrations/supabase/client";
 export default function TestGoogleAPI() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [mapsJsTest, setMapsJsTest] = useState<any>({ status: "pending" });
+
+  // Test Maps JavaScript API (frontend)
+  useEffect(() => {
+    const testMapsJS = async () => {
+      setMapsJsTest({ status: "testing" });
+      
+      try {
+        // Get the API key from environment
+        const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+        
+        if (!apiKey) {
+          setMapsJsTest({ 
+            status: "ERROR", 
+            error: { code: "MISSING_KEY", message: "VITE_GOOGLE_MAPS_API_KEY not configured" }
+          });
+          return;
+        }
+
+        // Try to load the Maps JavaScript API
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        
+        const loadPromise = new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+          setTimeout(() => reject(new Error('Timeout')), 10000);
+        });
+
+        document.head.appendChild(script);
+        await loadPromise;
+
+        // Verify google.maps is available
+        if (typeof (window as any).google !== 'undefined' && (window as any).google.maps) {
+          setMapsJsTest({ 
+            status: "OK",
+            message: "Maps JavaScript API loaded successfully"
+          });
+        } else {
+          setMapsJsTest({ 
+            status: "ERROR",
+            error: { code: "LOAD_FAILED", message: "API script loaded but google.maps not available" }
+          });
+        }
+      } catch (err: any) {
+        setMapsJsTest({ 
+          status: "ERROR",
+          error: { 
+            code: "LOAD_FAILED", 
+            message: err.message || "Failed to load Maps JavaScript API"
+          }
+        });
+      }
+    };
+
+    testMapsJS();
+  }, []);
 
   const runTest = async () => {
     setLoading(true);
@@ -44,16 +101,61 @@ export default function TestGoogleAPI() {
             Run Diagnostic Test
           </Button>
 
+          {/* Frontend Maps JS Test */}
+          <div className="space-y-3">
+            <h3 className="font-semibold">Frontend API Test</h3>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium">Maps JavaScript API</span>
+                      {mapsJsTest.status === "OK" ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : mapsJsTest.status === "testing" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Status: {mapsJsTest.status}
+                    </p>
+                    {mapsJsTest.message && (
+                      <p className="text-sm text-green-600 mt-1">
+                        ✓ {mapsJsTest.message}
+                      </p>
+                    )}
+                    {mapsJsTest.error && (
+                      <div className="mt-2">
+                        <p className="text-sm text-destructive font-medium">
+                          Error Code: {mapsJsTest.error.code}
+                        </p>
+                        <p className="text-sm text-destructive">
+                          {mapsJsTest.error.message}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {results && (
             <div className="space-y-4">
-              <Alert variant={results.overallStatus === "HEALTHY" ? "default" : "destructive"}>
+              <Alert variant={
+                results.overallStatus === "HEALTHY" && mapsJsTest.status === "OK" 
+                  ? "default" 
+                  : "destructive"
+              }>
                 <AlertDescription className="font-medium flex items-center gap-2">
-                  {results.overallStatus === "HEALTHY" ? (
+                  {results.overallStatus === "HEALTHY" && mapsJsTest.status === "OK" ? (
                     <CheckCircle2 className="h-5 w-5 text-green-600" />
                   ) : (
                     <XCircle className="h-5 w-5 text-red-600" />
                   )}
-                  {results.overallStatus === "HEALTHY" 
+                  {results.overallStatus === "HEALTHY" && mapsJsTest.status === "OK"
                     ? "✅ All Google Maps APIs are operational" 
                     : "❌ Google Maps API issues detected"}
                 </AlertDescription>
@@ -88,7 +190,7 @@ export default function TestGoogleAPI() {
 
               {results.tests && (
                 <div className="space-y-3">
-                  <h3 className="font-semibold">API Tests</h3>
+                  <h3 className="font-semibold">Backend API Tests</h3>
                   
                   {/* Geocoding API */}
                   {results.tests.geocoding && (
