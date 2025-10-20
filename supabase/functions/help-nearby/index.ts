@@ -180,8 +180,16 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
     return null;
   }
   
+  // Clean the API key - remove any non-ASCII characters, quotes, or whitespace
+  const cleanApiKey = GOOGLE_MAPS_API_KEY.trim().replace(/[^\x20-\x7E]/g, '').replace(/["']/g, '');
+  
+  if (cleanApiKey.length < 10) {
+    console.log("[geocode-google] API key invalid after cleaning");
+    return null;
+  }
+  
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(code)}&components=country:US|country:CA&key=${GOOGLE_MAPS_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(code)}&components=country:US|country:CA&key=${cleanApiKey}`;
     const res = await withTimeout(fetch(url), TIMEOUT_MS);
     const json = await res.json();
     
@@ -300,6 +308,14 @@ async function searchGooglePlaces(
     return [];
   }
   
+  // Clean the API key - remove any non-ASCII characters, quotes, or whitespace
+  const cleanApiKey = GOOGLE_MAPS_API_KEY.trim().replace(/[^\x20-\x7E]/g, '').replace(/["']/g, '');
+  
+  if (cleanApiKey.length < 10) {
+    console.log("[google-places] API key invalid after cleaning");
+    return [];
+  }
+  
   const results: Place[] = [];
   
   for (const keyword of keywords) {
@@ -323,7 +339,7 @@ async function searchGooglePlaces(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY || '',
+          'X-Goog-Api-Key': cleanApiKey,
           'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.currentOpeningHours.openNow,places.nationalPhoneNumber,places.websiteUri'
         },
         body: JSON.stringify(requestBody)
