@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AddFamilyMemberModal } from "@/components/family/AddFamilyMemberModal";
 import { FamilyInviteCodeCard } from "@/components/family/FamilyInviteCodeCard";
 import { JoinFamilyModal } from "@/components/family/JoinFamilyModal";
+import { FamilyCreatedModal } from "@/components/family/FamilyCreatedModal";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -34,6 +35,8 @@ const FamilyMembers = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showCreatedModal, setShowCreatedModal] = useState(false);
+  const [newGroupCode, setNewGroupCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [familyGroupId, setFamilyGroupId] = useState<string | null>(null);
 
@@ -368,6 +371,11 @@ const FamilyMembers = () => {
           setShowAddModal(false);
           loadFamilyMembers();
         }}
+        onGroupCreated={(code, expiresAt) => {
+          setNewGroupCode({ code, expiresAt });
+          setShowCreatedModal(true);
+          setShowAddModal(false);
+        }}
       />
 
       <JoinFamilyModal
@@ -378,6 +386,18 @@ const FamilyMembers = () => {
           loadFamilyMembers();
         }}
       />
+
+      {newGroupCode && (
+        <FamilyCreatedModal
+          open={showCreatedModal}
+          onClose={() => {
+            setShowCreatedModal(false);
+            setNewGroupCode(null);
+          }}
+          inviteCode={newGroupCode.code}
+          expiresAt={newGroupCode.expiresAt}
+        />
+      )}
 
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>

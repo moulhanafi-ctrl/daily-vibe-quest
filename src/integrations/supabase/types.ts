@@ -970,6 +970,7 @@ export type Database = {
           created_by: string
           id: string
           invite_code: string
+          invite_expires_at: string | null
           name: string
         }
         Insert: {
@@ -977,6 +978,7 @@ export type Database = {
           created_by: string
           id?: string
           invite_code?: string
+          invite_expires_at?: string | null
           name: string
         }
         Update: {
@@ -984,6 +986,7 @@ export type Database = {
           created_by?: string
           id?: string
           invite_code?: string
+          invite_expires_at?: string | null
           name?: string
         }
         Relationships: [
@@ -3649,6 +3652,10 @@ export type Database = {
           id: string
           name: string
         }[]
+      }
+      regenerate_family_invite_code: {
+        Args: { _family_id: string }
+        Returns: Json
       }
       update_user_streak: {
         Args: { p_user_id: string }

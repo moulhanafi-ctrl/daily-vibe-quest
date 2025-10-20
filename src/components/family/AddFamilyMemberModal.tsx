@@ -42,9 +42,10 @@ interface AddFamilyMemberModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onGroupCreated?: (code: string, expiresAt: string) => void;
 }
 
-export const AddFamilyMemberModal = ({ open, onClose, onSuccess }: AddFamilyMemberModalProps) => {
+export const AddFamilyMemberModal = ({ open, onClose, onSuccess, onGroupCreated }: AddFamilyMemberModalProps) => {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -83,10 +84,10 @@ export const AddFamilyMemberModal = ({ open, onClose, onSuccess }: AddFamilyMemb
         if (groupError) throw groupError;
         familyGroup = newGroup;
 
-        toast({
-          title: "✨ Family group created!",
-          description: `Share your invite code with family members: ${newGroup.invite_code}`,
-        });
+        // Notify parent component about the new group
+        if (onGroupCreated && newGroup.invite_code && newGroup.invite_expires_at) {
+          onGroupCreated(newGroup.invite_code, newGroup.invite_expires_at);
+        }
       }
 
       // Check if invite already exists for this email
