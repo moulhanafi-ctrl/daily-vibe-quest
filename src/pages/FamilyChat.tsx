@@ -5,14 +5,13 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, MessageSquare, Video, Users, UserPlus, Archive } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FamilyStories } from "@/components/family/FamilyStories";
-import ChatComingSoonModal from "@/components/family/ChatComingSoonModal";
+import { FamilyChatInterface } from "@/components/family/FamilyChatInterface";
 import { AddFamilyMemberModal } from "@/components/family/AddFamilyMemberModal";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function FamilyChat() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("stories");
-  const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [isParent, setIsParent] = useState(false);
 
@@ -93,27 +92,7 @@ export default function FamilyChat() {
 
           <TabsContent value="chat">
             <div className="mx-auto w-full max-w-3xl">
-              <Card className="rounded-2xl border border-border bg-card shadow-sm p-6 md:p-10">
-                <div className="flex flex-col items-center text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MessageSquare className="h-8 w-8 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">Family Chat Coming Soon</h3>
-                    <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                      Connect with your family through secure, private messaging. We're working hard to bring this feature to you.
-                    </p>
-                  </div>
-                  <Button 
-                    type="button"
-                    onClick={() => setShowNotifyModal(true)}
-                    className="mt-4 rounded-xl px-5 h-11"
-                    size="lg"
-                  >
-                    Notify Me When It Launches
-                  </Button>
-                </div>
-              </Card>
+              <FamilyChatInterface />
             </div>
           </TabsContent>
 
@@ -148,11 +127,6 @@ export default function FamilyChat() {
           </TabsContent>
         </Tabs>
       </div>
-
-      <ChatComingSoonModal 
-        open={showNotifyModal}
-        onOpenChange={setShowNotifyModal}
-      />
 
       <AddFamilyMemberModal
         open={showInviteModal}
