@@ -199,7 +199,8 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
         status: json.status, 
         error: json.error_message,
         code: code,
-        keyLength: GOOGLE_MAPS_API_KEY?.length || 0
+        keyLength: GOOGLE_MAPS_API_KEY?.length || 0,
+        httpStatus: res.status
       }));
       return null;
     }
