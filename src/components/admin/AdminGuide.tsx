@@ -1,8 +1,40 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, MessageSquare, BarChart3, AlertCircle } from "lucide-react";
+import { Shield, AlertCircle } from "lucide-react";
 
-export const AdminGuide = () => {
+interface AdminGuideProps {
+  onCommandClick: (command: string) => void;
+}
+
+export const AdminGuide = ({ onCommandClick }: AdminGuideProps) => {
+  const commands = [
+    {
+      type: "read" as const,
+      title: "List Incidents",
+      command: "Show me open incidents from the last 24 hours",
+      description: '"Show me open incidents" or "List high severity incidents from the last 24h"',
+    },
+    {
+      type: "read" as const,
+      title: "Summarize Room",
+      command: "Summarize activity in the top chat rooms for the last 24h",
+      description: '"Summarize activity in room [room-id] for the last 24h"',
+    },
+    {
+      type: "approve" as const,
+      title: "Take Action",
+      command: "What actions should I take for recent incidents?",
+      description: '"Warn user [user-id] for harassment" or "Mute user [user-id] for 24 hours"',
+    },
+    {
+      type: "approve" as const,
+      title: "Send Message",
+      command: "Draft a community update about guidelines",
+      description: '"Send a message to user [user-id] about community guidelines"',
+    },
+  ];
+
   return (
     <Card>
       <CardHeader>
@@ -13,45 +45,28 @@ export const AdminGuide = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <Badge variant="outline" className="mt-1">Read</Badge>
-            <div className="flex-1">
-              <p className="text-sm font-semibold mb-1">List Incidents</p>
-              <p className="text-xs text-muted-foreground">
-                "Show me open incidents" or "List high severity incidents from the last 24h"
-              </p>
+          {commands.map((cmd, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <Button
+                type="button"
+                size="sm"
+                variant={cmd.type === "read" ? "outline" : "default"}
+                className={`mt-1 min-w-[80px] pointer-events-auto cursor-pointer transition-all hover:scale-105 active:scale-95 ${
+                  cmd.type === "approve"
+                    ? "bg-amber-500 hover:bg-amber-600 text-white"
+                    : ""
+                }`}
+                onClick={() => onCommandClick(cmd.command)}
+                aria-label={`Run command: ${cmd.title}`}
+              >
+                {cmd.type === "read" ? "Read" : "Approve"}
+              </Button>
+              <div className="flex-1">
+                <p className="text-sm font-semibold mb-1">{cmd.title}</p>
+                <p className="text-xs text-muted-foreground">{cmd.description}</p>
+              </div>
             </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Badge variant="outline" className="mt-1">Read</Badge>
-            <div className="flex-1">
-              <p className="text-sm font-semibold mb-1">Summarize Room</p>
-              <p className="text-xs text-muted-foreground">
-                "Summarize activity in room [room-id] for the last 24h"
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Badge className="mt-1 bg-amber-500">Approve</Badge>
-            <div className="flex-1">
-              <p className="text-sm font-semibold mb-1">Take Action</p>
-              <p className="text-xs text-muted-foreground">
-                "Warn user [user-id] for harassment" or "Mute user [user-id] for 24 hours"
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Badge className="mt-1 bg-amber-500">Approve</Badge>
-            <div className="flex-1">
-              <p className="text-sm font-semibold mb-1">Send Message</p>
-              <p className="text-xs text-muted-foreground">
-                "Send a message to user [user-id] about community guidelines"
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-3">

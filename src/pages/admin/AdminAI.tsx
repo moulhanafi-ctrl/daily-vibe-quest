@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { VibeOpsChat } from "@/components/admin/VibeOpsChat";
+import { VibeOpsChat, VibeOpsChatRef } from "@/components/admin/VibeOpsChat";
 import { ActionPanel } from "@/components/admin/ActionPanel";
 import { AdminGuide } from "@/components/admin/AdminGuide";
 import { AdminGuard } from "@/components/admin/AdminGuard";
@@ -11,6 +10,13 @@ import { AdminGuard } from "@/components/admin/AdminGuard";
 export default function AdminAI() {
   const navigate = useNavigate();
   const [pendingAction, setPendingAction] = useState<any>(null);
+  const chatRef = useRef<VibeOpsChatRef>(null);
+
+  const handleCommandClick = (command: string) => {
+    if (chatRef.current) {
+      chatRef.current.sendCommand(command);
+    }
+  };
 
   return (
     <AdminGuard requireMFA={false}>
@@ -46,7 +52,7 @@ export default function AdminAI() {
                 </p>
               </CardHeader>
               <CardContent className="p-0 h-[calc(100%-80px)]">
-                <VibeOpsChat onActionProposed={setPendingAction} />
+                <VibeOpsChat ref={chatRef} onActionProposed={setPendingAction} />
               </CardContent>
             </Card>
           </div>
@@ -94,7 +100,7 @@ export default function AdminAI() {
               </CardContent>
             </Card>
             
-            <AdminGuide />
+            <AdminGuide onCommandClick={handleCommandClick} />
           </div>
         </div>
         </div>
