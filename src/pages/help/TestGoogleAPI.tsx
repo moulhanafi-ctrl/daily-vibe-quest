@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, AlertCircle, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function TestGoogleAPI() {
@@ -319,6 +319,56 @@ export default function TestGoogleAPI() {
             </li>
             <li className="mt-2"><strong>Important:</strong> Set both <code className="bg-muted px-1 py-0.5 rounded">GOOGLE_MAPS_API_KEY</code> (for backend) and <code className="bg-muted px-1 py-0.5 rounded">VITE_GOOGLE_MAPS_API_KEY</code> (for frontend) secrets to the same API key value</li>
           </ol>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 border-primary/50">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            📊 Monitoring & Operations
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div>
+            <p className="font-medium mb-2">Production Monitoring:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Structured logging with event tracking</li>
+              <li>10-minute edge cache for optimal performance</li>
+              <li>Rate limiting: 30 requests/min per IP</li>
+              <li>Anomaly detection: &gt;20 unique ZIPs/min triggers alerts</li>
+            </ul>
+          </div>
+          
+          <div className="bg-muted p-3 rounded-md">
+            <p className="font-medium mb-1">📖 Full Operations Runbook:</p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Complete monitoring guide including alert thresholds, incident response, and troubleshooting procedures.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+            >
+              <a 
+                href="https://github.com/yourusername/yourrepo/blob/main/src/docs/HELP_NEARBY_MONITORING.md" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Monitoring Runbook
+              </a>
+            </Button>
+          </div>
+
+          <div>
+            <p className="font-medium mb-2">Key Alert Thresholds:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2 text-xs">
+              <li>Error rate &gt; 2% (10 min window)</li>
+              <li>P95 latency &gt; 2000ms (10 min window)</li>
+              <li>Rate limit hits &gt; 200/10min</li>
+              <li>Google API quota at 80% daily limit</li>
+            </ul>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -14,27 +14,61 @@ const corsHeaders = {
 const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") ?? "";
 const MAPBOX_TOKEN = Deno.env.get("MAPBOX_TOKEN") ?? "";
 const TIMEOUT_MS = 4000;
-const CACHE_TTL_MS = 60 * 60 * 1000; // 60 minutes
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (edge cache)
 const RATE_LIMIT_PER_MIN = 30;
+const ANOMALY_THRESHOLD = 20; // ZIPs per minute for CAPTCHA trigger
 
-// ============= Rate Limiting =============
-const rateLimits = new Map<string, { count: number; resetAt: number }>();
+// ============= Rate Limiting & Anomaly Detection =============
+const rateLimits = new Map<string, { count: number; resetAt: number; zipCodes: Set<string> }>();
 
-function checkRateLimit(ip: string): boolean {
+interface RateLimitResult {
+  allowed: boolean;
+  anomalous: boolean;
+  count: number;
+}
+
+function checkRateLimit(ip: string, zipCode: string): RateLimitResult {
   const now = Date.now();
   const limit = rateLimits.get(ip);
   
   if (!limit || now > limit.resetAt) {
-    rateLimits.set(ip, { count: 1, resetAt: now + 60000 });
-    return true;
+    const newLimit = { count: 1, resetAt: now + 60000, zipCodes: new Set([zipCode]) };
+    rateLimits.set(ip, newLimit);
+    return { allowed: true, anomalous: false, count: 1 };
   }
   
+  limit.zipCodes.add(zipCode);
+  const uniqueZipCount = limit.zipCodes.size;
+  const anomalous = uniqueZipCount >= ANOMALY_THRESHOLD;
+  
   if (limit.count >= RATE_LIMIT_PER_MIN) {
-    return false;
+    return { allowed: false, anomalous, count: limit.count };
   }
   
   limit.count++;
-  return true;
+  return { allowed: true, anomalous, count: limit.count };
+}
+
+// Structured logging helper
+function logMetric(data: {
+  event: string;
+  zip?: string;
+  radiusKm?: number;
+  resultCount?: number;
+  latencyMs?: number;
+  rateLimited?: boolean;
+  errorCode?: string;
+  errorMessage?: string;
+  ip?: string;
+  anomalous?: boolean;
+  cached?: boolean;
+  geocoder?: string;
+}) {
+  console.log(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    service: "help-nearby",
+    ...data
+  }));
 }
 
 // ============= Cache =============
@@ -427,28 +461,67 @@ async function findProviders(
 // ============= Main Handler =============
 serve(async (req) => {
   const startTime = Date.now();
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
   
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    // Rate limiting
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
-    if (!checkRateLimit(ip)) {
+    // Parse request early for logging
+    const body = await req.json();
+    const zipCode = body.code || "";
+    
+    // Rate limiting with anomaly detection
+    const rateCheck = checkRateLimit(ip, zipCode);
+    
+    if (!rateCheck.allowed) {
+      logMetric({
+        event: "rate_limit_exceeded",
+        zip: zipCode,
+        ip,
+        rateLimited: true,
+        anomalous: rateCheck.anomalous,
+        latencyMs: Date.now() - startTime
+      });
+      
       return new Response(
-        JSON.stringify({ error: "RATE_LIMIT_EXCEEDED", message: "Too many requests. Please try again in a minute." }),
+        JSON.stringify({ 
+          error: "RATE_LIMIT_EXCEEDED", 
+          message: "Too many requests. Please try again in a minute.",
+          anomalous: rateCheck.anomalous
+        }),
         { status: 429, headers: { ...corsHeaders, "content-type": "application/json" } }
       );
     }
     
-    // Parse and validate request
-    const body = await req.json();
+    // Log anomalous behavior (potential abuse)
+    if (rateCheck.anomalous) {
+      logMetric({
+        event: "anomalous_usage_detected",
+        zip: zipCode,
+        ip,
+        anomalous: true,
+        latencyMs: Date.now() - startTime
+      });
+    }
+    
+    // Validate request (already parsed above)
     const validated = RequestSchema.parse(body);
     
     // Validate code format
     const validation = validateAndNormalize(validated.code, validated.countryHint);
     if (!validation.valid) {
+      const latencyMs = Date.now() - startTime;
+      logMetric({
+        event: "validation_error",
+        zip: validated.code,
+        errorCode: "INVALID_CODE",
+        errorMessage: validation.error,
+        latencyMs,
+        ip
+      });
+      
       return new Response(
         JSON.stringify({ error: "INVALID_CODE", message: validation.error }),
         { status: 400, headers: { ...corsHeaders, "content-type": "application/json" } }
@@ -457,18 +530,44 @@ serve(async (req) => {
     
     const { normalized, country } = validation;
     
-    // Check cache
+    // Check cache (10 minute TTL)
     const cacheKey = `${normalized}|${validated.radiusKm}|${validated.filters.type}|${validated.filters.openNow}`;
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-      console.log(`[help-nearby] CACHE HIT ${cacheKey}`);
+      const latencyMs = Date.now() - startTime;
+      logMetric({
+        event: "request_success",
+        zip: normalized,
+        radiusKm: validated.radiusKm,
+        resultCount: cached.data.localResults?.length || 0,
+        latencyMs,
+        cached: true,
+        geocoder: cached.data.geocoder,
+        ip
+      });
+      
       return new Response(JSON.stringify({ ...cached.data, meta: { ...cached.data.meta, cache: "HIT" } }), {
         headers: { ...corsHeaders, "content-type": "application/json" },
       });
     }
     
     // Geocode
-    const geo = await geocode(normalized, country!);
+    let geo;
+    try {
+      geo = await geocode(normalized, country!);
+    } catch (err) {
+      const latencyMs = Date.now() - startTime;
+      logMetric({
+        event: "geocode_failure",
+        zip: normalized,
+        errorCode: "GEOCODE_FAILED",
+        errorMessage: (err as Error).message,
+        latencyMs,
+        ip
+      });
+      throw err;
+    }
+    
     const center = { lat: geo.lat, lng: geo.lng };
     
     // Find providers
@@ -491,6 +590,18 @@ serve(async (req) => {
     const nationals = getNationalHotlines(geo.country);
     
     const tookMs = Date.now() - startTime;
+    
+    // Log successful request
+    logMetric({
+      event: "request_success",
+      zip: normalized,
+      radiusKm: validated.radiusKm,
+      resultCount: locals.length,
+      latencyMs: tookMs,
+      cached: false,
+      geocoder: geo.source,
+      ip
+    });
     
     const response = {
       status: "ok",
