@@ -1,9 +1,13 @@
 import { LiveModeStatus } from "@/components/admin/LiveModeStatus";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, TestTube2 } from "lucide-react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const StripeAdmin = () => {
+  const navigate = useNavigate();
+  
   // Checklist for Phase 2 completion
   const checklist = [
     { item: "Live secret key added", done: true },
@@ -27,6 +31,25 @@ const StripeAdmin = () => {
       </div>
 
       <LiveModeStatus />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Live Mode Testing</CardTitle>
+          <CardDescription>
+            Test your live Stripe configuration with a real checkout session
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            onClick={() => navigate("/admin/stripe-live-test")}
+            className="w-full"
+            size="lg"
+          >
+            <TestTube2 className="mr-2 h-4 w-4" />
+            Test Live Checkout
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
