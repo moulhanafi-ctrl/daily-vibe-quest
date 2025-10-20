@@ -625,19 +625,8 @@ serve(async (req) => {
       },
     };
     
-    // Cache response
+    // Cache successful response (but not on errors)
     cache.set(cacheKey, { ts: Date.now(), data: response });
-    
-    // Log (structured, no PII)
-    console.log(JSON.stringify({
-      code: normalized,
-      country: geo.country,
-      sourceUsed: geo.source,
-      locals: locals.length,
-      nationals: nationals.length,
-      tookMs,
-      cache: "MISS",
-    }));
     
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, "content-type": "application/json" },

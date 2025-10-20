@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help Nearby Monitoring Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .test-section {
+      margin: 30px 0;
+      padding: 20px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+    }
+    .test-section h2 {
+      margin-top: 0;
+      color: #444;
+      font-size: 18px;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #0052a3;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .results {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f8f8f8;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .success { color: #00aa00; }
+    .error { color: #cc0000; }
+    .info { color: #0066cc; }
+    .summary {
+      background: #e8f4f8;
+      padding: 20px;
+      border-radius: 6px;
+      margin-top: 30px;
+    }
+    .metric {
+      display: inline-block;
+      margin: 10px 20px 10px 0;
+    }
+    .metric-label {
+      font-weight: bold;
+      color: #555;
+    }
+    .metric-value {
+      font-size: 24px;
+      color: #0066cc;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Help Nearby Monitoring Test</h1>
+    <p class="subtitle">End-to-end verification of /help/nearby monitoring infrastructure</p>
+
+    <!-- Test 1: Success -->
+    <div class="test-section">
+      <h2>✅ Test 1: Successful Request</h2>
+      <p>Tests: <code>code=90210</code> - Should return results and log success event</p>
+      <button onclick="testSuccess()">Run Test</button>
+      <div id="test1-result" class="results" style="display:none;"></div>
+    </div>
+
+    <!-- Test 2: Validation Error -->
+    <div class="test-section">
+      <h2>❌ Test 2: Validation Error</h2>
+      <p>Tests: <code>code=invalid</code> - Should return 400 and log validation_error event</p>
+      <button onclick="testValidation()">Run Test</button>
+      <div id="test2-result" class="results" style="display:none;"></div>
+    </div>
+
+    <!-- Test 3: Cache Hit -->
+    <div class="test-section">
+      <h2>💾 Test 3: Cache Verification</h2>
+      <p>First call should miss cache, second call within 10m should hit cache</p>
+      <button onclick="testCache()">Run Test</button>
+      <div id="test3-result" class="results" style="display:none;"></div>
+    </div>
+
+    <!-- Test 4: Rate Limit -->
+    <div class="test-section">
+      <h2>🚫 Test 4: Rate Limit (35 requests)</h2>
+      <p>Sends 35 requests rapidly - should trigger rate limit after 30</p>
+      <button onclick="testRateLimit()">Run Test</button>
+      <div id="test4-result" class="results" style="display:none;"></div>
+    </div>
+
+    <!-- Test 5: Anomaly Detection -->
+    <div class="test-section">
+      <h2>⚠️ Test 5: Anomaly Detection (20+ unique ZIPs)</h2>
+      <p>Sends requests with 25 unique ZIP codes - should flag as anomalous</p>
+      <button onclick="testAnomaly()">Run Test</button>
+      <div id="test5-result" class="results" style="display:none;"></div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary">
+      <h2>📊 Test Summary</h2>
+      <div id="summary">Run tests to see results</div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hssrytzedacchvkrxgnq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhzc3J5dHplZGFjY2h2a3J4Z25xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwODA2NTEsImV4cCI6MjA3NTY1NjY1MX0.YBmt9RZQ3Oxw0LMg44CfyJwV2866wd2t8K6gf5vWMCA';
+    
+    let testResults = {
+      success: 0,
+      errors: 0,
+      cached: 0,
+      rateLimited: 0,
+      anomalous: 0,
+      totalLatency: 0,
+      requests: 0,
+      latencies: []
+    };
+
+    function log(elementId, message, type = 'info') {
+      const el = document.getElementById(elementId);
+      el.style.display = 'block';
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      el.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    async function callHelpNearby(body) {
+      const start = Date.now();
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/help-nearby`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify(body)
+        });
+        
+        const latency = Date.now() - start;
+        testResults.totalLatency += latency;
+        testResults.requests++;
+        testResults.latencies.push(latency);
+        
+        const data = await response.json();
+        return { response, data, latency, status: response.status };
+      } catch (error) {
+        return { error: error.message, latency: Date.now() - start };
+      }
+    }
+
+    async function testSuccess() {
+      const btn = event.target;
+      btn.disabled = true;
+      document.getElementById('test1-result').innerHTML = '';
+      
+      log('test1-result', 'Sending request to /help-nearby with code=90210...', 'info');
+      
+      const result = await callHelpNearby({ code: '90210', radiusKm: 40 });
+      
+      if (result.error) {
+        log('test1-result', `ERROR: ${result.error}`, 'error');
+        testResults.errors++;
+      } else {
+        log('test1-result', `✓ Response ${result.status} in ${result.latency}ms`, 'success');
+        log('test1-result', `✓ Status: ${result.data.status}`, 'success');
+        log('test1-result', `✓ Geocoder: ${result.data.geocoder}`, 'info');
+        log('test1-result', `✓ Local results: ${result.data.localResults?.length || 0}`, 'info');
+        log('test1-result', `✓ National results: ${result.data.nationalResults?.length || 0}`, 'info');
+        log('test1-result', `✓ Cache: ${result.data.meta?.cache || 'MISS'}`, 'info');
+        testResults.success++;
+        
+        if (result.data.meta?.cache === 'HIT') {
+          testResults.cached++;
+        }
+      }
+      
+      btn.disabled = false;
+      updateSummary();
+    }
+
+    async function testValidation() {
+      const btn = event.target;
+      btn.disabled = true;
+      document.getElementById('test2-result').innerHTML = '';
+      
+      log('test2-result', 'Sending request with invalid code...', 'info');
+      
+      const result = await callHelpNearby({ code: 'INVALID' });
+      
+      if (result.status === 400) {
+        log('test2-result', `✓ Correctly returned 400 error in ${result.latency}ms`, 'success');
+        log('test2-result', `✓ Error: ${result.data.error}`, 'info');
+        log('test2-result', `✓ Message: ${result.data.message}`, 'info');
+        testResults.errors++;
+      } else {
+        log('test2-result', `✗ Expected 400, got ${result.status}`, 'error');
+      }
+      
+      btn.disabled = false;
+      updateSummary();
+    }
+
+    async function testCache() {
+      const btn = event.target;
+      btn.disabled = true;
+      document.getElementById('test3-result').innerHTML = '';
+      
+      const uniqueZip = '90' + Math.floor(Math.random() * 900 + 100);
+      
+      log('test3-result', `First request for ${uniqueZip} (should miss cache)...`, 'info');
+      const result1 = await callHelpNearby({ code: uniqueZip, radiusKm: 40 });
+      
+      if (result1.data?.meta?.cache === 'MISS' || !result1.data?.meta?.cache) {
+        log('test3-result', `✓ First request cache MISS in ${result1.latency}ms`, 'success');
+      } else {
+        log('test3-result', `✗ First request should have missed cache`, 'error');
+      }
+      
+      log('test3-result', `Second request for ${uniqueZip} (should hit cache)...`, 'info');
+      const result2 = await callHelpNearby({ code: uniqueZip, radiusKm: 40 });
+      
+      if (result2.data?.meta?.cache === 'HIT') {
+        log('test3-result', `✓ Second request cache HIT in ${result2.latency}ms`, 'success');
+        log('test3-result', `✓ Cache speedup: ${result1.latency - result2.latency}ms faster`, 'success');
+        testResults.cached++;
+      } else {
+        log('test3-result', `✗ Second request should have hit cache`, 'error');
+      }
+      
+      testResults.success += 2;
+      btn.disabled = false;
+      updateSummary();
+    }
+
+    async function testRateLimit() {
+      const btn = event.target;
+      btn.disabled = true;
+      document.getElementById('test4-result').innerHTML = '';
+      
+      log('test4-result', 'Sending 35 rapid requests to trigger rate limit...', 'info');
+      
+      let rateLimited = 0;
+      const promises = [];
+      
+      for (let i = 0; i < 35; i++) {
+        promises.push(
+          callHelpNearby({ code: '90210', radiusKm: 40 })
+            .then(result => {
+              if (result.status === 429) {
+                rateLimited++;
+              }
+              return result;
+            })
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      
+      log('test4-result', `✓ Sent 35 requests`, 'info');
+      log('test4-result', `✓ Rate limited: ${rateLimited} requests`, rateLimited > 0 ? 'success' : 'error');
+      log('test4-result', `✓ Allowed: ${35 - rateLimited} requests`, 'info');
+      
+      if (rateLimited > 0) {
+        log('test4-result', `✓ Rate limiting is working correctly`, 'success');
+        testResults.rateLimited += rateLimited;
+      } else {
+        log('test4-result', `⚠ Warning: No requests were rate limited`, 'error');
+      }
+      
+      testResults.success += 35 - rateLimited;
+      testResults.errors += rateLimited;
+      
+      btn.disabled = false;
+      updateSummary();
+    }
+
+    async function testAnomaly() {
+      const btn = event.target;
+      btn.disabled = true;
+      document.getElementById('test5-result').innerHTML = '';
+      
+      log('test5-result', 'Sending requests with 25 unique ZIP codes...', 'info');
+      
+      const promises = [];
+      for (let i = 0; i < 25; i++) {
+        const zip = '90' + String(200 + i).padStart(3, '0');
+        promises.push(
+          callHelpNearby({ code: zip, radiusKm: 40 })
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      const successful = results.filter(r => r.status === 200).length;
+      const rateLimited = results.filter(r => r.status === 429).length;
+      
+      log('test5-result', `✓ Sent 25 requests with unique ZIP codes`, 'info');
+      log('test5-result', `✓ Successful: ${successful}`, 'info');
+      log('test5-result', `✓ Rate limited: ${rateLimited}`, 'info');
+      log('test5-result', `⚠ Note: Anomaly detection logs 'anomalous: true' in backend logs`, 'info');
+      log('test5-result', `⚠ Check edge function logs to verify anomalous flag`, 'info');
+      
+      testResults.success += successful;
+      testResults.errors += rateLimited;
+      testResults.anomalous = 1; // Flag that we attempted anomaly test
+      
+      btn.disabled = false;
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const avgLatency = testResults.requests > 0 
+        ? Math.round(testResults.totalLatency / testResults.requests) 
+        : 0;
+      
+      // Calculate P95 latency
+      const sortedLatencies = [...testResults.latencies].sort((a, b) => a - b);
+      const p95Index = Math.floor(sortedLatencies.length * 0.95);
+      const p95Latency = sortedLatencies[p95Index] || 0;
+      
+      document.getElementById('summary').innerHTML = `
+        <div class="metric">
+          <div class="metric-label">Total Requests</div>
+          <div class="metric-value">${testResults.requests}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Successful</div>
+          <div class="metric-value" style="color: #00aa00;">${testResults.success}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Errors</div>
+          <div class="metric-value" style="color: #cc0000;">${testResults.errors}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Cached</div>
+          <div class="metric-value" style="color: #9966ff;">${testResults.cached}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Rate Limited</div>
+          <div class="metric-value" style="color: #ff9900;">${testResults.rateLimited}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Avg Latency</div>
+          <div class="metric-value">${avgLatency}ms</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">P95 Latency</div>
+          <div class="metric-value">${p95Latency}ms</div>
+        </div>
+      `;
+    }
+
+    // Initialize summary on load
+    updateSummary();
+  </script>
+</body>
+</html>
