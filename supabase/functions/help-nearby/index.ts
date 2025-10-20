@@ -246,26 +246,24 @@ async function geocodeOSM(code: string): Promise<{ lat: number; lng: number; cit
   }
 }
 
-async function geocode(code: string, country: string) {
+async function geocode(code: string, country: string, useOSM = false) {
   const startTime = Date.now();
   
-  // Try Google first (best results)
-  let result = await geocodeGoogle(code);
+  // Try Google first (unless OSM explicitly requested)
+  let result = null;
   let source = "google";
   
-  // Fallback to Mapbox
-  if (!result && MAPBOX_TOKEN) {
-    const mapboxResult = await geocodeMapbox(code, country);
-    if (mapboxResult) {
-      result = { ...mapboxResult, country: country as "US" | "CA" };
-      source = "mapbox";
-    }
-  }
-  
-  // Final fallback to OSM
-  if (!result) {
+  if (useOSM) {
+    // OSM explicitly requested via query parameter
     result = await geocodeOSM(code);
     source = "osm";
+  } else {
+    // Default: Use Google exclusively
+    result = await geocodeGoogle(code);
+    
+    if (!result) {
+      throw new Error("GOOGLE_GEOCODE_FAILED");
+    }
   }
   
   if (!result) {
@@ -472,6 +470,7 @@ async function findProviders(
   center: { lat: number; lng: number },
   radiusKm: number,
   filters: HelpRequest["filters"],
+  useOSM = false,
 ) {
   const radiusM = radiusKm * 1000;
   const therapistKeywords = [
@@ -499,22 +498,26 @@ async function findProviders(
   
   let allPlaces: Place[] = [];
   
-  if (filters.type === "all" || filters.type === "therapists") {
-    const therapists = await searchGooglePlaces(center, radiusM, therapistKeywords, "therapist");
-    if (therapists.length === 0) {
+  if (useOSM) {
+    // OSM explicitly requested via query parameter
+    if (filters.type === "all" || filters.type === "therapists") {
       const osmTherapists = await searchOSMPlaces(center, radiusM, "therapist");
       allPlaces.push(...osmTherapists);
-    } else {
-      allPlaces.push(...therapists);
     }
-  }
-  
-  if (filters.type === "all" || filters.type === "crisis") {
-    const crisis = await searchGooglePlaces(center, radiusM, crisisKeywords, "crisis");
-    if (crisis.length === 0) {
+    
+    if (filters.type === "all" || filters.type === "crisis") {
       const osmCrisis = await searchOSMPlaces(center, radiusM, "crisis");
       allPlaces.push(...osmCrisis);
-    } else {
+    }
+  } else {
+    // Default: Use Google exclusively (no OSM fallback)
+    if (filters.type === "all" || filters.type === "therapists") {
+      const therapists = await searchGooglePlaces(center, radiusM, therapistKeywords, "therapist");
+      allPlaces.push(...therapists);
+    }
+    
+    if (filters.type === "all" || filters.type === "crisis") {
+      const crisis = await searchGooglePlaces(center, radiusM, crisisKeywords, "crisis");
       allPlaces.push(...crisis);
     }
   }
@@ -575,8 +578,11 @@ serve(async (req) => {
   try {
     // Parse request (support both GET with query params and POST with body)
     let body: any;
+    let useOSM = false;
+    
     if (req.method === "GET") {
       const url = new URL(req.url);
+      useOSM = url.searchParams.get("use_osm") === "true";
       body = {
         code: url.searchParams.get("code") || "",
         countryHint: (url.searchParams.get("country") as "US" | "CA" | null) || null,
@@ -587,6 +593,7 @@ serve(async (req) => {
     } else {
       const text = await req.text();
       body = text ? JSON.parse(text) : {};
+      useOSM = body.use_osm === true;
     }
     const zipCode = body.code || "";
     
@@ -672,24 +679,43 @@ serve(async (req) => {
     // Geocode
     let geo;
     try {
-      geo = await geocode(normalized, country!);
+      geo = await geocode(normalized, country!, useOSM);
     } catch (err) {
       const latencyMs = Date.now() - startTime;
+      const errorMessage = (err as Error).message;
+      
       logMetric({
         event: "geocode_failure",
         zip: normalized,
-        errorCode: "GEOCODE_FAILED",
-        errorMessage: (err as Error).message,
+        errorCode: errorMessage === "GOOGLE_GEOCODE_FAILED" ? "GOOGLE_API_FAILED" : "GEOCODE_FAILED",
+        errorMessage,
         latencyMs,
         ip
       });
+      
+      // Return clear error if Google fails
+      if (errorMessage === "GOOGLE_GEOCODE_FAILED") {
+        return new Response(
+          JSON.stringify({
+            status: "error",
+            error: "GOOGLE_API_FAILED",
+            message: "Google API failed. Check key or quota.",
+            localResults: [],
+            nationalResults: getNationalHotlines(country!),
+            fallback: false,
+            meta: { tookMs: latencyMs, cache: "MISS" },
+          }),
+          { status: 200, headers: { ...corsHeaders, "content-type": "application/json" } }
+        );
+      }
+      
       throw err;
     }
     
     const center = { lat: geo.lat, lng: geo.lng };
     
     // Find providers
-    const providers = await findProviders(center, validated.radiusKm, validated.filters);
+    const providers = await findProviders(center, validated.radiusKm, validated.filters, useOSM);
     const limited = providers.slice(0, validated.limit);
     
     // Build response
