@@ -299,6 +299,73 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+// Fallback: OpenStreetMap Overpass search (no API key required)
+async function searchOSMPlaces(
+  center: { lat: number; lng: number },
+  radiusM: number,
+  type: "therapist" | "crisis",
+): Promise<Place[]> {
+  try {
+    const overpass = 'https://overpass-api.de/api/interpreter';
+    const selectorsTherapist = [
+      '["healthcare"="psychotherapist"]',
+      '["healthcare"="psychologist"]',
+      '["amenity"="doctors"]',
+      '["amenity"="clinic"]',
+      '["healthcare"="clinic"]'
+    ];
+    const selectorsCrisis = [
+      '["amenity"="hospital"]',
+      '["social_facility"="shelter"]',
+      '["amenity"="community_centre"]'
+    ];
+    const tags = (type === 'therapist' ? selectorsTherapist : selectorsCrisis);
+    const clauses = tags.map((sel) => `
+        node${sel}(around:${radiusM},${center.lat},${center.lng});
+        way${sel}(around:${radiusM},${center.lat},${center.lng});
+        relation${sel}(around:${radiusM},${center.lat},${center.lng});
+    `).join('\n');
+    const q = `
+      [out:json][timeout:15];
+      (
+        ${clauses}
+      );
+      out center 30;
+    `;
+    const res = await withTimeout(fetch(overpass, { method: 'POST', body: q, headers: { 'Content-Type':'text/plain', 'User-Agent': 'HelpNearby/1.0' } }), TIMEOUT_MS);
+    const text = await res.text();
+    if (!res.ok) {
+      console.warn('[osm-places] http', res.status);
+      return [];
+    }
+    const json = text ? JSON.parse(text) : { elements: [] };
+    const elements = Array.isArray(json.elements) ? json.elements : [];
+    const places: Place[] = [];
+    for (const el of elements) {
+      const lat = el.lat || el.center?.lat;
+      const lng = el.lon || el.center?.lon;
+      if (typeof lat !== 'number' || typeof lng !== 'number') continue;
+      const name = el.tags?.name || (type === 'therapist' ? 'Clinic' : 'Facility');
+      const addressParts = [el.tags?.addr_housenumber, el.tags?.addr_street, el.tags?.addr_city, el.tags?.addr_state].filter(Boolean);
+      places.push({
+        name,
+        lat,
+        lng,
+        address: addressParts.length ? addressParts.join(' ') : undefined,
+        phone: el.tags?.phone || undefined,
+        website: el.tags?.website || undefined,
+        rating: undefined,
+        openNow: undefined,
+        type
+      });
+    }
+    return places;
+  } catch (e) {
+    console.warn('[osm-places]', (e as Error).message);
+    return [];
+  }
+}
+
 async function searchGooglePlaces(
   center: { lat: number; lng: number },
   radiusM: number,
@@ -433,12 +500,22 @@ async function findProviders(
   
   if (filters.type === "all" || filters.type === "therapists") {
     const therapists = await searchGooglePlaces(center, radiusM, therapistKeywords, "therapist");
-    allPlaces.push(...therapists);
+    if (therapists.length === 0) {
+      const osmTherapists = await searchOSMPlaces(center, radiusM, "therapist");
+      allPlaces.push(...osmTherapists);
+    } else {
+      allPlaces.push(...therapists);
+    }
   }
   
   if (filters.type === "all" || filters.type === "crisis") {
     const crisis = await searchGooglePlaces(center, radiusM, crisisKeywords, "crisis");
-    allPlaces.push(...crisis);
+    if (crisis.length === 0) {
+      const osmCrisis = await searchOSMPlaces(center, radiusM, "crisis");
+      allPlaces.push(...osmCrisis);
+    } else {
+      allPlaces.push(...crisis);
+    }
   }
   
   // Deduplicate by name+address
