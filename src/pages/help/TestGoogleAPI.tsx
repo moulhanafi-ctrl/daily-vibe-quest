@@ -22,7 +22,7 @@ export default function TestGoogleAPI() {
     } catch (err: any) {
       setResults({
         error: err.message,
-        overall: "❌ Test failed to run"
+        overallStatus: "UNHEALTHY"
       });
     } finally {
       setLoading(false);
@@ -46,9 +46,16 @@ export default function TestGoogleAPI() {
 
           {results && (
             <div className="space-y-4">
-              <Alert variant={results.overall?.includes("✅") ? "default" : "destructive"}>
-                <AlertDescription className="font-medium">
-                  {results.overall}
+              <Alert variant={results.overallStatus === "HEALTHY" ? "default" : "destructive"}>
+                <AlertDescription className="font-medium flex items-center gap-2">
+                  {results.overallStatus === "HEALTHY" ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-600" />
+                  )}
+                  {results.overallStatus === "HEALTHY" 
+                    ? "✅ All Google Maps APIs are operational" 
+                    : "❌ Google Maps API issues detected"}
                 </AlertDescription>
               </Alert>
 
@@ -63,15 +70,20 @@ export default function TestGoogleAPI() {
                 <h3 className="font-semibold">Configuration</h3>
                 <div className="flex items-center gap-2">
                   <span className="text-sm">API Key Configured:</span>
-                  <Badge variant={results.apiKeyConfigured ? "default" : "destructive"}>
-                    {results.apiKeyConfigured ? "Yes" : "No"}
+                  <Badge variant={results.apiKey?.configured ? "default" : "destructive"}>
+                    {results.apiKey?.configured ? "Yes" : "No"}
                   </Badge>
-                  {results.apiKeyLength > 0 && (
+                  {results.apiKey?.length > 0 && (
                     <span className="text-xs text-muted-foreground">
-                      ({results.apiKeyLength} chars)
+                      ({results.apiKey.length} chars)
                     </span>
                   )}
                 </div>
+                {results.apiKey?.preview && (
+                  <p className="text-xs text-muted-foreground">
+                    Key preview: {results.apiKey.preview}
+                  </p>
+                )}
               </div>
 
               {results.tests && (
@@ -83,10 +95,10 @@ export default function TestGoogleAPI() {
                     <Card>
                       <CardContent className="pt-4">
                         <div className="flex items-start justify-between">
-                          <div>
+                          <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-medium">Geocoding API</span>
-                              {results.tests.geocoding.success ? (
+                              {results.tests.geocoding.status === "OK" ? (
                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-red-600" />
@@ -95,10 +107,20 @@ export default function TestGoogleAPI() {
                             <p className="text-sm text-muted-foreground">
                               Status: {results.tests.geocoding.status}
                             </p>
-                            {results.tests.geocoding.error && (
-                              <p className="text-sm text-destructive mt-1">
-                                Error: {results.tests.geocoding.error}
+                            {results.tests.geocoding.latency > 0 && (
+                              <p className="text-xs text-muted-foreground">
+                                Latency: {results.tests.geocoding.latency}ms
                               </p>
+                            )}
+                            {results.tests.geocoding.error && (
+                              <div className="mt-2">
+                                <p className="text-sm text-destructive font-medium">
+                                  Error Code: {results.tests.geocoding.error.code}
+                                </p>
+                                <p className="text-sm text-destructive">
+                                  {results.tests.geocoding.error.message}
+                                </p>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -106,15 +128,15 @@ export default function TestGoogleAPI() {
                     </Card>
                   )}
 
-                  {/* Places API */}
+                  {/* Places API (New) */}
                   {results.tests.places && (
                     <Card>
                       <CardContent className="pt-4">
                         <div className="flex items-start justify-between">
-                          <div>
+                          <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium">Places API</span>
-                              {results.tests.places.success ? (
+                              <span className="font-medium">Places API (New)</span>
+                              {results.tests.places.status === "OK" ? (
                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-red-600" />
@@ -123,15 +145,25 @@ export default function TestGoogleAPI() {
                             <p className="text-sm text-muted-foreground">
                               Status: {results.tests.places.status}
                             </p>
-                            {results.tests.places.resultsCount > 0 && (
+                            {results.tests.places.latency > 0 && (
+                              <p className="text-xs text-muted-foreground">
+                                Latency: {results.tests.places.latency}ms
+                              </p>
+                            )}
+                            {results.tests.places.resultsCount !== undefined && (
                               <p className="text-sm text-green-600 mt-1">
-                                Found {results.tests.places.resultsCount} test results
+                                ✓ Found {results.tests.places.resultsCount} test results
                               </p>
                             )}
                             {results.tests.places.error && (
-                              <p className="text-sm text-destructive mt-1">
-                                Error: {results.tests.places.error}
-                              </p>
+                              <div className="mt-2">
+                                <p className="text-sm text-destructive font-medium">
+                                  Error Code: {results.tests.places.error.code}
+                                </p>
+                                <p className="text-sm text-destructive">
+                                  {results.tests.places.error.message}
+                                </p>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -139,6 +171,12 @@ export default function TestGoogleAPI() {
                     </Card>
                   )}
                 </div>
+              )}
+
+              {results.timestamp && (
+                <p className="text-xs text-muted-foreground">
+                  Test run at: {new Date(results.timestamp).toLocaleString()}
+                </p>
               )}
 
               {results.error && !results.tests && (
@@ -153,16 +191,24 @@ export default function TestGoogleAPI() {
 
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle className="text-lg">How to Fix</CardTitle>
+          <CardTitle className="text-lg">Troubleshooting</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <p className="font-medium">If tests are failing:</p>
           <ol className="list-decimal list-inside space-y-1 ml-2">
             <li>Go to Google Cloud Console</li>
-            <li>Enable both "Geocoding API" and "Places API"</li>
+            <li>Enable these APIs: <strong>Geocoding API</strong> and <strong>Places API (New)</strong></li>
+            <li>Disable the old "Places API" (legacy)</li>
             <li>Ensure billing is enabled (required for API calls)</li>
-            <li>Check API key restrictions - remove HTTP referrer restrictions or add your domain</li>
-            <li>Update the GOOGLE_MAPS_API_KEY secret with a valid key</li>
+            <li>Update API key restrictions to include "Places API (New)"</li>
+            <li>Add your domains to HTTP referrer restrictions:
+              <ul className="list-disc list-inside ml-4 mt-1 text-xs">
+                <li>https://dailyvibecheck.com/*</li>
+                <li>https://www.dailyvibecheck.com/*</li>
+                <li>https://*.lovable.app/*</li>
+                <li>localhost (for local testing)</li>
+              </ul>
+            </li>
           </ol>
         </CardContent>
       </Card>
