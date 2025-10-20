@@ -294,8 +294,11 @@ const Dashboard = () => {
       </main>
 
       {showFocusPopup && user?.id && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 pointer-events-none"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <div className="w-full max-w-4xl pointer-events-auto relative z-[60]">
             <FocusAreasPopup 
               userId={user.id} 
               onClose={() => setShowFocusPopup(false)} 

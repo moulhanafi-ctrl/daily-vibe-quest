@@ -87,7 +87,8 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
       trackEvent({ 
         eventType: "focus_area_changed", 
         metadata: { 
-          new_focus_area: selected
+          new_focus_area: selected,
+          source: "focus-picker"
         } 
       });
 
@@ -116,12 +117,12 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
 
   return (
     <div 
-      className="animate-slide-up"
+      className="animate-slide-up pointer-events-auto relative z-[60]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="focus-areas-title"
     >
-      <Card className="shadow-[0_8px_32px_rgba(192,166,255,0.2)] border-[hsl(270,65%,75%)] backdrop-blur-sm bg-[hsl(30,40%,95%)]/95 dark:bg-[hsl(280,25%,12%)]/95 rounded-2xl max-w-4xl mx-auto">
+      <Card className="shadow-[0_8px_32px_rgba(192,166,255,0.2)] border-[hsl(270,65%,75%)] backdrop-blur-sm bg-[hsl(30,40%,95%)]/95 dark:bg-[hsl(280,25%,12%)]/95 rounded-2xl max-w-4xl mx-auto pointer-events-auto">
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1 flex-1 min-w-0">
@@ -204,11 +205,14 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
             </div>
           )}
 
-          <div className="flex flex-col gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-2 relative z-[70]">
             <Button 
+              type="button"
               onClick={handleSave} 
-              className="w-full min-h-[44px] touch-manipulation bg-gradient-to-r from-[hsl(180,70%,70%)] to-[hsl(270,65%,75%)] hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(122,241,199,0.3)]"
-              disabled={loading || !selected}
+              disabled={!selected || loading}
+              aria-disabled={!selected || loading}
+              aria-label="Join chat"
+              className="w-full min-h-[44px] touch-manipulation bg-gradient-to-r from-[hsl(180,70%,70%)] to-[hsl(270,65%,75%)] hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(122,241,199,0.3)] pointer-events-auto relative z-[70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(180,70%,70%)] focus-visible:ring-offset-2"
             >
               {loading ? (
                 <>
@@ -224,7 +228,7 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
               variant="ghost" 
               onClick={onClose}
               disabled={loading}
-              className="w-full min-h-[44px] touch-manipulation text-muted-foreground hover:text-foreground"
+              className="w-full min-h-[44px] touch-manipulation text-muted-foreground hover:text-foreground pointer-events-auto"
             >
               Cancel
             </Button>
