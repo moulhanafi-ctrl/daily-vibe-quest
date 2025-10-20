@@ -387,6 +387,130 @@ async function searchOSMPlaces(
   }
 }
 
+// Safe includedTypes for Places API (New) - more reliable than keywords
+const SAFE_THERAPIST_TYPES = [
+  "psychologist",
+  "psychiatrist", 
+  "mental_health_clinic",
+  "doctor",
+  "medical_clinic"
+];
+
+const SAFE_CRISIS_TYPES = [
+  "hospital",
+  "medical_clinic",
+  "doctor"
+];
+
+async function searchGooglePlacesTextSearch(
+  center: { lat: number; lng: number },
+  radiusM: number,
+  textQuery: string,
+  type: "therapist" | "crisis",
+  debugContainer?: any
+): Promise<Place[]> {
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.length < 10) {
+    return [];
+  }
+  
+  const cleanApiKey = GOOGLE_MAPS_API_KEY.trim().replace(/[^\x20-\x7E]/g, '').replace(/["']/g, '');
+  if (cleanApiKey.length < 10) return [];
+  
+  const results: Place[] = [];
+  
+  try {
+    const startTime = Date.now();
+    const url = `https://places.googleapis.com/v1/places:searchText`;
+    const requestBody = {
+      textQuery,
+      locationBias: {
+        circle: {
+          center: { latitude: center.lat, longitude: center.lng },
+          radius: radiusM
+        }
+      },
+      maxResultCount: 20
+    };
+    
+    const res = await withTimeout(fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': cleanApiKey,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.currentOpeningHours.openNow,places.nationalPhoneNumber,places.websiteUri'
+      },
+      body: JSON.stringify(requestBody)
+    }), TIMEOUT_MS);
+    
+    const responseText = await res.text();
+    const json = responseText ? JSON.parse(responseText) : {};
+    const tookMs = Date.now() - startTime;
+    
+    const textSearchDebug: any = {
+      method: 'textSearch',
+      textQuery,
+      httpStatus: res.status,
+      responseSnippet: responseText.substring(0, 120),
+      apiKeyMasked: `${cleanApiKey.substring(0, 8)}...${cleanApiKey.substring(cleanApiKey.length - 4)}`,
+      url: 'https://places.googleapis.com/v1/places:searchText'
+    };
+    
+    if (debugContainer?.places) {
+      debugContainer.places.push(textSearchDebug);
+    }
+    
+    if (!res.ok || !json.places) {
+      console.error(JSON.stringify({
+        source: "GoogleTextSearch",
+        status: "ERROR",
+        error_code: json.error?.code || res.status,
+        reason: json.error?.message || "Unknown error",
+        textQuery,
+        tookMs,
+        httpStatus: res.status
+      }));
+      
+      textSearchDebug.error = json.error?.message || "Unknown error";
+      textSearchDebug.errorCode = json.error?.code || res.status;
+      return [];
+    }
+    
+    console.log(JSON.stringify({
+      source: "GoogleTextSearch",
+      status: "OK",
+      textQuery,
+      results: json.places?.length || 0,
+      tookMs
+    }));
+    
+    if (json.places) {
+      for (const place of json.places) {
+        results.push({
+          name: place.displayName?.text || "Unknown",
+          lat: place.location?.latitude,
+          lng: place.location?.longitude,
+          address: place.formattedAddress || null,
+          phone: place.nationalPhoneNumber || null,
+          website: place.websiteUri || null,
+          rating: place.rating || null,
+          openNow: place.currentOpeningHours?.openNow ?? null,
+          type,
+        });
+      }
+    }
+  } catch (e) {
+    console.error(JSON.stringify({
+      source: "GoogleTextSearch",
+      status: "ERROR",
+      error_code: "EXCEPTION",
+      reason: (e as Error).message,
+      textQuery
+    }));
+  }
+  
+  return results;
+}
+
 async function searchGooglePlaces(
   center: { lat: number; lng: number },
   radiusM: number,
@@ -413,101 +537,131 @@ async function searchGooglePlaces(
     debugContainer.places = [];
   }
   
-  for (const keyword of keywords) {
-    try {
-      const startTime = Date.now();
-      
-      // Use new Places API (New)
-      const url = `https://places.googleapis.com/v1/places:searchText`;
-      const requestBody = {
-        textQuery: keyword,
-        locationBias: {
-          circle: {
-            center: { latitude: center.lat, longitude: center.lng },
-            radius: radiusM
-          }
-        },
-        maxResultCount: 20
-      };
-      
-      const res = await withTimeout(fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': cleanApiKey,
-          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.currentOpeningHours.openNow,places.nationalPhoneNumber,places.websiteUri'
-        },
-        body: JSON.stringify(requestBody)
-      }), TIMEOUT_MS);
-      
-      const responseText = await res.text();
-      const json = responseText ? JSON.parse(responseText) : {};
-      const tookMs = Date.now() - startTime;
-      
-      // Capture debug info
-      const placeDebug: any = {
-        keyword,
-        httpStatus: res.status,
-        responseSnippet: responseText.substring(0, 120),
-        apiKeyMasked: `${cleanApiKey.substring(0, 8)}...${cleanApiKey.substring(cleanApiKey.length - 4)}`,
-        url: 'https://places.googleapis.com/v1/places:searchText',
-        headers: {
-          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.currentOpeningHours.openNow,places.nationalPhoneNumber,places.websiteUri'
+  // Use safe includedTypes for Places API (New)
+  const includedTypes = type === "therapist" ? SAFE_THERAPIST_TYPES : SAFE_CRISIS_TYPES;
+  
+  // Try searchNearby with includedTypes first
+  try {
+    const startTime = Date.now();
+    
+    const url = `https://places.googleapis.com/v1/places:searchNearby`;
+    const requestBody = {
+      includedTypes,
+      locationRestriction: {
+        circle: {
+          center: { latitude: center.lat, longitude: center.lng },
+          radius: radiusM
         }
-      };
-      debugContainer.places.push(placeDebug);
+      },
+      maxResultCount: 20
+    };
       
-      if (!res.ok || !json.places) {
-        console.error(JSON.stringify({
-          source: "GooglePlacesNew",
-          status: "ERROR",
-          error_code: json.error?.code || res.status,
-          reason: json.error?.message || "Unknown error",
-          keyword,
-          tookMs,
-          httpStatus: res.status,
-          responseSnippet: responseText.substring(0, 120)
-        }));
-        
-        placeDebug.error = json.error?.message || "Unknown error";
-        placeDebug.errorCode = json.error?.code || res.status;
-        
-        continue;
+    const res = await withTimeout(fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': cleanApiKey,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.currentOpeningHours.openNow,places.nationalPhoneNumber,places.websiteUri'
+      },
+      body: JSON.stringify(requestBody)
+    }), TIMEOUT_MS);
+    
+    const responseText = await res.text();
+    const json = responseText ? JSON.parse(responseText) : {};
+    const tookMs = Date.now() - startTime;
+    
+    // Capture debug info
+    const placeDebug: any = {
+      method: 'searchNearby',
+      includedTypes,
+      httpStatus: res.status,
+      responseSnippet: responseText.substring(0, 120),
+      apiKeyMasked: `${cleanApiKey.substring(0, 8)}...${cleanApiKey.substring(cleanApiKey.length - 4)}`,
+      url: 'https://places.googleapis.com/v1/places:searchNearby',
+      headers: {
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.currentOpeningHours.openNow,places.nationalPhoneNumber,places.websiteUri'
       }
-      
-      console.log(JSON.stringify({
-        source: "GooglePlacesNew",
-        status: "OK",
-        keyword,
-        results: json.places?.length || 0,
-        tookMs
+    };
+    debugContainer.places.push(placeDebug);
+    
+    // If 400 error, fall back to Text Search
+    if (res.status === 400) {
+      console.warn(JSON.stringify({
+        source: "GooglePlacesNearby",
+        status: "400_FALLBACK_TO_TEXT_SEARCH",
+        error_code: json.error?.code || res.status,
+        reason: json.error?.message || "Bad request",
+        tookMs,
+        httpStatus: res.status
       }));
       
-      if (json.places) {
-        for (const place of json.places) {
-          results.push({
-            name: place.displayName?.text || "Unknown",
-            lat: place.location?.latitude,
-            lng: place.location?.longitude,
-            address: place.formattedAddress || null,
-            phone: place.nationalPhoneNumber || null,
-            website: place.websiteUri || null,
-            rating: place.rating || null,
-            openNow: place.currentOpeningHours?.openNow ?? null,
-            type,
-          });
-        }
-      }
-    } catch (e) {
-      console.error(JSON.stringify({
-        source: "GooglePlacesNew",
-        status: "ERROR",
-        error_code: "EXCEPTION",
-        reason: (e as Error).message,
-        keyword,
-        tookMs: 0
-      }));
+      placeDebug.error = json.error?.message || "Bad request - falling back to text search";
+      placeDebug.errorCode = json.error?.code || res.status;
+      placeDebug.fallbackUsed = true;
+      
+      // Fallback to Google Text Search (NOT OSM)
+      const textQuery = type === "therapist" 
+        ? "therapist OR counseling OR mental health OR psychologist"
+        : "crisis center OR emergency mental health OR hospital";
+      
+      return await searchGooglePlacesTextSearch(center, radiusM, textQuery, type, debugContainer);
     }
+    
+    if (!res.ok || !json.places) {
+      console.error(JSON.stringify({
+        source: "GooglePlacesNearby",
+        status: "ERROR",
+        error_code: json.error?.code || res.status,
+        reason: json.error?.message || "Unknown error",
+        tookMs,
+        httpStatus: res.status,
+        responseSnippet: responseText.substring(0, 120)
+      }));
+      
+      placeDebug.error = json.error?.message || "Unknown error";
+      placeDebug.errorCode = json.error?.code || res.status;
+      
+      return [];
+    }
+    
+    console.log(JSON.stringify({
+      source: "GooglePlacesNearby",
+      status: "OK",
+      includedTypes,
+      results: json.places?.length || 0,
+      tookMs
+    }));
+    
+    if (json.places) {
+      for (const place of json.places) {
+        results.push({
+          name: place.displayName?.text || "Unknown",
+          lat: place.location?.latitude,
+          lng: place.location?.longitude,
+          address: place.formattedAddress || null,
+          phone: place.nationalPhoneNumber || null,
+          website: place.websiteUri || null,
+          rating: place.rating || null,
+          openNow: place.currentOpeningHours?.openNow ?? null,
+          type,
+        });
+      }
+    }
+  } catch (e) {
+    console.error(JSON.stringify({
+      source: "GooglePlacesNearby",
+      status: "ERROR",
+      error_code: "EXCEPTION",
+      reason: (e as Error).message,
+      tookMs: 0
+    }));
+    
+    // On exception, try text search fallback
+    const textQuery = type === "therapist" 
+      ? "therapist OR counseling OR mental health OR psychologist"
+      : "crisis center OR emergency mental health OR hospital";
+    
+    return await searchGooglePlacesTextSearch(center, radiusM, textQuery, type, debugContainer);
   }
   
   return results;
