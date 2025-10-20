@@ -174,7 +174,7 @@ async function geocodeMapbox(code: string, country: string): Promise<{ lat: numb
   }
 }
 
-async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; city?: string; region?: string; country: "US" | "CA" } | null> {
+async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; city?: string; region?: string; country: "US" | "CA"; debug?: any } | null> {
   if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.length < 10) {
     console.log("[geocode-google] No valid API key configured");
     return null;
@@ -188,11 +188,24 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
     return null;
   }
   
+  const debug: any = {
+    geocoding: {
+      httpStatus: null,
+      responseSnippet: null,
+      apiKeyMasked: `${cleanApiKey.substring(0, 8)}...${cleanApiKey.substring(cleanApiKey.length - 4)}`,
+      url: `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(code)}&components=country:US|country:CA&key=***`
+    }
+  };
+  
   try {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(code)}&components=country:US|country:CA&key=${cleanApiKey}`;
     const res = await withTimeout(fetch(url), TIMEOUT_MS);
     const text = await res.text();
     const json = text ? JSON.parse(text) : {};
+    
+    // Capture debug info
+    debug.geocoding.httpStatus = res.status;
+    debug.geocoding.responseSnippet = text.substring(0, 120);
     
     if (json.status !== "OK" || !json.results?.length) {
       console.error("[geocode-google] FAILED", JSON.stringify({ 
@@ -200,8 +213,11 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
         error: json.error_message,
         code: code,
         keyLength: GOOGLE_MAPS_API_KEY?.length || 0,
-        httpStatus: res.status
+        httpStatus: res.status,
+        responseSnippet: text.substring(0, 120)
       }));
+      
+      // Return null with debug info attached
       return null;
     }
     
@@ -216,9 +232,10 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
     const region = getComponent("administrative_area_level_1")?.short_name;
     const countryCode = getComponent("country")?.short_name as "US" | "CA";
     
-    return { lat, lng, city, region, country: countryCode };
+    return { lat, lng, city, region, country: countryCode, debug };
   } catch (e) {
     console.warn("[geocode-google]", (e as Error).message);
+    debug.geocoding.error = (e as Error).message;
     return null;
   }
 }
@@ -252,6 +269,7 @@ async function geocode(code: string, country: string, useOSM = false) {
   // Try Google first (unless OSM explicitly requested)
   let result = null;
   let source = "google";
+  let debug = null;
   
   if (useOSM) {
     // OSM explicitly requested via query parameter
@@ -259,7 +277,11 @@ async function geocode(code: string, country: string, useOSM = false) {
     source = "osm";
   } else {
     // Default: Use Google exclusively
-    result = await geocodeGoogle(code);
+    const googleResult = await geocodeGoogle(code);
+    if (googleResult) {
+      result = googleResult;
+      debug = googleResult.debug;
+    }
     
     if (!result) {
       throw new Error("GOOGLE_GEOCODE_FAILED");
@@ -273,7 +295,7 @@ async function geocode(code: string, country: string, useOSM = false) {
   const tookMs = Date.now() - startTime;
   console.log(`[geocode] source=${source} lat=${result.lat} lng=${result.lng} tookMs=${tookMs}`);
   
-  return { ...result, source, geocodeTookMs: tookMs };
+  return { ...result, source, geocodeTookMs: tookMs, debug };
 }
 
 // ============= Places Search =============
@@ -370,6 +392,7 @@ async function searchGooglePlaces(
   radiusM: number,
   keywords: string[],
   type: "therapist" | "crisis",
+  debugContainer?: any
 ): Promise<Place[]> {
   if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.length < 10) {
     console.log("[google-places] No valid API key configured");
@@ -385,6 +408,10 @@ async function searchGooglePlaces(
   }
   
   const results: Place[] = [];
+  
+  if (!debugContainer.places) {
+    debugContainer.places = [];
+  }
   
   for (const keyword of keywords) {
     try {
@@ -413,8 +440,22 @@ async function searchGooglePlaces(
         body: JSON.stringify(requestBody)
       }), TIMEOUT_MS);
       
-      const json = await res.json();
+      const responseText = await res.text();
+      const json = responseText ? JSON.parse(responseText) : {};
       const tookMs = Date.now() - startTime;
+      
+      // Capture debug info
+      const placeDebug: any = {
+        keyword,
+        httpStatus: res.status,
+        responseSnippet: responseText.substring(0, 120),
+        apiKeyMasked: `${cleanApiKey.substring(0, 8)}...${cleanApiKey.substring(cleanApiKey.length - 4)}`,
+        url: 'https://places.googleapis.com/v1/places:searchText',
+        headers: {
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.currentOpeningHours.openNow,places.nationalPhoneNumber,places.websiteUri'
+        }
+      };
+      debugContainer.places.push(placeDebug);
       
       if (!res.ok || !json.places) {
         console.error(JSON.stringify({
@@ -423,8 +464,14 @@ async function searchGooglePlaces(
           error_code: json.error?.code || res.status,
           reason: json.error?.message || "Unknown error",
           keyword,
-          tookMs
+          tookMs,
+          httpStatus: res.status,
+          responseSnippet: responseText.substring(0, 120)
         }));
+        
+        placeDebug.error = json.error?.message || "Unknown error";
+        placeDebug.errorCode = json.error?.code || res.status;
+        
         continue;
       }
       
@@ -471,6 +518,7 @@ async function findProviders(
   radiusKm: number,
   filters: HelpRequest["filters"],
   useOSM = false,
+  debugContainer?: any
 ) {
   const radiusM = radiusKm * 1000;
   const therapistKeywords = [
@@ -512,12 +560,12 @@ async function findProviders(
   } else {
     // Default: Use Google exclusively (no OSM fallback)
     if (filters.type === "all" || filters.type === "therapists") {
-      const therapists = await searchGooglePlaces(center, radiusM, therapistKeywords, "therapist");
+      const therapists = await searchGooglePlaces(center, radiusM, therapistKeywords, "therapist", debugContainer);
       allPlaces.push(...therapists);
     }
     
     if (filters.type === "all" || filters.type === "crisis") {
-      const crisis = await searchGooglePlaces(center, radiusM, crisisKeywords, "crisis");
+      const crisis = await searchGooglePlaces(center, radiusM, crisisKeywords, "crisis", debugContainer);
       allPlaces.push(...crisis);
     }
   }
@@ -714,8 +762,11 @@ serve(async (req) => {
     
     const center = { lat: geo.lat, lng: geo.lng };
     
+    // Create debug container
+    const debugInfo = geo.debug || { geocoding: null, places: [] };
+    
     // Find providers
-    const providers = await findProviders(center, validated.radiusKm, validated.filters, useOSM);
+    const providers = await findProviders(center, validated.radiusKm, validated.filters, useOSM, debugInfo);
     const limited = providers.slice(0, validated.limit);
     
     // Build response
@@ -766,6 +817,7 @@ serve(async (req) => {
         source: geo.source,
         tookMs,
         cache: "MISS",
+        debug: debugInfo,
       },
     };
     
