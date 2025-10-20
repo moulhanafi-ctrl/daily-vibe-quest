@@ -43,6 +43,7 @@ import SubscriberAnalytics from "./pages/admin/SubscriberAnalytics";
 import StoreAdmin from "./pages/admin/StoreAdmin";
 import HelpAdmin from "./pages/admin/HelpAdmin";
 import HelpLocationsAdmin from "./pages/admin/HelpLocationsAdmin";
+import HelpNearbyMonitoring from "./pages/admin/HelpNearbyMonitoring";
 import ZipToolsAdmin from "./pages/admin/ZipToolsAdmin";
 import ProductsAdmin from "./pages/admin/ProductsAdmin";
 import ProductForm from "./pages/admin/ProductForm";
@@ -162,6 +163,7 @@ const App = () => (
           <Route path="/help/therapists" element={<TherapistsNearby />} />
           <Route path="/help/national" element={<NationalHotlines />} />
           <Route path="/help/test-google" element={<TestGoogleAPI />} />
+          <Route path="/admin/help-monitoring" element={<HelpNearbyMonitoring />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
