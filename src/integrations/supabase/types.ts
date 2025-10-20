@@ -976,7 +976,7 @@ export type Database = {
           created_at?: string | null
           created_by: string
           id?: string
-          invite_code: string
+          invite_code?: string
           name: string
         }
         Update: {
@@ -3629,6 +3629,10 @@ export type Database = {
       is_super_admin: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      join_family_via_code: {
+        Args: { _invite_code: string }
+        Returns: Json
       }
       jwt_role: {
         Args: Record<PropertyKey, never>

@@ -7,6 +7,8 @@ import { ArrowLeft, UserPlus, Users, Mail, Clock, CheckCircle2, XCircle, Trash2,
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddFamilyMemberModal } from "@/components/family/AddFamilyMemberModal";
+import { FamilyInviteCodeCard } from "@/components/family/FamilyInviteCodeCard";
+import { JoinFamilyModal } from "@/components/family/JoinFamilyModal";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -31,7 +33,9 @@ const FamilyMembers = () => {
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [familyGroupId, setFamilyGroupId] = useState<string | null>(null);
 
   useEffect(() => {
     loadFamilyMembers();
@@ -53,12 +57,32 @@ const FamilyMembers = () => {
         .single();
 
       if (!familyGroup) {
+        // Check if user is a member of any family
+        const { data: memberOf } = await supabase
+          .from("family_members")
+          .select("family_id")
+          .eq("user_id", user.id)
+          .single();
+
+        if (!memberOf) {
+          setMembers([]);
+          setLoading(false);
+          return;
+        }
+        
+        setFamilyGroupId(memberOf.family_id);
+      } else {
+        setFamilyGroupId(familyGroup.id);
+      }
+
+      // Get family members and pending invites
+      const actualFamilyId = familyGroupId || familyGroup?.id;
+      if (!actualFamilyId) {
         setMembers([]);
         setLoading(false);
         return;
       }
 
-      // Get family members and pending invites
       const { data: familyMembers, error: membersError } = await supabase
         .from("family_members")
         .select(`
@@ -67,7 +91,7 @@ const FamilyMembers = () => {
           joined_at,
           profiles!inner(username)
         `)
-        .eq("family_id", familyGroup.id);
+        .eq("family_id", actualFamilyId);
 
       const { data: pendingInvites, error: invitesError } = await supabase
         .from("family_invites")
@@ -221,10 +245,16 @@ const FamilyMembers = () => {
                       Invite your loved ones and stay connected through chat and stories
                     </CardDescription>
                   </div>
-                  <Button onClick={() => setShowAddModal(true)}>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Add Family Member
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setShowJoinModal(true)}>
+                      <Users className="w-4 h-4 mr-2" />
+                      Join Group
+                    </Button>
+                    <Button onClick={() => setShowAddModal(true)}>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Invite Member
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -237,6 +267,10 @@ const FamilyMembers = () => {
                 </Button>
               </CardContent>
             </Card>
+
+            {familyGroupId && (
+              <FamilyInviteCodeCard familyGroupId={familyGroupId} />
+            )}
 
             {members.length === 0 ? (
               <Card>
@@ -332,6 +366,15 @@ const FamilyMembers = () => {
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
           setShowAddModal(false);
+          loadFamilyMembers();
+        }}
+      />
+
+      <JoinFamilyModal
+        open={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+        onSuccess={() => {
+          setShowJoinModal(false);
           loadFamilyMembers();
         }}
       />
