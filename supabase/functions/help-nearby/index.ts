@@ -191,7 +191,8 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
   try {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(code)}&components=country:US|country:CA&key=${cleanApiKey}`;
     const res = await withTimeout(fetch(url), TIMEOUT_MS);
-    const json = await res.json();
+    const text = await res.text();
+    const json = text ? JSON.parse(text) : {};
     
     if (json.status !== "OK" || !json.results?.length) {
       console.error("[geocode-google] FAILED", JSON.stringify({ 
@@ -225,7 +226,8 @@ async function geocodeOSM(code: string): Promise<{ lat: number; lng: number; cit
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(code)}&limit=1&countrycodes=us,ca`;
     const res = await withTimeout(fetch(url, { headers: { "User-Agent": "HelpNearby/1.0" } }), TIMEOUT_MS);
-    const json = await res.json();
+    const text = await res.text();
+    const json = text ? JSON.parse(text) : [];
     const first = json?.[0];
     
     if (!first) return null;
@@ -485,8 +487,20 @@ serve(async (req) => {
   }
   
   try {
-    // Parse request early for logging
-    const body = await req.json();
+    // Parse request early for logging (support GET for diagnostics)
+    let body: any;
+    if (req.method === "GET") {
+      const url = new URL(req.url);
+      body = {
+        code: url.searchParams.get("code") || "",
+        countryHint: (url.searchParams.get("country") as "US" | "CA" | null) || null,
+        radiusKm: parseInt(url.searchParams.get("radiusKm") || "40", 10),
+        limit: parseInt(url.searchParams.get("limit") || "30", 10),
+        filters: { type: "all", openNow: false },
+      };
+    } else {
+      body = await req.json();
+    }
     const zipCode = body.code || "";
     
     // Rate limiting with anomaly detection

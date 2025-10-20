@@ -153,5 +153,8 @@ verify_jwt = false
 [functions.help-nearby]
 verify_jwt = false
 
+[functions.help-nearby-selftest]
+verify_jwt = false
+
 [functions.help-test-google]
 verify_jwt = false
