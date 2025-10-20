@@ -270,17 +270,39 @@ async function searchGooglePlaces(
   for (const keyword of keywords) {
     try {
       const startTime = Date.now();
-      const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${center.lat},${center.lng}&radius=${radiusM}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_API_KEY}`;
-      const res = await withTimeout(fetch(url), TIMEOUT_MS);
+      
+      // Use new Places API (New)
+      const url = `https://places.googleapis.com/v1/places:searchText`;
+      const requestBody = {
+        textQuery: keyword,
+        locationBias: {
+          circle: {
+            center: { latitude: center.lat, longitude: center.lng },
+            radius: radiusM
+          }
+        },
+        maxResultCount: 20
+      };
+      
+      const res = await withTimeout(fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.currentOpeningHours.openNow,places.nationalPhoneNumber,places.websiteUri'
+        },
+        body: JSON.stringify(requestBody)
+      }), TIMEOUT_MS);
+      
       const json = await res.json();
       const tookMs = Date.now() - startTime;
       
-      if (json.status !== "OK") {
+      if (!res.ok || !json.places) {
         console.error(JSON.stringify({
-          source: "GooglePlaces",
+          source: "GooglePlacesNew",
           status: "ERROR",
-          error_code: json.status,
-          reason: json.error_message || "Unknown error",
+          error_code: json.error?.code || res.status,
+          reason: json.error?.message || "Unknown error",
           keyword,
           tookMs
         }));
@@ -288,50 +310,31 @@ async function searchGooglePlaces(
       }
       
       console.log(JSON.stringify({
-        source: "GooglePlaces",
+        source: "GooglePlacesNew",
         status: "OK",
         keyword,
-        results: json.results?.length || 0,
+        results: json.places?.length || 0,
         tookMs
       }));
       
-      if (json.results) {
-        for (const r of json.results) {
-          // Get place details for phone and website
-          let phone = null;
-          let website = null;
-          
-          if (r.place_id) {
-            try {
-              const detailUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${r.place_id}&fields=formatted_phone_number,website,business_status&key=${GOOGLE_MAPS_API_KEY}`;
-              const detailRes = await withTimeout(fetch(detailUrl), TIMEOUT_MS);
-              const detailJson = await detailRes.json();
-              
-              if (detailJson.status === "OK" && detailJson.result) {
-                phone = detailJson.result.formatted_phone_number || null;
-                website = detailJson.result.website || null;
-              }
-            } catch (e) {
-              console.warn(`[google-places-details] ${r.place_id}:`, (e as Error).message);
-            }
-          }
-          
+      if (json.places) {
+        for (const place of json.places) {
           results.push({
-            name: r.name,
-            lat: r.geometry?.location?.lat,
-            lng: r.geometry?.location?.lng,
-            address: r.vicinity || r.formatted_address,
-            phone,
-            website,
-            rating: r.rating,
-            openNow: r.opening_hours?.open_now,
+            name: place.displayName?.text || "Unknown",
+            lat: place.location?.latitude,
+            lng: place.location?.longitude,
+            address: place.formattedAddress || null,
+            phone: place.nationalPhoneNumber || null,
+            website: place.websiteUri || null,
+            rating: place.rating || null,
+            openNow: place.currentOpeningHours?.openNow ?? null,
             type,
           });
         }
       }
     } catch (e) {
       console.error(JSON.stringify({
-        source: "GooglePlaces",
+        source: "GooglePlacesNew",
         status: "ERROR",
         error_code: "EXCEPTION",
         reason: (e as Error).message,

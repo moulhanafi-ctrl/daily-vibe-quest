@@ -52,22 +52,39 @@ serve(async (req) => {
     };
   }
 
-  // Test Places API
+  // Test Places API (New)
   try {
     const placesStart = Date.now();
-    const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=34.0522,-118.2437&radius=5000&keyword=therapist&key=${GOOGLE_MAPS_API_KEY}`;
-    const placesRes = await fetch(placesUrl);
+    const placesUrl = `https://places.googleapis.com/v1/places:searchText`;
+    const placesRes = await fetch(placesUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location'
+      },
+      body: JSON.stringify({
+        textQuery: "therapist near Los Angeles",
+        locationBias: {
+          circle: {
+            center: { latitude: 34.0522, longitude: -118.2437 },
+            radius: 5000
+          }
+        },
+        maxResultCount: 5
+      })
+    });
     const placesJson = await placesRes.json();
     diagnostics.tests.places.latency = Date.now() - placesStart;
     
-    if (placesJson.status === "OK") {
+    if (placesRes.ok && placesJson.places) {
       diagnostics.tests.places.status = "OK";
-      diagnostics.tests.places.resultsCount = placesJson.results?.length || 0;
+      diagnostics.tests.places.resultsCount = placesJson.places?.length || 0;
     } else {
       diagnostics.tests.places.status = "ERROR";
       diagnostics.tests.places.error = {
-        code: placesJson.status,
-        message: placesJson.error_message || "Unknown error",
+        code: placesJson.error?.code || placesRes.status,
+        message: placesJson.error?.message || "Unknown error",
       };
     }
   } catch (e) {
@@ -93,8 +110,8 @@ serve(async (req) => {
     if (diagnostics.tests.geocoding.error?.code === "REQUEST_DENIED") {
       errors.push("Geocoding API: Enable in Google Cloud Console and check API restrictions");
     }
-    if (diagnostics.tests.places.error?.code === "REQUEST_DENIED") {
-      errors.push("Places API: Enable in Google Cloud Console and check API restrictions");
+    if (diagnostics.tests.places.error?.code === "REQUEST_DENIED" || diagnostics.tests.places.error?.code === 403) {
+      errors.push("Places API (New): Enable in Google Cloud Console and check API restrictions");
     }
     if (diagnostics.tests.geocoding.error?.code === "OVER_QUERY_LIMIT") {
       errors.push("Geocoding API: Quota exceeded - check billing");
