@@ -217,8 +217,9 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
         responseSnippet: text.substring(0, 120)
       }));
       
-      // Return null with debug info attached
-      return null;
+      const err: any = new Error("GOOGLE_GEOCODE_FAILED");
+      err.debug = debug;
+      throw err;
     }
     
     const best = json.results[0];
@@ -236,7 +237,9 @@ async function geocodeGoogle(code: string): Promise<{ lat: number; lng: number; 
   } catch (e) {
     console.warn("[geocode-google]", (e as Error).message);
     debug.geocoding.error = (e as Error).message;
-    return null;
+    const err: any = new Error("GOOGLE_GEOCODE_FAILED");
+    err.debug = debug;
+    throw err;
   }
 }
 
@@ -900,12 +903,13 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             status: "error",
+            geocoder: "google",
             error: "GOOGLE_API_FAILED",
             message: "Google API failed. Check key or quota.",
             localResults: [],
             nationalResults: getNationalHotlines(country!),
             fallback: false,
-            meta: { tookMs: latencyMs, cache: "MISS" },
+            meta: { tookMs: latencyMs, cache: "MISS", debug: (err as any)?.debug || null },
           }),
           { status: 200, headers: { ...corsHeaders, "content-type": "application/json" } }
         );
