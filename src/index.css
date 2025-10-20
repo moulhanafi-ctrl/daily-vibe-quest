@@ -373,6 +373,59 @@ All colors MUST be HSL.
     filter: none !important;
   }
 
+  /* Help Provider Button Styles */
+  .btn-help-call {
+    background-color: #FF6B4A !important;
+    color: white !important;
+    padding: 10px 16px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+    transition: background-color 0.2s ease, transform 0.1s ease !important;
+    border: none !important;
+  }
+
+  .btn-help-call:hover {
+    background-color: #E35A3A !important;
+    transform: scale(1.03) !important;
+  }
+
+  .btn-help-call:focus {
+    background-color: #E35A3A !important;
+    transform: scale(1.03) !important;
+    outline: 2px solid rgba(255, 107, 74, 0.5) !important;
+    outline-offset: 2px !important;
+  }
+
+  .btn-help-website {
+    background-color: #4A90E2 !important;
+    color: white !important;
+    padding: 10px 16px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+    transition: background-color 0.2s ease, transform 0.1s ease !important;
+    border: none !important;
+  }
+
+  .btn-help-website:hover {
+    background-color: #3B78C2 !important;
+    transform: scale(1.03) !important;
+  }
+
+  .btn-help-website:focus {
+    background-color: #3B78C2 !important;
+    transform: scale(1.03) !important;
+    outline: 2px solid rgba(74, 144, 226, 0.5) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Ensure white icons in help buttons */
+  .btn-help-call svg,
+  .btn-help-website svg,
+  .btn-help-call span,
+  .btn-help-website span {
+    color: white !important;
+  }
+
 }
 
 

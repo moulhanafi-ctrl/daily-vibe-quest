@@ -365,7 +365,7 @@ const LocalHelpSearch = () => {
                       <Button
                         size="sm"
                         asChild
-                        className="flex-1 sm:flex-none"
+                        className="flex-1 sm:flex-none btn-help-call"
                         onClick={() =>
                           trackEvent({
                             eventType: "help_viewed",
@@ -373,7 +373,7 @@ const LocalHelpSearch = () => {
                           })
                         }
                       >
-                        <a href={`tel:${provider.phone}`}>
+                        <a href={`tel:${provider.phone}`} className="flex items-center justify-center">
                           <Phone className="h-4 w-4 mr-2" />
                           Call
                         </a>
@@ -382,10 +382,9 @@ const LocalHelpSearch = () => {
 
                     {provider.website && (
                       <Button
-                        variant="outline"
                         size="sm"
                         asChild
-                        className="flex-1 sm:flex-none"
+                        className="flex-1 sm:flex-none btn-help-website"
                         onClick={() =>
                           trackEvent({
                             eventType: "help_viewed",
@@ -393,7 +392,7 @@ const LocalHelpSearch = () => {
                           })
                         }
                       >
-                        <a href={provider.website} target="_blank" rel="noopener noreferrer">
+                        <a href={provider.website} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                           <Globe className="h-4 w-4 mr-2" />
                           Website
                         </a>
