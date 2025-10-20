@@ -114,7 +114,24 @@ export default function Analytics() {
 
         {/* Quick Links */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/analytics/subscribers")}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/analytics/dashboard")}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Analytics Dashboard
+              </CardTitle>
+              <CardDescription>
+                Event metrics, search analytics, and performance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">
+                View Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/subscriber-analytics")}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Filter className="h-5 w-5" />

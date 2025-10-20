@@ -40,6 +40,7 @@ import ArthurAdmin from "./pages/admin/ArthurAdmin";
 import Analytics from "./pages/admin/Analytics";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SubscriberAnalytics from "./pages/admin/SubscriberAnalytics";
+import AnalyticsDashboard from "./pages/admin/AnalyticsDashboard";
 import StoreAdmin from "./pages/admin/StoreAdmin";
 import HelpAdmin from "./pages/admin/HelpAdmin";
 import HelpLocationsAdmin from "./pages/admin/HelpLocationsAdmin";
@@ -130,6 +131,7 @@ const App = () => (
           <Route path="/admin/ai" element={<AdminAI />} />
           <Route path="/admin/arthur" element={<ArthurAdmin />} />
           <Route path="/admin/analytics" element={<Analytics />} />
+          <Route path="/admin/analytics/dashboard" element={<AnalyticsDashboard />} />
           <Route path="/admin/subscriber-analytics" element={<SubscriberAnalytics />} />
           <Route path="/admin/store" element={<StoreAdmin />} />
           <Route path="/admin/help" element={<HelpAdmin />} />
