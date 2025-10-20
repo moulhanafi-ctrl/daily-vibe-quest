@@ -486,8 +486,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
   
+  // Allow both GET and POST
+  if (req.method !== "GET" && req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "METHOD_NOT_ALLOWED", message: "Use GET or POST" }),
+      { status: 405, headers: { ...corsHeaders, "content-type": "application/json" } }
+    );
+  }
+  
   try {
-    // Parse request early for logging (support GET for diagnostics)
+    // Parse request (support both GET with query params and POST with body)
     let body: any;
     if (req.method === "GET") {
       const url = new URL(req.url);
@@ -499,7 +507,8 @@ serve(async (req) => {
         filters: { type: "all", openNow: false },
       };
     } else {
-      body = await req.json();
+      const text = await req.text();
+      body = text ? JSON.parse(text) : {};
     }
     const zipCode = body.code || "";
     
