@@ -378,44 +378,58 @@ All colors MUST be HSL.
     background-color: #FF6B4A !important;
     color: white !important;
     padding: 10px 16px !important;
-    border-radius: 10px !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
-    transition: background-color 0.2s ease, transform 0.1s ease !important;
+    border-radius: 12px !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.2s ease !important;
     border: none !important;
   }
 
   .btn-help-call:hover {
-    background-color: #E35A3A !important;
+    background-color: #E4572E !important;
     transform: scale(1.03) !important;
   }
 
   .btn-help-call:focus {
-    background-color: #E35A3A !important;
+    background-color: #E4572E !important;
     transform: scale(1.03) !important;
     outline: 2px solid rgba(255, 107, 74, 0.5) !important;
     outline-offset: 2px !important;
+  }
+
+  .btn-help-call:disabled {
+    background-color: #E0E0E0 !important;
+    color: #888 !important;
+    transform: none !important;
+    cursor: not-allowed !important;
   }
 
   .btn-help-website {
     background-color: #4A90E2 !important;
     color: white !important;
     padding: 10px 16px !important;
-    border-radius: 10px !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
-    transition: background-color 0.2s ease, transform 0.1s ease !important;
+    border-radius: 12px !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.2s ease !important;
     border: none !important;
   }
 
   .btn-help-website:hover {
-    background-color: #3B78C2 !important;
+    background-color: #357ABD !important;
     transform: scale(1.03) !important;
   }
 
   .btn-help-website:focus {
-    background-color: #3B78C2 !important;
+    background-color: #357ABD !important;
     transform: scale(1.03) !important;
     outline: 2px solid rgba(74, 144, 226, 0.5) !important;
     outline-offset: 2px !important;
+  }
+
+  .btn-help-website:disabled {
+    background-color: #E0E0E0 !important;
+    color: #888 !important;
+    transform: none !important;
+    cursor: not-allowed !important;
   }
 
   /* Ensure white icons in help buttons */
@@ -424,6 +438,13 @@ All colors MUST be HSL.
   .btn-help-call span,
   .btn-help-website span {
     color: white !important;
+  }
+
+  .btn-help-call:disabled svg,
+  .btn-help-call:disabled span,
+  .btn-help-website:disabled svg,
+  .btn-help-website:disabled span {
+    color: #888 !important;
   }
 
 }
