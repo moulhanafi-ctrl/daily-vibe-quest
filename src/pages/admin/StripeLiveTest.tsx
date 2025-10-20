@@ -18,9 +18,10 @@ const StripeLiveTest = () => {
     setResult(null);
 
     try {
-      // First verify the mode status
+      // First verify the mode status (force invalidate cache)
       const { data: statusData, error: statusError } = await supabase.functions.invoke(
-        "stripe-live-status"
+        "stripe-live-status",
+        { body: { invalidate: true } }
       );
 
       if (statusError) throw statusError;
