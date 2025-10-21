@@ -17,11 +17,16 @@ const COMMON_PASSWORDS = [
 ];
 
 /**
+ * Password policy constants
+ */
+const MIN_PASSWORD_LENGTH = 12;
+
+/**
  * Password policy validation (client-side enforcement)
  */
 export const passwordSchema = z
   .string()
-  .min(12, "Password must be at least 12 characters")
+  .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters`)
   .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[0-9]/, "Password must contain at least one number")
@@ -51,87 +56,109 @@ export function validatePassword(
   password: string,
   userInfo?: { email?: string; displayName?: string }
 ): PasswordValidation {
-  const trimmed = password.trim();
   const errors: string[] = [];
+  const checks = {
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSymbol: false,
+    notCommon: true,
+    strongEnough: true,
+    noWhitespace: true,
+    notUserInfo: true,
+  };
 
-  // Check for leading/trailing whitespace
-  const noWhitespace = password === trimmed && !password.includes(" ");
-  if (!noWhitespace) {
-    errors.push("Password cannot contain spaces");
+  // Check minimum length
+  checks.minLength = password.length >= MIN_PASSWORD_LENGTH;
+  if (!checks.minLength) {
+    errors.push(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long`);
   }
 
-  // Basic requirements
-  const minLength = trimmed.length >= 12;
-  const hasUppercase = /[A-Z]/.test(trimmed);
-  const hasLowercase = /[a-z]/.test(trimmed);
-  const hasNumber = /[0-9]/.test(trimmed);
-  const hasSymbol = /[^A-Za-z0-9]/.test(trimmed);
-
-  if (!minLength) errors.push("Must be at least 12 characters");
-  if (!hasUppercase) errors.push("Must contain an uppercase letter");
-  if (!hasLowercase) errors.push("Must contain a lowercase letter");
-  if (!hasNumber) errors.push("Must contain a number");
-  if (!hasSymbol) errors.push("Must contain a symbol");
-
-  // Check against common passwords
-  const lowerPassword = trimmed.toLowerCase();
-  const notCommon = !COMMON_PASSWORDS.includes(lowerPassword);
-  if (!notCommon) {
-    errors.push("This password is too common");
+  // Check for uppercase
+  checks.hasUppercase = /[A-Z]/.test(password);
+  if (!checks.hasUppercase) {
+    errors.push('Password must contain at least one uppercase letter');
   }
 
-  // Check for user info
-  let notUserInfo = true;
+  // Check for lowercase
+  checks.hasLowercase = /[a-z]/.test(password);
+  if (!checks.hasLowercase) {
+    errors.push('Password must contain at least one lowercase letter');
+  }
+
+  // Check for number
+  checks.hasNumber = /\d/.test(password);
+  if (!checks.hasNumber) {
+    errors.push('Password must contain at least one number');
+  }
+
+  // Check for symbol
+  checks.hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  if (!checks.hasSymbol) {
+    errors.push('Password must contain at least one special character');
+  }
+
+  // Use zxcvbn for comprehensive password strength analysis
+  const result = zxcvbn(
+    password,
+    userInfo ? [userInfo.email || '', userInfo.displayName || ''] : []
+  );
+
+  // Check for whitespace
+  checks.noWhitespace = !/\s/.test(password);
+  if (!checks.noWhitespace) {
+    errors.push('Password must not contain whitespace');
+  }
+
+  // STRICT: Block passwords with score < 3 (must be "strong" or "very strong")
+  checks.strongEnough = result.score >= 3;
+  if (!checks.strongEnough) {
+    errors.push('Password is too weak. Please choose a stronger password.');
+  }
+
+  // Check if password contains user info
   if (userInfo) {
+    const lowerPassword = password.toLowerCase();
     if (userInfo.email) {
-      const emailLocal = userInfo.email.split("@")[0].toLowerCase();
-      if (lowerPassword.includes(emailLocal)) {
-        notUserInfo = false;
-        errors.push("Password cannot contain your email");
+      const emailParts = userInfo.email.toLowerCase().split('@')[0].split(/[._-]/);
+      for (const part of emailParts) {
+        if (part.length > 2 && lowerPassword.includes(part)) {
+          checks.notUserInfo = false;
+          errors.push('Password should not contain parts of your email');
+          break;
+        }
       }
     }
     if (userInfo.displayName) {
-      const nameLower = userInfo.displayName.toLowerCase();
-      if (lowerPassword.includes(nameLower)) {
-        notUserInfo = false;
-        errors.push("Password cannot contain your name");
+      const nameParts = userInfo.displayName.toLowerCase().split(/\s+/);
+      for (const part of nameParts) {
+        if (part.length > 2 && lowerPassword.includes(part)) {
+          checks.notUserInfo = false;
+          errors.push('Password should not contain parts of your name');
+          break;
+        }
       }
     }
   }
 
-  // zxcvbn strength check
-  const userInputs = userInfo
-    ? [userInfo.email || "", userInfo.displayName || ""].filter(Boolean)
-    : [];
-  const result = zxcvbn(trimmed, userInputs);
-  const strongEnough = result.score >= 3;
-
-  if (!strongEnough && errors.length === 0) {
-    errors.push("Password is not strong enough");
+  // Check common passwords (zxcvbn already does this, but add explicit check)
+  if (result.feedback.warning?.includes('common') || result.feedback.warning?.includes('predictable')) {
+    checks.notCommon = false;
+    errors.push('This password is too common or predictable. Please choose a unique password.');
   }
 
-  const checks = {
-    minLength,
-    hasUppercase,
-    hasLowercase,
-    hasNumber,
-    hasSymbol,
-    notCommon,
-    strongEnough,
-    noWhitespace,
-    notUserInfo,
-  };
-
-  const isValid =
-    minLength &&
-    hasUppercase &&
-    hasLowercase &&
-    hasNumber &&
-    hasSymbol &&
-    notCommon &&
-    strongEnough &&
-    noWhitespace &&
-    notUserInfo;
+  const isValid = 
+    checks.minLength &&
+    checks.hasUppercase &&
+    checks.hasLowercase &&
+    checks.hasNumber &&
+    checks.hasSymbol &&
+    checks.noWhitespace &&
+    checks.notCommon &&
+    checks.strongEnough &&
+    checks.notUserInfo &&
+    result.score >= 3; // STRICT: Require score of 3 or higher
 
   return {
     isValid,

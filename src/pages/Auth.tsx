@@ -147,9 +147,14 @@ const Auth = () => {
           throw new Error(errors);
         }
 
-        // Additional password validation check
+        // STRICT: Require strong password validation
         if (!passwordValidation?.isValid) {
-          throw new Error("Password does not meet security requirements");
+          throw new Error("Password does not meet security requirements. " + (passwordValidation?.errors[0] || ""));
+        }
+
+        // STRICT: Additional score check
+        if (passwordValidation.score < 3) {
+          throw new Error("Password is too weak. Please use a stronger password with mixed characters.");
         }
 
         const { error } = await supabase.auth.signUp({

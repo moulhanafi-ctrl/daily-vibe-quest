@@ -46,11 +46,21 @@ const ResetPassword = () => {
       return;
     }
 
-    // SECURITY: Validate password strength
+    // STRICT: Validate password strength - BLOCK weak passwords
     if (!passwordValidation?.isValid) {
       toast({
-        title: "Weak password",
-        description: passwordValidation?.errors[0] || "Password doesn't meet requirements.",
+        title: "Password does not meet security requirements",
+        description: passwordValidation?.errors.join('. ') || "Password is too weak.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // STRICT: Additional score check
+    if (passwordValidation.score < 3) {
+      toast({
+        title: "Password is too weak",
+        description: "Your password must be stronger. Use a mix of uppercase, lowercase, numbers, and symbols, and avoid common patterns.",
         variant: "destructive",
       });
       return;
