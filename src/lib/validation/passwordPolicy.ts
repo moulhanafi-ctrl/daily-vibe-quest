@@ -1,78 +1,143 @@
 import { z } from "zod";
+import zxcvbn from "zxcvbn";
+
+/**
+ * Common weak passwords denylist
+ */
+const COMMON_PASSWORDS = [
+  "password",
+  "123456",
+  "qwerty",
+  "letmein",
+  "abc123",
+  "password123",
+  "welcome",
+  "admin",
+  "iloveyou",
+];
 
 /**
  * Password policy validation (client-side enforcement)
- * Server-side policy must be configured in Supabase Auth settings
  */
-
 export const passwordSchema = z
   .string()
   .min(12, "Password must be at least 12 characters")
   .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[0-9]/, "Password must contain at least one number")
-  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character (!@#$%^&*)");
+  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
 
-export interface PasswordStrength {
-  score: number; // 0-4
-  feedback: string;
-  meetsPolicy: boolean;
+export interface PasswordValidation {
+  isValid: boolean;
+  errors: string[];
+  checks: {
+    minLength: boolean;
+    hasUppercase: boolean;
+    hasLowercase: boolean;
+    hasNumber: boolean;
+    hasSymbol: boolean;
+    notCommon: boolean;
+    strongEnough: boolean;
+    noWhitespace: boolean;
+    notUserInfo: boolean;
+  };
+  score: number; // 0-4 from zxcvbn
 }
 
 /**
- * Evaluate password strength
- * @param password - Password to evaluate
- * @returns Strength score and feedback
+ * Validate password against all requirements
  */
-export function evaluatePasswordStrength(password: string): PasswordStrength {
-  let score = 0;
-  const feedback: string[] = [];
+export function validatePassword(
+  password: string,
+  userInfo?: { email?: string; displayName?: string }
+): PasswordValidation {
+  const trimmed = password.trim();
+  const errors: string[] = [];
 
-  // Length check
-  if (password.length >= 12) {
-    score++;
-  } else {
-    feedback.push("Use at least 12 characters");
+  // Check for leading/trailing whitespace
+  const noWhitespace = password === trimmed && !password.includes(" ");
+  if (!noWhitespace) {
+    errors.push("Password cannot contain spaces");
   }
 
-  // Uppercase check
-  if (/[A-Z]/.test(password)) {
-    score++;
-  } else {
-    feedback.push("Add an uppercase letter");
+  // Basic requirements
+  const minLength = trimmed.length >= 12;
+  const hasUppercase = /[A-Z]/.test(trimmed);
+  const hasLowercase = /[a-z]/.test(trimmed);
+  const hasNumber = /[0-9]/.test(trimmed);
+  const hasSymbol = /[^A-Za-z0-9]/.test(trimmed);
+
+  if (!minLength) errors.push("Must be at least 12 characters");
+  if (!hasUppercase) errors.push("Must contain an uppercase letter");
+  if (!hasLowercase) errors.push("Must contain a lowercase letter");
+  if (!hasNumber) errors.push("Must contain a number");
+  if (!hasSymbol) errors.push("Must contain a symbol");
+
+  // Check against common passwords
+  const lowerPassword = trimmed.toLowerCase();
+  const notCommon = !COMMON_PASSWORDS.includes(lowerPassword);
+  if (!notCommon) {
+    errors.push("This password is too common");
   }
 
-  // Lowercase check
-  if (/[a-z]/.test(password)) {
-    score++;
-  } else {
-    feedback.push("Add a lowercase letter");
+  // Check for user info
+  let notUserInfo = true;
+  if (userInfo) {
+    if (userInfo.email) {
+      const emailLocal = userInfo.email.split("@")[0].toLowerCase();
+      if (lowerPassword.includes(emailLocal)) {
+        notUserInfo = false;
+        errors.push("Password cannot contain your email");
+      }
+    }
+    if (userInfo.displayName) {
+      const nameLower = userInfo.displayName.toLowerCase();
+      if (lowerPassword.includes(nameLower)) {
+        notUserInfo = false;
+        errors.push("Password cannot contain your name");
+      }
+    }
   }
 
-  // Number check
-  if (/[0-9]/.test(password)) {
-    score++;
-  } else {
-    feedback.push("Add a number");
+  // zxcvbn strength check
+  const userInputs = userInfo
+    ? [userInfo.email || "", userInfo.displayName || ""].filter(Boolean)
+    : [];
+  const result = zxcvbn(trimmed, userInputs);
+  const strongEnough = result.score >= 3;
+
+  if (!strongEnough && errors.length === 0) {
+    errors.push("Password is not strong enough");
   }
 
-  // Special character check
-  if (/[^A-Za-z0-9]/.test(password)) {
-    score++;
-  } else {
-    feedback.push("Add a special character (!@#$%^&*)");
-  }
+  const checks = {
+    minLength,
+    hasUppercase,
+    hasLowercase,
+    hasNumber,
+    hasSymbol,
+    notCommon,
+    strongEnough,
+    noWhitespace,
+    notUserInfo,
+  };
 
-  // Bonus for extra length
-  if (password.length >= 16) score++;
-
-  const meetsPolicy = score >= 5;
-  const finalScore = Math.min(score, 5); // Cap at 5
+  const isValid =
+    minLength &&
+    hasUppercase &&
+    hasLowercase &&
+    hasNumber &&
+    hasSymbol &&
+    notCommon &&
+    strongEnough &&
+    noWhitespace &&
+    notUserInfo;
 
   return {
-    score: finalScore,
-    feedback: meetsPolicy ? "Strong password!" : feedback.join(". "),
-    meetsPolicy,
+    isValid,
+    errors,
+    checks,
+    score: result.score,
   };
 }
 

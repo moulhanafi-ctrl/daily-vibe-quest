@@ -9,8 +9,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import vibeCheckLogo from "@/assets/vibe-check-logo.png";
 import { z } from "zod";
-import { passwordSchema, evaluatePasswordStrength } from "@/lib/validation/passwordPolicy";
-import { Progress } from "@/components/ui/progress";
+import { passwordSchema, type PasswordValidation } from "@/lib/validation/passwordPolicy";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
 // SECURITY: Enhanced input validation schema for signup with strong password policy
 const SignupSchema = z.object({
@@ -37,17 +37,7 @@ const Auth = () => {
   const [ageGroup, setAgeGroup] = useState<"child" | "teen" | "adult">("adult");
   const [loading, setLoading] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: "", meetsPolicy: false });
-
-  // Real-time password strength evaluation
-  useEffect(() => {
-    if (!isLogin && !isForgotPassword && password) {
-      const strength = evaluatePasswordStrength(password);
-      setPasswordStrength(strength);
-    } else {
-      setPasswordStrength({ score: 0, feedback: "", meetsPolicy: false });
-    }
-  }, [password, isLogin, isForgotPassword]);
+  const [passwordValidation, setPasswordValidation] = useState<PasswordValidation | null>(null);
 
   // Detect Safari Private Mode
   useEffect(() => {
@@ -157,6 +147,11 @@ const Auth = () => {
           throw new Error(errors);
         }
 
+        // Additional password validation check
+        if (!passwordValidation?.isValid) {
+          throw new Error("Password does not meet security requirements");
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -256,30 +251,20 @@ const Auth = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={isLogin ? 6 : 12}
-                  aria-describedby={!isLogin ? "password-strength" : undefined}
+                  aria-describedby={!isLogin ? "password-requirements" : undefined}
                 />
                 
                 {/* Password strength indicator for signup */}
-                {!isLogin && password.length > 0 && (
-                  <div id="password-strength" className="space-y-2 mt-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Password strength:</span>
-                      <span className={passwordStrength.meetsPolicy ? "text-green-600 font-medium" : "text-amber-600"}>
-                        {passwordStrength.meetsPolicy ? "Strong ✓" : "Needs improvement"}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={(passwordStrength.score / 5) * 100} 
-                      className="h-2"
+                {!isLogin && (
+                  <div id="password-requirements">
+                    <PasswordStrengthIndicator
+                      password={password}
+                      userInfo={{ email, displayName: username }}
+                      onValidationChange={setPasswordValidation}
                     />
-                    {!passwordStrength.meetsPolicy && (
-                      <p className="text-xs text-muted-foreground">
-                        {passwordStrength.feedback}
-                      </p>
-                    )}
-                    {passwordStrength.meetsPolicy && (
-                      <p className="text-xs text-green-600">
-                        ✓ Meets all security requirements
+                    {passwordValidation && passwordValidation.errors.length > 0 && password.length > 0 && (
+                      <p className="text-xs text-destructive mt-2" role="alert">
+                        {passwordValidation.errors[0]}
                       </p>
                     )}
                   </div>
@@ -299,7 +284,7 @@ const Auth = () => {
             <Button 
               type="submit" 
               className="w-full min-h-[44px] touch-manipulation" 
-              disabled={loading || isPrivateMode}
+              disabled={loading || isPrivateMode || (!isLogin && !isForgotPassword && !passwordValidation?.isValid)}
             >
               {loading ? "Loading..." : isForgotPassword ? "Send Reset Link" : isLogin ? "Sign In" : "Sign Up"}
             </Button>

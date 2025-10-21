@@ -7,26 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import vibeCheckLogo from "@/assets/vibe-check-logo.png";
-import { CheckCircle2, XCircle } from "lucide-react";
-import { z } from "zod";
-
-// SECURITY: Strong password validation
-const PasswordSchema = z.string()
-  .min(12, "Password must be at least 12 characters")
-  .max(128, "Password must be less than 128 characters")
-  .regex(/[0-9]/, "Password must contain at least one number")
-  .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one symbol");
+import { passwordSchema, type PasswordValidation } from "@/lib/validation/passwordPolicy";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [validations, setValidations] = useState({
-    minLength: false,
-    hasNumber: false,
-    hasSymbol: false,
-  });
+  const [passwordValidation, setPasswordValidation] = useState<PasswordValidation | null>(null);
 
   useEffect(() => {
     // SECURITY: Verify user has gone through OTP flow
@@ -43,14 +32,7 @@ const ResetPassword = () => {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    // Update password strength indicators
-    setValidations({
-      minLength: newPassword.length >= 12,
-      hasNumber: /[0-9]/.test(newPassword),
-      hasSymbol: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
-    });
-  }, [newPassword]);
+  // Password validation is now handled by PasswordStrengthIndicator component
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,12 +47,10 @@ const ResetPassword = () => {
     }
 
     // SECURITY: Validate password strength
-    try {
-      PasswordSchema.parse(newPassword);
-    } catch (error: any) {
+    if (!passwordValidation?.isValid) {
       toast({
         title: "Weak password",
-        description: error.errors?.[0]?.message || "Password doesn't meet requirements.",
+        description: passwordValidation?.errors[0] || "Password doesn't meet requirements.",
         variant: "destructive",
       });
       return;
@@ -118,7 +98,7 @@ const ResetPassword = () => {
     }
   };
 
-  const allValidationsPassed = validations.minLength && validations.hasNumber && validations.hasSymbol;
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
@@ -142,7 +122,21 @@ const ResetPassword = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
+                aria-describedby="password-requirements"
               />
+              
+              {/* Password strength indicator */}
+              <div id="password-requirements">
+                <PasswordStrengthIndicator
+                  password={newPassword}
+                  onValidationChange={setPasswordValidation}
+                />
+                {passwordValidation && passwordValidation.errors.length > 0 && newPassword.length > 0 && (
+                  <p className="text-xs text-destructive mt-2" role="alert">
+                    {passwordValidation.errors[0]}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -154,48 +148,17 @@ const ResetPassword = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
-            </div>
-
-            <div className="rounded-lg bg-muted p-4 space-y-2">
-              <p className="text-sm font-medium mb-2">Password Requirements:</p>
-              <div className="space-y-1 text-sm">
-                <div className="flex items-center gap-2">
-                  {validations.minLength ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span className={validations.minLength ? "text-green-600" : ""}>
-                    At least 12 characters
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {validations.hasNumber ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span className={validations.hasNumber ? "text-green-600" : ""}>
-                    Contains a number
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {validations.hasSymbol ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span className={validations.hasSymbol ? "text-green-600" : ""}>
-                    Contains a symbol (!@#$%^&*)
-                  </span>
-                </div>
-              </div>
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-xs text-destructive mt-1" role="alert">
+                  Passwords do not match
+                </p>
+              )}
             </div>
 
             <Button
               type="submit"
               className="w-full min-h-[44px]"
-              disabled={loading || !allValidationsPassed || newPassword !== confirmPassword}
+              disabled={loading || !passwordValidation?.isValid || newPassword !== confirmPassword}
             >
               {loading ? "Updating..." : "Update Password"}
             </Button>
