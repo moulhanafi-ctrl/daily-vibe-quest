@@ -64,12 +64,68 @@ export const JournalComposer = ({ moodId, mood, onSave, onCancel, editEntry }: J
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Check title for profanity if present
+      let sanitizedTitle = title;
+      if (title.trim()) {
+        const { data: titleModeration, error: titleError } = await supabase.functions.invoke(
+          'check-profanity',
+          { body: { text: title.trim() } }
+        );
+
+        if (titleError) {
+          console.error("Title profanity check error:", titleError);
+          toast.error("Unable to verify title content. Please try again.");
+          return;
+        }
+
+        if (titleModeration.severity === 'severe') {
+          toast.error("Title contains inappropriate content and cannot be saved.");
+          return;
+        }
+
+        sanitizedTitle = titleModeration.is_offensive 
+          ? titleModeration.sanitized_text 
+          : title.trim();
+
+        if (titleModeration.is_offensive && titleModeration.severity !== 'severe') {
+          toast.warning("Title was modified to meet content standards.");
+        }
+      }
+
+      // Check body for profanity if present
+      let sanitizedBody = body;
+      if (body.trim()) {
+        const { data: bodyModeration, error: bodyError } = await supabase.functions.invoke(
+          'check-profanity',
+          { body: { text: body.trim() } }
+        );
+
+        if (bodyError) {
+          console.error("Body profanity check error:", bodyError);
+          toast.error("Unable to verify content. Please try again.");
+          return;
+        }
+
+        if (bodyModeration.severity === 'severe') {
+          toast.error("Entry contains inappropriate content and cannot be saved.");
+          return;
+        }
+
+        sanitizedBody = bodyModeration.is_offensive 
+          ? bodyModeration.sanitized_text 
+          : body.trim();
+
+        if (bodyModeration.is_offensive && bodyModeration.severity !== 'severe') {
+          toast.warning("Some content was modified to meet standards.");
+        }
+      }
+
       const entryData = {
         user_id: user.id,
         mood_id: moodId,
         mood: mood,
-        title: title || null,
-        body: body || null,
+        title: sanitizedTitle || null,
+        body: sanitizedBody || null,
         audio_url: audioUrl || null,
         transcript: transcript || null,
         tags: tags,
@@ -96,8 +152,8 @@ export const JournalComposer = ({ moodId, mood, onSave, onCancel, editEntry }: J
         trackEvent({ 
           eventType: "journal_saved", 
           metadata: { 
-            hasTitle: !!title,
-            hasBody: !!body,
+            hasTitle: !!sanitizedTitle,
+            hasBody: !!sanitizedBody,
             hasAudio: !!audioUrl,
             hasTranscript: !!transcript,
             tagCount: tags.length,

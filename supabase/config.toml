@@ -158,3 +158,6 @@ verify_jwt = false
 
 [functions.help-test-google]
 verify_jwt = false
+
+[functions.check-profanity]
+verify_jwt = true

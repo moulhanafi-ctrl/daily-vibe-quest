@@ -271,13 +271,52 @@ const ChatRoom = () => {
 
     setSending(true);
     try {
+      // Check for profanity first
+      const { data: moderationData, error: moderationError } = await supabase.functions.invoke(
+        'check-profanity',
+        { body: { text: newMessage.trim() } }
+      );
+
+      if (moderationError) {
+        console.error("Profanity check error:", moderationError);
+        toast({
+          title: "Content Check Failed",
+          description: "Unable to verify message content. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If severely offensive, reject completely
+      if (moderationData.severity === 'severe') {
+        toast({
+          title: "Message Rejected",
+          description: "Your message contains inappropriate content and cannot be sent.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Use sanitized text if offensive content was found
+      const messageToSend = moderationData.is_offensive 
+        ? moderationData.sanitized_text 
+        : newMessage.trim();
+
+      // Notify user if content was sanitized
+      if (moderationData.is_offensive && moderationData.severity !== 'severe') {
+        toast({
+          title: "Content Modified",
+          description: "Some words were replaced to maintain community standards.",
+        });
+      }
+
       const { error } = await supabase
         .from("chat_messages")
         .insert({
           room_id: activeRoomId,
           user_id: currentUserId,
           username: username,
-          message: newMessage.trim(),
+          message: messageToSend,
         });
 
       if (error) throw error;
