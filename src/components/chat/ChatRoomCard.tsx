@@ -62,7 +62,16 @@ export const ChatRoomCard = ({ room, currentUserId, currentUsername, onNavigate 
         </div>
       </CardHeader>
       <CardContent>
-        <Button className="w-full" aria-label={`Join ${room.name}`}>Join Chat</Button>
+        <Button 
+          className="w-full" 
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigate(roomPath);
+          }}
+          aria-label={`Join ${room.name}`}
+        >
+          Join Chat
+        </Button>
       </CardContent>
     </Card>
   );
