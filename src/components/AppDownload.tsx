@@ -149,6 +149,7 @@ export const AppDownload = () => {
                     alt="Vibe Check app on iPhone showing mood tracking dashboard"
                     className="w-full h-auto rounded-[2.5rem] shadow-2xl"
                     loading="lazy"
+                    decoding="async"
                     width="512"
                     height="1024"
                   />
@@ -161,6 +162,7 @@ export const AppDownload = () => {
                     alt="Vibe Check app on Android showing support chat rooms"
                     className="w-full h-auto rounded-[2.5rem] shadow-2xl rotate-3"
                     loading="lazy"
+                    decoding="async"
                     width="512"
                     height="1024"
                   />
