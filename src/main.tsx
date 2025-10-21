@@ -2,6 +2,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import "./lib/i18n";
+import { initSentry } from "./lib/sentry";
+
+// Initialize Sentry
+initSentry();
 
 // Force cache clear for desktop session fix
 const APP_VERSION = '2025-10-15-chat-fix';
