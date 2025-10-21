@@ -428,6 +428,27 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_users: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string | null
@@ -3666,6 +3687,10 @@ export type Database = {
       }
       is_super_admin: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      is_user_blocked: {
+        Args: { _target_id: string; _user_id: string }
         Returns: boolean
       }
       join_family_via_code: {

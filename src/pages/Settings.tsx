@@ -20,6 +20,7 @@ import { MFASettings } from "@/components/settings/MFASettings";
 import { StripeLiveModeVerification } from "@/components/admin/StripeLiveModeVerification";
 import { ProductionReadinessChecklist } from "@/components/admin/ProductionReadinessChecklist";
 import { PasswordPolicyCard } from "@/components/admin/PasswordPolicyCard";
+import { BlockedUsersList } from "@/components/settings/BlockedUsersList";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -139,8 +140,9 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="privacy">
+          <TabsContent value="privacy" className="space-y-4">
             <PrivacySettings />
+            <BlockedUsersList />
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-4">

@@ -17,6 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useTranslation } from "react-i18next";
 import { useChatRoomPresence } from "@/hooks/useChatRoomPresence";
 import { ChatRoomOnboarding } from "@/components/chat/ChatRoomOnboarding";
+import { BlockUserButton } from "@/components/chat/BlockUserButton";
 
 interface Message {
   id: string;
@@ -464,6 +465,16 @@ const ChatRoom = () => {
                                   <DropdownMenuItem onClick={() => handleMuteUser(msg.user_id)}>
                                     <VolumeX className="mr-2 h-4 w-4" />
                                     Mute User
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem asChild>
+                                    <BlockUserButton 
+                                      userId={msg.user_id} 
+                                      username={msg.username}
+                                      onBlockComplete={() => {
+                                        // Refresh messages to exclude blocked user
+                                        window.location.reload();
+                                      }}
+                                    />
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
