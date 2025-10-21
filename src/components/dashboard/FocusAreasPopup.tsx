@@ -212,7 +212,7 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
               disabled={!selected || loading}
               aria-disabled={!selected || loading}
               aria-label="Join chat"
-              className="w-full min-h-[44px] touch-manipulation bg-gradient-to-r from-[hsl(180,70%,70%)] to-[hsl(270,65%,75%)] hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(122,241,199,0.3)] pointer-events-auto relative z-[70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(180,70%,70%)] focus-visible:ring-offset-2"
+              className="w-full min-h-[44px] touch-manipulation bg-gradient-to-r from-[hsl(180,70%,70%)] to-[hsl(270,65%,75%)] hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(122,241,199,0.3)] relative z-[70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(180,70%,70%)] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -228,7 +228,7 @@ export const FocusAreasPopup = ({ userId, onClose }: FocusAreasPopupProps) => {
               variant="ghost" 
               onClick={onClose}
               disabled={loading}
-              className="w-full min-h-[44px] touch-manipulation text-muted-foreground hover:text-foreground pointer-events-auto"
+              className="w-full min-h-[44px] touch-manipulation text-muted-foreground hover:text-foreground"
             >
               Cancel
             </Button>

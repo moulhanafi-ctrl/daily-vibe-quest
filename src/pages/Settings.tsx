@@ -171,10 +171,15 @@ const Settings = () => {
 
       {showFocusPopup && userId && (
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 pointer-events-none"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowFocusPopup(false);
+            }
+          }}
         >
-          <div className="w-full max-w-4xl pointer-events-auto relative z-[60]">
+          <div className="w-full max-w-4xl relative z-[60]">
             <FocusAreasPopup 
               userId={userId} 
               onClose={() => setShowFocusPopup(false)} 
