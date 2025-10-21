@@ -161,3 +161,6 @@ verify_jwt = false
 
 [functions.check-profanity]
 verify_jwt = true
+
+[functions.generate-store-graphics]
+verify_jwt = true

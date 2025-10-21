@@ -7,6 +7,7 @@ import { LiveModeStatus } from "@/components/admin/LiveModeStatus";
 import { FeatureFlagKillSwitches } from "@/components/admin/FeatureFlagKillSwitches";
 import { StripeLiveSetupGuide } from "@/components/admin/StripeLiveSetupGuide";
 import { StripeModeToggle } from "@/components/admin/StripeModeToggle";
+import { StoreGraphicsGenerator } from "@/components/admin/StoreGraphicsGenerator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const PublishReadiness = () => {
@@ -40,6 +41,7 @@ const PublishReadiness = () => {
           </TabsList>
 
           <TabsContent value="qa" className="space-y-6">
+            <StoreGraphicsGenerator />
             <QAChecklist />
           </TabsContent>
 
