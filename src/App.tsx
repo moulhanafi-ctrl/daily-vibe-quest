@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { setUser as setSentryUser } from "@/lib/sentry";
+import { identifyUser, resetUser } from "@/lib/posthog";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -88,16 +89,34 @@ const TriviaRedirect = () => {
   return <Navigate to={`/trivia/sessions${location.search}`} replace />;
 };
 
-const SentryUserTracker = () => {
+const AnalyticsUserTracker = () => {
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        // Set Sentry user
         setSentryUser({
           id: session.user.id,
           email: session.user.email,
         });
+
+        // Identify PostHog user with non-PII properties
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('age_group, subscription_status, language')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile) {
+          identifyUser(session.user.id, {
+            plan: profile.subscription_status || 'free',
+            locale: profile.language || 'en',
+            age_group: profile.age_group || 'unknown',
+          });
+        }
       } else {
+        // Reset both analytics on logout
         setSentryUser(null);
+        resetUser();
       }
     });
 
@@ -116,7 +135,7 @@ const App = () => (
         <Sonner />
         <MobileKeyboardHandler />
         <ArthurNotifications />
-        <SentryUserTracker />
+        <AnalyticsUserTracker />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />

@@ -3,6 +3,11 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { createStripeClient, getStripeConfig } from "../_shared/stripe-config.ts";
+import { 
+  trackSubscriptionStarted, 
+  trackSubscriptionCanceled, 
+  trackSubscriptionUpdated 
+} from "../_shared/posthog.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -273,6 +278,159 @@ async function processRefund(
   return { success: true };
 }
 
+async function processSubscriptionCreated(
+  stripe: Stripe,
+  subscription: Stripe.Subscription,
+  supabase: any,
+  eventId: string
+) {
+  console.log(`[WEBHOOK] Processing subscription.created: ${subscription.id}`);
+
+  try {
+    // Get customer email
+    const customer = await stripe.customers.retrieve(subscription.customer as string);
+    const customerEmail = (customer as Stripe.Customer).email;
+
+    if (!customerEmail) {
+      console.warn("[WEBHOOK] No email found for subscription customer");
+      return { success: true, warning: "no_email" };
+    }
+
+    // Find user by email
+    const { data: user } = await supabase.auth.admin.getUserByEmail(customerEmail);
+    
+    if (!user) {
+      console.warn("[WEBHOOK] No user found for email:", customerEmail);
+      return { success: true, warning: "no_user" };
+    }
+
+    // Update profile with subscription status
+    await supabase
+      .from("profiles")
+      .update({
+        subscription_status: subscription.status,
+        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+        stripe_customer_id: subscription.customer,
+        stripe_subscription_id: subscription.id,
+      })
+      .eq("id", user.id);
+
+    // Track subscription started
+    await trackSubscriptionStarted(user.id, {
+      plan: subscription.items.data[0]?.price.nickname || 'premium',
+      billing_interval: subscription.items.data[0]?.price.recurring?.interval,
+      amount: subscription.items.data[0]?.price.unit_amount ? subscription.items.data[0].price.unit_amount / 100 : undefined,
+      stripe_customer_id: subscription.customer as string,
+      stripe_subscription_id: subscription.id,
+    });
+
+    console.log(`[WEBHOOK] Subscription created for user: ${user.id}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[WEBHOOK] Error in processSubscriptionCreated:", error);
+    return { error: error.message };
+  }
+}
+
+async function processSubscriptionUpdated(
+  stripe: Stripe,
+  subscription: Stripe.Subscription,
+  supabase: any,
+  eventId: string
+) {
+  console.log(`[WEBHOOK] Processing subscription.updated: ${subscription.id}`);
+
+  try {
+    // Find user by subscription ID
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, subscription_status")
+      .eq("stripe_subscription_id", subscription.id)
+      .single();
+
+    if (!profile) {
+      console.warn("[WEBHOOK] No profile found for subscription:", subscription.id);
+      return { success: true, warning: "no_profile" };
+    }
+
+    const oldStatus = profile.subscription_status;
+
+    // Update profile with new subscription status
+    await supabase
+      .from("profiles")
+      .update({
+        subscription_status: subscription.status,
+        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+      })
+      .eq("id", profile.id);
+
+    // Track if status changed
+    if (oldStatus !== subscription.status) {
+      await trackSubscriptionUpdated(profile.id, {
+        old_plan: oldStatus,
+        new_plan: subscription.status,
+        stripe_subscription_id: subscription.id,
+      });
+    }
+
+    console.log(`[WEBHOOK] Subscription updated for user: ${profile.id}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[WEBHOOK] Error in processSubscriptionUpdated:", error);
+    return { error: error.message };
+  }
+}
+
+async function processSubscriptionDeleted(
+  stripe: Stripe,
+  subscription: Stripe.Subscription,
+  supabase: any,
+  eventId: string
+) {
+  console.log(`[WEBHOOK] Processing subscription.deleted: ${subscription.id}`);
+
+  try {
+    // Find user by subscription ID
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, subscription_status, created_at")
+      .eq("stripe_subscription_id", subscription.id)
+      .single();
+
+    if (!profile) {
+      console.warn("[WEBHOOK] No profile found for subscription:", subscription.id);
+      return { success: true, warning: "no_profile" };
+    }
+
+    // Calculate subscription duration
+    const createdAt = new Date(profile.created_at);
+    const now = new Date();
+    const durationDays = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Update profile
+    await supabase
+      .from("profiles")
+      .update({
+        subscription_status: 'canceled',
+        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+      })
+      .eq("id", profile.id);
+
+    // Track subscription cancellation
+    await trackSubscriptionCanceled(profile.id, {
+      plan: profile.subscription_status,
+      duration_days: durationDays,
+      stripe_subscription_id: subscription.id,
+    });
+
+    console.log(`[WEBHOOK] Subscription canceled for user: ${profile.id}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[WEBHOOK] Error in processSubscriptionDeleted:", error);
+    return { error: error.message };
+  }
+}
+
 serve(async (req) => {
   const signature = req.headers.get("stripe-signature");
   
@@ -328,6 +486,33 @@ serve(async (req) => {
         result = await processRefund(
           stripe,
           event.data.object as Stripe.Charge,
+          supabase,
+          event.id
+        );
+        break;
+
+      case "customer.subscription.created":
+        result = await processSubscriptionCreated(
+          stripe,
+          event.data.object as Stripe.Subscription,
+          supabase,
+          event.id
+        );
+        break;
+
+      case "customer.subscription.updated":
+        result = await processSubscriptionUpdated(
+          stripe,
+          event.data.object as Stripe.Subscription,
+          supabase,
+          event.id
+        );
+        break;
+
+      case "customer.subscription.deleted":
+        result = await processSubscriptionDeleted(
+          stripe,
+          event.data.object as Stripe.Subscription,
           supabase,
           event.id
         );

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Save, Trash2, Mic, X, Share2 } from "lucide-react";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { trackEvent } from "@/lib/analytics";
+import { analytics } from "@/lib/posthog";
 import { celebrateFirstEntry } from "@/lib/confetti";
 
 interface JournalComposerProps {
@@ -148,7 +149,7 @@ export const JournalComposer = ({ moodId, mood, onSave, onCancel, editEntry }: J
         
         if (error) throw error;
 
-        // Track journal save event
+        // Track journal save event (old analytics)
         trackEvent({ 
           eventType: "journal_saved", 
           metadata: { 
@@ -159,6 +160,14 @@ export const JournalComposer = ({ moodId, mood, onSave, onCancel, editEntry }: J
             tagCount: tags.length,
             sharedWithParent
           } 
+        });
+
+        // Track journal entry created (PostHog)
+        analytics.journalEntryCreated({
+          word_count: sanitizedBody ? sanitizedBody.split(/\s+/).length : 0,
+          has_voice: !!audioUrl,
+          prompt_used: false, // Could track if a prompt was used
+          visibility: sharedWithParent ? 'shared_with_parent' : 'private',
         });
 
         // Check if this is the first journal entry

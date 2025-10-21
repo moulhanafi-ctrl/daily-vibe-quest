@@ -12,6 +12,7 @@ import { JournalPrompts } from "@/components/journal/JournalPrompts";
 import { FocusAreasPopup } from "./FocusAreasPopup";
 import { Book, Mic, Lightbulb, Target } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { analytics } from "@/lib/posthog";
 
 const MOODS = [
   { emoji: "🤩", value: "excited", label: "Great" },
@@ -127,10 +128,17 @@ export const MoodCheckIn = ({ userId, ageGroup }: MoodCheckInProps) => {
         // Don't block the mood checkin if streak update fails
       }
 
-      // Track event
+      // Track event (old analytics)
       trackEvent({ 
         eventType: "checkin_submitted", 
         metadata: { mood: selectedMood, intensity: intensity[0] } 
+      });
+
+      // Track event (PostHog)
+      analytics.dailyCheckinSubmitted({
+        mood: selectedMood,
+        energy_level: intensity[0],
+        has_notes: !!reflection,
       });
 
       // Send notification to parent if child/teen has linked parent

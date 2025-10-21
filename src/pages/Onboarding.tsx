@@ -9,6 +9,7 @@ import { FocusAreaStep } from "@/components/onboarding/FocusAreaStep";
 import { DeepDiveStep } from "@/components/onboarding/DeepDiveStep";
 import { ConfirmationScreen } from "@/components/onboarding/ConfirmationScreen";
 import { trackEvent } from "@/lib/analytics";
+import { analytics } from "@/lib/posthog";
 import { slugForId } from "@/lib/focusAreas";
 
 type OnboardingStep = "overview" | "welcome" | "basic-info" | "focus-area" | "deep-dive" | "confirmation";
@@ -124,6 +125,12 @@ const Onboarding = () => {
         .eq("id", user.id);
 
       if (error) throw error;
+
+      // Track onboarding completion
+      analytics.onboardingCompleted({
+        age_group: ageGroupData,
+        focus_areas: data.focusAreas || [],
+      });
 
       toast({
         title: "Profile created! 🎉",
