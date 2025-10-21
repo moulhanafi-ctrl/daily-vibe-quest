@@ -105,7 +105,6 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'es2020',
     cssCodeSplit: true,
-    cssMinify: 'lightningcss',
     rollupOptions: {
       output: {
         manualChunks: (id) => {
