@@ -69,6 +69,7 @@ import DailyAIMessagesAdmin from "./pages/admin/DailyAIMessagesAdmin";
 import EmailDiagnostics from "./pages/admin/EmailDiagnostics";
 import StripeDiagnostics from "./pages/admin/StripeDiagnostics";
 import StripeLiveTest from "./pages/admin/StripeLiveTest";
+import StripeLiveSetup from "./pages/admin/StripeLiveSetup";
 import E2ETestDashboard from "./pages/admin/E2ETestDashboard";
 import AdminOrders from "./pages/admin/AdminOrders";
 import Recovery from "./pages/auth/Recovery";
@@ -159,6 +160,7 @@ const App = () => (
           <Route path="/admin/email-diagnostics" element={<EmailDiagnostics />} />
           <Route path="/admin/stripe-diagnostics" element={<StripeDiagnostics />} />
           <Route path="/admin/stripe-live-test" element={<StripeLiveTest />} />
+          <Route path="/admin/stripe-live-setup" element={<StripeLiveSetup />} />
           <Route path="/admin/e2e-tests" element={<E2ETestDashboard />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/settings" element={<Settings />} />
