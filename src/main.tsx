@@ -30,7 +30,7 @@ const updateSW = registerSW({
 });
 
 // Force cache clear for desktop session fix
-const APP_VERSION = '2025-10-22-sw-unified';
+const APP_VERSION = '2025-10-22-domain-fix';
 const storedVersion = localStorage.getItem('app_version');
 if (storedVersion !== APP_VERSION) {
   console.log('App version updated, clearing caches...');
@@ -39,12 +39,18 @@ if (storedVersion !== APP_VERSION) {
   localStorage.removeItem('subscriptionActive');
   localStorage.removeItem('userRole');
   
-  // Force SW update
+  // Force SW update and cache clear
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then((registrations) => {
       registrations.forEach((registration) => {
         registration.unregister();
       });
+      // Also clear all caches
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach(name => caches.delete(name));
+        });
+      }
       window.location.reload();
     });
   }
