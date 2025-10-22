@@ -58,7 +58,8 @@ const Auth = () => {
   }, []);
 
   useEffect(() => {
-    const checkAuthAndRedirect = async (session: any) => {
+    const checkAuthAndRedirect = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
       try {
@@ -84,22 +85,17 @@ const Auth = () => {
       }
     };
 
-    // Check for existing session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        checkAuthAndRedirect(session);
-      }
-    });
+    // Check on mount and on any auth state change
+    checkAuthAndRedirect();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        await checkAuthAndRedirect(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        checkAuthAndRedirect();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
