@@ -58,34 +58,42 @@ const Auth = () => {
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('language, selected_focus_areas, username')
-            .eq('id', session.user.id)
-            .maybeSingle();
+    const redirectAfterLogin = async (userId: string) => {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('language, selected_focus_areas, username')
+          .eq('id', userId)
+          .maybeSingle();
 
-          if (!profile?.language) {
-            navigate('/welcome/language');
-          } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
-            navigate('/onboarding');
-          } else {
-            toast({ 
-              title: `Welcome back, ${profile.username || 'friend'}!`,
-              description: "Good to see you again."
-            });
-            navigate('/dashboard');
-          }
-        } catch (error) {
-          console.error('Error checking profile:', error);
-          toast({
-            title: "Error",
-            description: "Failed to load profile. Please try again.",
-            variant: "destructive"
+        if (!profile?.language) {
+          navigate('/welcome/language');
+        } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
+          navigate('/onboarding');
+        } else {
+          toast({ 
+            title: `Welcome back, ${profile?.username || 'friend'}!`,
+            description: 'Good to see you again.'
           });
+          navigate('/dashboard');
         }
+      } catch (error) {
+        console.error('Error checking profile:', error);
+        toast({ title: 'Error', description: 'Failed to load profile. Please try again.', variant: 'destructive' });
+      }
+    };
+
+    // 1) Listen for auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        redirectAfterLogin(session.user.id);
+      }
+    });
+
+    // 2) Also handle existing session on first load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        redirectAfterLogin(session.user.id);
       }
     });
 
@@ -108,10 +116,15 @@ const Auth = () => {
         });
         setIsForgotPassword(false);
       } else if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        // Prevent indefinite loading with a safety timeout
+        const signInPromise = supabase.auth.signInWithPassword({
           email,
           password,
         });
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Login timed out, please try again.')), 12000)
+        );
+        const { data, error } = await Promise.race([signInPromise, timeout]) as any;
         if (error) throw error;
 
         const session = data?.session;
