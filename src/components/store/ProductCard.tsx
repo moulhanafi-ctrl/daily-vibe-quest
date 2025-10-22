@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Download, ExternalLink } from "lucide-react";
+import { ShoppingCart, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -27,9 +27,6 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showCartAnimation, setShowCartAnimation] = useState(false);
   const navigate = useNavigate();
-  
-  // Check if this is the $1 Test Product
-  const isTestProduct = product.price === 1 && product.name.toLowerCase().includes('test');
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
@@ -130,30 +127,15 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
         </p>
         <div className="flex items-center justify-between pt-2">
           <span className="text-2xl font-bold">${product.price}</span>
-          {isTestProduct ? (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open("https://buy.stripe.com/6oUcN5guibSD9ZRbv5dnW00", "_blank");
-              }}
-              size="sm"
-              className="bg-gradient-to-r from-primary to-primary/80"
-              aria-label={`Buy ${product.name} now`}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Buy Now
-            </Button>
-          ) : (
-            <Button
-              onClick={handleAddToCart}
-              disabled={loading}
-              size="sm"
-              aria-label={`Add ${product.name} to cart`}
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Add to Cart
-            </Button>
-          )}
+          <Button
+            onClick={handleAddToCart}
+            disabled={loading}
+            size="sm"
+            aria-label={`Add ${product.name} to cart`}
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Add to Cart
+          </Button>
         </div>
       </div>
     </Card>
