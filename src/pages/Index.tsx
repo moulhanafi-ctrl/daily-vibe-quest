@@ -19,17 +19,31 @@ const Index = () => {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          if (isMounted) setIsCheckingSession(false);
+          return;
+        }
         
         if (session) {
           // Check if user has completed onboarding
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('language, selected_focus_areas')
             .eq('id', session.user.id)
             .single();
+
+          if (profileError) {
+            console.error('Profile fetch error:', profileError);
+            if (isMounted) setIsCheckingSession(false);
+            return;
+          }
 
           if (!profile?.language) {
             navigate('/welcome/language');
@@ -38,23 +52,29 @@ const Index = () => {
           } else {
             navigate('/dashboard');
           }
+        } else {
+          // No session - show landing page
+          if (isMounted) setIsCheckingSession(false);
         }
       } catch (error) {
         console.error('Session check error:', error);
       } finally {
-        setIsCheckingSession(false);
+        if (isMounted) setIsCheckingSession(false);
       }
     };
 
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
+      if (session && isMounted) {
         checkSession();
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   if (isCheckingSession) {
