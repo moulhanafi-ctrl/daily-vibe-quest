@@ -1,0 +1,30 @@
+ID,Area,Description,Owner,Priority,Estimate (hrs),Status,Dependencies,Link/Reference
+SEC-001,Security,Enable leaked password protection in Supabase Auth,DevOps,P0,0.5,OPEN,None,Supabase Dashboard → Auth → Policies
+SEC-002,Security,Implement rate limiting on auth endpoints,Backend,P1,4,OPEN,None,supabase/functions/_shared/rate-limit.ts
+SEC-003,Security,Add HMAC validation to cron functions,Backend,P1,3,OPEN,None,supabase/functions/_shared/hmac-validation.ts
+GDPR-001,Compliance,Add cookie consent banner for EU users,Frontend,P2,6,OPEN,None,src/components/legal/CookieConsentBanner.tsx
+PLAY-001,Compliance,Verify Google Play Data Safety form accuracy,Product,P0,2,OPEN,None,Google Play Console → Data Safety
+STORE-001,Store Assets,Create 1024x1024 app icon (upscale from 512),Design,P0,1,OPEN,None,store/icon-1024.png
+STORE-002,Store Assets,Create iPhone screenshots (6.5" and 5.5"),Design,P0,4,OPEN,None,store/screenshots/ios-6.5/ and ios-5.5/
+STORE-003,Store Assets,Add 2+ more Android screenshots (total 5-8),Design,P1,2,OPEN,None,store/screenshots/android/
+STORE-004,Store Metadata,Create Apple App Store keywords (100 chars),Marketing,P1,1,OPEN,None,App Store Connect → Keywords
+STORE-005,Store Metadata,Create dedicated support page (/support),Frontend,P1,3,OPEN,None,src/pages/Support.tsx
+STORE-006,Content Rating,Complete IARC questionnaire for Google Play,Product,P0,1,OPEN,None,Google Play Console → Content Rating
+QA-001,Testing,Execute end-to-end test suite (8 test scenarios),QA,P0,8,OPEN,None,test-results/e2e-manual-YYYYMMDD.md
+QA-002,Testing,Browser compatibility matrix (6 browsers),QA,P1,4,OPEN,QA-001,test-results/browser-compat-YYYYMMDD.md
+QA-003,Testing,Physical device testing (4+ devices),QA,P0,6,OPEN,QA-001,test-results/device-testing-YYYYMMDD.md
+PERF-001,Performance,Run production Lighthouse audit (desktop + mobile),Frontend,P1,2,OPEN,None,lighthouse-report-YYYYMMDD.html
+PERF-002,Performance,Convert hero images to WebP format,Frontend,P2,2,OPEN,None,src/assets/*.webp
+ANALYTICS-001,Analytics,Verify PostHog events firing in production,Backend,P1,3,OPEN,None,PostHog Dashboard → Live Events
+MONITORING-001,Monitoring,Verify Sentry source maps upload,DevOps,P1,2,OPEN,None,Sentry Dashboard → Releases
+MONITORING-002,Monitoring,Set up external uptime monitoring (UptimeRobot),DevOps,P2,2,OPEN,None,UptimeRobot dashboard
+STRIPE-001,Payments,Enable Stripe live mode and complete $1 test,Backend,P0,3,OPEN,None,src/docs/STRIPE_LIVE_PRODUCTION.md
+A11Y-001,Accessibility,Run color contrast audit with axe DevTools,Design,P1,4,OPEN,None,src/index.css fixes
+UX-001,UX,Tablet layout testing (iPad + Android tablet),Frontend,P2,3,OPEN,None,Test results document
+I18N-001,Internationalization,Complete Spanish translations (priority: legal),Content,P2,8,OPEN,None,src/locales/es/*.json
+SUPPORT-001,Support,Create customer support email templates,Support,P1,4,OPEN,None,docs/support-templates.md
+OPS-001,Operations,Create incident response runbooks (3 scenarios),DevOps,P2,6,OPEN,None,docs/runbooks/*.md
+DOCS-001,Documentation,Update all documentation dates to current,Tech Writer,P2,2,OPEN,None,All *.md files
+RELEASE-001,Release,Establish version management strategy + scripts,DevOps,P1,3,OPEN,None,scripts/sync-version.sh
+
+TOTAL HOURS,,,,,110,,,
