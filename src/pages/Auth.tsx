@@ -59,8 +59,15 @@ const Auth = () => {
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
+      console.log('[Auth] Checking auth state...');
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      
+      if (!session) {
+        console.log('[Auth] No session found');
+        return;
+      }
+
+      console.log('[Auth] Session found, checking profile for user:', session.user.id);
 
       try {
         const { data: profile } = await supabase
@@ -69,11 +76,16 @@ const Auth = () => {
           .eq('id', session.user.id)
           .maybeSingle();
 
+        console.log('[Auth] Profile data:', profile);
+
         if (!profile?.language) {
+          console.log('[Auth] No language, redirecting to /welcome/language');
           navigate('/welcome/language');
         } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
+          console.log('[Auth] No focus areas, redirecting to /onboarding');
           navigate('/onboarding');
         } else {
+          console.log('[Auth] Complete profile, redirecting to /dashboard');
           toast({ 
             title: `Welcome back, ${profile.username || 'friend'}!`,
             description: "Good to see you again."
@@ -81,7 +93,7 @@ const Auth = () => {
           navigate('/dashboard');
         }
       } catch (error) {
-        console.error('Error checking profile:', error);
+        console.error('[Auth] Error checking profile:', error);
       }
     };
 
@@ -89,6 +101,7 @@ const Auth = () => {
     checkAuthAndRedirect();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      console.log('[Auth] Auth state changed:', event);
       if (event === 'SIGNED_IN') {
         checkAuthAndRedirect();
       }
