@@ -58,11 +58,10 @@ const Auth = () => {
   }, []);
 
   useEffect(() => {
-    const checkAuthAndLanguage = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        // Check if user has language preference and onboarding status
+    const checkAuthAndRedirect = async (session: any) => {
+      if (!session) return;
+
+      try {
         const { data: profile } = await supabase
           .from('profiles')
           .select('language, selected_focus_areas, username')
@@ -74,24 +73,28 @@ const Auth = () => {
         } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
           navigate('/onboarding');
         } else {
-          // Show welcome back message
           toast({ 
             title: `Welcome back, ${profile.username || 'friend'}!`,
             description: "Good to see you again."
           });
           navigate('/dashboard');
         }
+      } catch (error) {
+        console.error('Error checking profile:', error);
       }
     };
 
-    checkAuthAndLanguage();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Check for existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        // Defer Supabase calls to avoid deadlocks per best practices
-        setTimeout(() => {
-          checkAuthAndLanguage();
-        }, 0);
+        checkAuthAndRedirect(session);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        await checkAuthAndRedirect(session);
       }
     });
 
