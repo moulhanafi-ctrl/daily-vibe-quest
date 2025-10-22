@@ -117,14 +117,10 @@ const Auth = () => {
         setIsForgotPassword(false);
       } else if (isLogin) {
         // Prevent indefinite loading with a safety timeout
-        const signInPromise = supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Login timed out, please try again.')), 12000)
-        );
-        const { data, error } = await Promise.race([signInPromise, timeout]) as any;
         if (error) throw error;
 
         const session = data?.session;
