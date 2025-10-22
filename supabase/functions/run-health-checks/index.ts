@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { verifyHmacSignature } from "../_shared/hmac-validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-signature',
 };
 
 interface TestResult {
@@ -17,6 +18,14 @@ interface TestResult {
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // SECURITY: Verify HMAC signature for cron-triggered function
+  if (!await verifyHmacSignature(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized: Invalid signature' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
