@@ -1,0 +1,27 @@
+{
+  "name": "Daily Vibe Check",
+  "displayName": "Daily Vibe Check",
+  "version": "1.0.0",
+  "description": "Mental wellness companion for teens with mood tracking, journaling, crisis support, and community features",
+  "author": "Daily Vibe Quest",
+  "license": "UNLICENSED",
+  "appId": "com.dailyvibequest.app",
+  "icon": {
+    "ios": "store/icons/app-icon-1024.png",
+    "android": "store/icons/app-icon-1024.png",
+    "source": "store/icons/app-icon-1024.png"
+  },
+  "splash": {
+    "backgroundColor": "#8B5CF6"
+  },
+  "orientation": "portrait",
+  "platforms": ["ios", "android"],
+  "keywords": [
+    "mental health",
+    "wellness",
+    "teens",
+    "mood tracking",
+    "journaling",
+    "crisis support"
+  ]
+}
