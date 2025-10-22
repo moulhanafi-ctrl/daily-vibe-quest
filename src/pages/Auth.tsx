@@ -88,7 +88,10 @@ const Auth = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        checkAuthAndLanguage();
+        // Defer Supabase calls to avoid deadlocks per best practices
+        setTimeout(() => {
+          checkAuthAndLanguage();
+        }, 0);
       }
     });
 
@@ -155,8 +158,8 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast({ title: "Account created! Let's personalize your experience." });
-        navigate("/onboarding");
+        toast({ title: "Account created! Please verify your email if required." });
+        // Auth state change listener will handle navigation after sign up
       }
     } catch (error: any) {
       toast({
