@@ -29,14 +29,27 @@ const updateSW = registerSW({
   }
 });
 
-// Force cache clear for desktop session fix (only on version change)
-const APP_VERSION = '2025-10-22-auth-fix';
+// Force a one-time cache reset to recover from stale SW/assets
+const APP_VERSION = '2025-10-22-recover';
 const storedVersion = localStorage.getItem('app_version');
 if (storedVersion !== APP_VERSION) {
-  console.log('App version updated, clearing auth cache...');
+  console.log('App version updated, clearing caches and service worker...');
   localStorage.setItem('app_version', APP_VERSION);
   localStorage.removeItem('subscriptionActive');
   localStorage.removeItem('userRole');
+  
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => registration.unregister());
+      if ('caches' in window) {
+        caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n)))).finally(() => {
+          location.reload();
+        });
+      } else {
+        location.reload();
+      }
+    });
+  }
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
