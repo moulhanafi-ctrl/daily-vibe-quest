@@ -58,52 +58,34 @@ const Auth = () => {
   }, []);
 
   useEffect(() => {
-    const checkAuthAndRedirect = async () => {
-      console.log('[Auth] Checking auth state...');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.log('[Auth] No session found');
-        return;
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('language, selected_focus_areas, username')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-      console.log('[Auth] Session found, checking profile for user:', session.user.id);
-
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('language, selected_focus_areas, username')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        console.log('[Auth] Profile data:', profile);
-
-        if (!profile?.language) {
-          console.log('[Auth] No language, redirecting to /welcome/language');
-          navigate('/welcome/language');
-        } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
-          console.log('[Auth] No focus areas, redirecting to /onboarding');
-          navigate('/onboarding');
-        } else {
-          console.log('[Auth] Complete profile, redirecting to /dashboard');
-          toast({ 
-            title: `Welcome back, ${profile.username || 'friend'}!`,
-            description: "Good to see you again."
+          if (!profile?.language) {
+            navigate('/welcome/language');
+          } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
+            navigate('/onboarding');
+          } else {
+            toast({ 
+              title: `Welcome back, ${profile.username || 'friend'}!`,
+              description: "Good to see you again."
+            });
+            navigate('/dashboard');
+          }
+        } catch (error) {
+          console.error('Error checking profile:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load profile. Please try again.",
+            variant: "destructive"
           });
-          navigate('/dashboard');
         }
-      } catch (error) {
-        console.error('[Auth] Error checking profile:', error);
-      }
-    };
-
-    // Check on mount and on any auth state change
-    checkAuthAndRedirect();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      console.log('[Auth] Auth state changed:', event);
-      if (event === 'SIGNED_IN') {
-        checkAuthAndRedirect();
       }
     });
 
@@ -126,14 +108,13 @@ const Auth = () => {
         });
         setIsForgotPassword(false);
       } else if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
         
-        // Auth state change listener will handle navigation and welcome message
-        // No need to do it here to avoid race conditions
+        // Navigation handled by onAuthStateChange listener
       } else {
         // SECURITY: Validate signup inputs
         const validationResult = SignupSchema.safeParse({
