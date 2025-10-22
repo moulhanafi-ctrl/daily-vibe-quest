@@ -20,6 +20,7 @@ const Index = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const checkSession = async () => {
       try {
@@ -58,12 +59,19 @@ const Index = () => {
         }
       } catch (error) {
         console.error('Session check error:', error);
-      } finally {
         if (isMounted) setIsCheckingSession(false);
       }
     };
 
-    checkSession();
+    // Safety timeout: if session check takes > 5 seconds, show the page anyway
+    timeoutId = setTimeout(() => {
+      console.warn('Session check timeout - showing landing page');
+      if (isMounted) setIsCheckingSession(false);
+    }, 5000);
+
+    checkSession().finally(() => {
+      clearTimeout(timeoutId);
+    });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session && isMounted) {
@@ -73,6 +81,7 @@ const Index = () => {
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [navigate]);

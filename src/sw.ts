@@ -77,6 +77,12 @@ self.addEventListener('fetch', (event) => {
   
   // Skip chrome-extension and other non-http(s) requests
   if (!event.request.url.startsWith('http')) return;
+  
+  // CRITICAL: Don't intercept Supabase API calls - let them through
+  if (event.request.url.includes('supabase.co') || 
+      event.request.url.includes('hssrytzedacchvkrxgnq.supabase.co')) {
+    return;
+  }
 
   event.respondWith(
     fetch(event.request)
