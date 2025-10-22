@@ -111,28 +111,14 @@ const Auth = () => {
         });
         setIsForgotPassword(false);
       } else if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
         
-        // Force JWT refresh to ensure role is included in claims
-        await supabase.auth.refreshSession();
-        
-        // Fetch user profile for welcome message
-        if (data.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', data.user.id)
-            .maybeSingle();
-          
-          toast({ 
-            title: `Welcome back, ${profile?.username || 'friend'}!`,
-            description: "Good to see you again."
-          });
-        }
+        // Auth state change listener will handle navigation and welcome message
+        // No need to do it here to avoid race conditions
       } else {
         // SECURITY: Validate signup inputs
         const validationResult = SignupSchema.safeParse({
