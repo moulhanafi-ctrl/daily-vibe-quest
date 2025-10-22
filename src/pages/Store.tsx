@@ -118,20 +118,6 @@ const Store = () => {
             Discover curated products designed to support your emotional wellbeing
             at every stage of life
           </p>
-          
-          {/* $1 Test Product Button */}
-          <div className="mt-8">
-            <Button
-              size="lg"
-              onClick={() => window.open("https://buy.stripe.com/6oUcN5guibSD9ZRbv5dnW00", "_blank")}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              🎉 Buy Now – $1 Test Product
-            </Button>
-            <p className="text-sm text-muted-foreground mt-2">
-              Try our store with a $1 test purchase
-            </p>
-          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">

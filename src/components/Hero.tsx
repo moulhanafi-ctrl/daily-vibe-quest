@@ -152,24 +152,7 @@ export const Hero = () => {
             </Button>
           </div>
           
-          {/* $1 Test Product Button */}
-          <div className="pt-4 w-full max-w-md">
-            <Button
-              type="button"
-              size="lg"
-              onClick={() => window.open("https://buy.stripe.com/6oUcN5guibSD9ZRbv5dnW00", "_blank")}
-              onTouchStart={() => window.open("https://buy.stripe.com/6oUcN5guibSD9ZRbv5dnW00", "_blank")}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all touch-manipulation"
-              aria-label="Buy $1 test product"
-            >
-              🎉 Buy Now – $1 Test Product
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2">
-              Try our store with a $1 test purchase
-            </p>
-          </div>
-          
-          <p className="text-sm text-muted-foreground pt-2">
+          <p className="text-sm text-muted-foreground pt-4">
             Free forever • No credit card required • 2-minute setup
           </p>
         </div>
