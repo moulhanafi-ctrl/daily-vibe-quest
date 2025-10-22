@@ -15,8 +15,12 @@ export default defineConfig(({ mode }) => ({
     react(), 
     mode === "development" && componentTagger(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
-      includeAssets: ['icon-512.png', 'icon-512-maskable.png'],
+      injectRegister: 'auto',
+      includeAssets: ['icon-512.png', 'icon-512-maskable.png', 'offline.html'],
       manifest: {
         name: 'Vibe Check - Teen Wellness & Support',
         short_name: 'Vibe Check',
@@ -40,50 +44,13 @@ export default defineConfig(({ mode }) => ({
           }
         ]
       },
-      workbox: {
-        // Only precache small essential files (shell, CSS, small images)
-        globPatterns: ['**/*.{css,html,ico,png,svg}'],
-        // Increase limit for any large assets that do get precached
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
-        // Use runtime caching for JS bundles (better for large apps)
-        runtimeCaching: [
-          {
-            // Cache JS bundles with CacheFirst strategy
-            urlPattern: /\.js$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'js-cache',
-              expiration: {
-                maxEntries: 60,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              }
-            }
-          },
-          {
-            // Supabase API calls
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              }
-            }
-          },
-          {
-            // Image CDN or external images
-            urlPattern: /^https?:\/\/.+\.(png|jpg|jpeg|svg|gif|webp)$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'image-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
-              }
-            }
-          }
-        ]
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
+      devOptions: {
+        enabled: false,
+        type: 'module'
       }
     }),
     // Sentry source maps upload (only in production builds)
