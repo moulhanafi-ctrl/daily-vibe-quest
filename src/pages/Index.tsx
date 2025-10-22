@@ -16,7 +16,7 @@ import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isCheckingSession, setIsCheckingSession] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
