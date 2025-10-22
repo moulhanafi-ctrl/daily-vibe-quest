@@ -113,8 +113,34 @@ const Auth = () => {
           password,
         });
         if (error) throw error;
+
+        const session = data?.session;
+        if (session) {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('language, selected_focus_areas, username')
+              .eq('id', session.user.id)
+              .maybeSingle();
+
+            if (!profile?.language) {
+              navigate('/welcome/language');
+            } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
+              navigate('/onboarding');
+            } else {
+              toast({ 
+                title: `Welcome back, ${profile.username || 'friend'}!`,
+                description: "Good to see you again."
+              });
+              navigate('/dashboard');
+            }
+          } catch (err) {
+            console.error('Post-login profile check failed:', err);
+            navigate('/dashboard'); // Fallback to dashboard
+          }
+        }
         
-        // Navigation handled by onAuthStateChange listener
+        // Listener also handles other auth events
       } else {
         // SECURITY: Validate signup inputs
         const validationResult = SignupSchema.safeParse({
