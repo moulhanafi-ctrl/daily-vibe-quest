@@ -1,4 +1,5 @@
 import { AppleIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 import iphoneMockup from "@/assets/iphone-mockup.png";
 import androidMockup from "@/assets/android-mockup.png";
 
@@ -127,12 +128,12 @@ export const AppDownload = () => {
               </div>
 
               {/* Help Link */}
-              <a 
-                href="/help" 
+              <Link 
+                to="/help" 
                 className="inline-block text-sm text-muted-foreground hover:text-foreground underline decoration-primary/50 hover:decoration-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
               >
                 Need help installing?
-              </a>
+              </Link>
             </div>
 
             {/* Right Column: Device Mockups */}

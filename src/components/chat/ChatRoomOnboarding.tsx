@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Shield, Heart, Flag, Users } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 interface ChatRoomOnboardingProps {
   onComplete: () => void;
@@ -90,9 +91,9 @@ export const ChatRoomOnboarding = ({ onComplete }: ChatRoomOnboardingProps) => {
         <div className="bg-muted p-4 rounded-lg">
           <p className="text-sm text-muted-foreground">
             By joining, you agree to follow our{" "}
-            <a href="/legal/community-guidelines" className="text-primary hover:underline" target="_blank">
+            <Link to="/legal/community-guidelines" className="text-primary hover:underline" target="_blank">
               Community Guidelines
-            </a>
+            </Link>
           </p>
         </div>
 

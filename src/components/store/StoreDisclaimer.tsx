@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { AlertCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const StoreDisclaimer = () => {
   const { t } = useTranslation("legal");
@@ -11,12 +12,12 @@ export const StoreDisclaimer = () => {
         <div className="space-y-1">
           <p>{t("storeDisclaimer.educational")}</p>
           <p>{t("storeDisclaimer.digitalGoods")}</p>
-          <a 
-            href="/policies/refunds" 
+          <Link 
+            to="/policies/refunds" 
             className="text-primary underline hover:text-primary/80"
           >
             {t("storeDisclaimer.refundPolicy")}
-          </a>
+          </Link>
         </div>
       </div>
     </div>

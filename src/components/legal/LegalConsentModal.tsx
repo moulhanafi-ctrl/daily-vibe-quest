@@ -9,6 +9,7 @@ import { ChevronDown, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
+import { Link } from "react-router-dom";
 
 interface LegalConsentModalProps {
   open: boolean;
@@ -142,9 +143,9 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
                   <li>{t("consent.guidelines.crisisContent")}</li>
                 </ul>
                 <Button variant="link" className="mt-2 p-0" asChild>
-                  <a href="/community-guidelines" target="_blank">
+                  <Link to="/community-guidelines" target="_blank">
                     {t("consent.guidelines.viewFull")} <ExternalLink className="h-3 w-3 ml-1" />
-                  </a>
+                  </Link>
                 </Button>
               </CollapsibleContent>
             </Collapsible>
@@ -163,9 +164,9 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
                   <li>{t("consent.terms.point4")}</li>
                 </ul>
                 <Button variant="link" className="mt-2 p-0" asChild>
-                  <a href="/terms" target="_blank">
+                  <Link to="/terms" target="_blank">
                     {t("consent.terms.viewFull")} <ExternalLink className="h-3 w-3 ml-1" />
-                  </a>
+                  </Link>
                 </Button>
               </CollapsibleContent>
             </Collapsible>
@@ -181,9 +182,9 @@ export const LegalConsentModal = ({ open, onClose, onConsent, userAgeGroup, isGu
                   {t("consent.privacy.content")}
                 </p>
                 <Button variant="link" className="mt-2 p-0" asChild>
-                  <a href="/privacy" target="_blank">
+                  <Link to="/privacy" target="_blank">
                     {t("consent.privacy.viewFull")} <ExternalLink className="h-3 w-3 ml-1" />
-                  </a>
+                  </Link>
                 </Button>
               </CollapsibleContent>
             </Collapsible>
