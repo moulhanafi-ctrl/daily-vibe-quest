@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    
+    <!-- Theme & Mobile App Configuration -->
+    <meta name="theme-color" content="#8B5CF6" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Daily Vibe Check" />
+    <link rel="apple-touch-icon" href="/icon-512.png" />
+
+    <title>Daily Vibe Check — Page not found</title>
+    <meta name="description" content="SPA fallback for deep links. Redirecting you to the app." />
+    <link rel="canonical" href="https://dailyvibecheck.com" />
+
+    <!-- Auto-redirect fallback if JS fails -->
+    <meta http-equiv="refresh" content="5; url=/" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Load the app just like index.html so SPA routes work on 404s -->
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // If the app fails to mount within 4s, hard redirect to home as a fallback
+      setTimeout(() => {
+        const root = document.getElementById('root');
+        if (!root || !root.children.length) {
+          window.location.replace('/');
+        }
+      }, 4000);
+    </script>
+  </body>
+</html>
