@@ -10,29 +10,33 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true;
 
-    (async () => {
-      try {
-        // 1) Resolve initial session BEFORE subscribing
-        const { data: { session: initial } } = await supabase.auth.getSession();
+    // Safety: ensure loading can't hang forever
+    const safetyTimeout = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 7000);
+
+    // 1) Subscribe FIRST to avoid missing events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, next) => {
+      if (!mounted) return;
+      setSession(next);
+    });
+    unsubRef.current = () => subscription.unsubscribe();
+
+    // 2) THEN resolve initial session
+    supabase.auth.getSession()
+      .then(({ data: { session: initial } }) => {
         if (!mounted) return;
         setSession(initial);
-
-        // 2) Subscribe AFTER we have a baseline
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_, next) => {
-          if (mounted) {
-            setSession(next);
-          }
-        });
-        
-        unsubRef.current = () => subscription.unsubscribe();
-      } finally {
+      })
+      .finally(() => {
         if (mounted) setLoading(false);
-      }
-    })();
+        clearTimeout(safetyTimeout);
+      });
 
     // 3) Cleanup
     return () => {
       mounted = false;
+      clearTimeout(safetyTimeout);
       unsubRef.current?.();
       unsubRef.current = null;
     };

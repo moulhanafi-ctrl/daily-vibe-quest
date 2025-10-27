@@ -105,6 +105,8 @@ const Auth = () => {
       } catch (error) {
         console.error('Error checking profile:', error);
         toast({ title: 'Error', description: 'Failed to load profile. Please try again.', variant: 'destructive' });
+        // Fallback: never get stuck on /auth due to profile issues
+        navigate('/dashboard');
       }
     };
 
