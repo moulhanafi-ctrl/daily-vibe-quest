@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import vibeCheckLogo from "@/assets/vibe-check-logo.png";
 import { z } from "zod";
 import { passwordSchema, type PasswordValidation } from "@/lib/validation/passwordPolicy";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import { AlertTriangle, RefreshCw, ExternalLink } from "lucide-react";
 
 // SECURITY: Enhanced input validation schema for signup with strong password policy
 const SignupSchema = z.object({
@@ -29,6 +31,7 @@ const SignupSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -38,6 +41,28 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [passwordValidation, setPasswordValidation] = useState<PasswordValidation | null>(null);
+  const [authTimeout, setAuthTimeout] = useState(false);
+  const [lastAuthEvent, setLastAuthEvent] = useState<string>("");
+  const authTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const AUTH_TIMEOUT_MS = 8000; // 8 second timeout
+  const PREVIEW_URL = "https://2c588c7a-e9e9-4d3f-b2dd-79a1b8546184.lovableproject.com/auth";
+
+  // Handle SW bypass on mount
+  useEffect(() => {
+    const bypassSw = searchParams.get('bypass-sw');
+    if (bypassSw === '1') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach(reg => reg.unregister());
+          toast({ title: "Service worker cleared", description: "Reloading app..." });
+          setTimeout(() => {
+            window.location.href = window.location.origin + '/auth';
+          }, 1000);
+        });
+      }
+    }
+  }, [searchParams]);
 
   // Detect Safari Private Mode
   useEffect(() => {
@@ -85,7 +110,12 @@ const Auth = () => {
 
     // 1) Listen for auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setLastAuthEvent(event);
       if (event === 'SIGNED_IN' && session?.user) {
+        if (authTimeoutRef.current) {
+          clearTimeout(authTimeoutRef.current);
+          authTimeoutRef.current = null;
+        }
         redirectAfterLogin(session.user.id);
       }
     });
@@ -100,9 +130,39 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate, toast]);
 
+  const handleClearCacheAndReload = async () => {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.reload();
+  };
+
+  const handleRetryAuth = () => {
+    setAuthTimeout(false);
+    setLoading(false);
+    if (authTimeoutRef.current) {
+      clearTimeout(authTimeoutRef.current);
+      authTimeoutRef.current = null;
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setAuthTimeout(false);
+
+    // Start timeout timer
+    authTimeoutRef.current = setTimeout(() => {
+      setAuthTimeout(true);
+      setLoading(false);
+    }, AUTH_TIMEOUT_MS);
 
     try {
       if (isForgotPassword) {
@@ -190,18 +250,57 @@ const Auth = () => {
         // Auth state change listener will handle navigation after sign up
       }
     } catch (error: any) {
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current);
+        authTimeoutRef.current = null;
+      }
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
     } finally {
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current);
+        authTimeoutRef.current = null;
+      }
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
+      {authTimeout && (
+        <Alert variant="destructive" className="fixed top-4 left-4 right-4 z-50 max-w-2xl mx-auto">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="ml-2">
+            <div className="space-y-3">
+              <p className="font-semibold">Authentication Timeout</p>
+              <p className="text-sm">Login took too long. This may be due to network or SSL issues.</p>
+              <div className="text-xs space-y-1 opacity-80">
+                <p>Last auth event: {lastAuthEvent || 'None'}</p>
+                <p>LocalStorage: {(() => { try { return localStorage ? 'Available' : 'Unavailable'; } catch { return 'Blocked'; }})()}</p>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Button size="sm" variant="outline" onClick={handleRetryAuth}>
+                  <RefreshCw className="h-3 w-3 mr-1" /> Retry
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleClearCacheAndReload}>
+                  Clear Cache & Reload
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <a href={PREVIEW_URL} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-1" /> Use Preview
+                  </a>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <a href="/auth?bypass-sw=1">Bypass Service Worker</a>
+                </Button>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex justify-center mb-4">
