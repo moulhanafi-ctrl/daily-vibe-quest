@@ -130,7 +130,10 @@ const Auth = () => {
           clearTimeout(authTimeoutRef.current);
           authTimeoutRef.current = null;
         }
-        redirectAfterLogin(session.user.id);
+        // Defer any Supabase calls/navigation to avoid deadlocks in the callback
+        setTimeout(() => {
+          redirectAfterLogin(session.user!.id);
+        }, 0);
       }
     });
 
