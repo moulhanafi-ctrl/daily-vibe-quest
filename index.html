@@ -131,10 +131,7 @@
         // 3. Force reload if we just cleared (one time only)
         if (!sessionStorage.getItem('cache_cleared')) {
           sessionStorage.setItem('cache_cleared', '1');
-          // Don't reload on /auth to avoid login loop
-          if (window.location.pathname !== '/auth') {
-            window.location.reload();
-          }
+          window.location.reload();
         }
       })();
     </script>
