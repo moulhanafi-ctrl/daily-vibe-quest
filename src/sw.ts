@@ -20,7 +20,7 @@ const OFFLINE_URL = '/offline.html';
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
   event.waitUntil(
-    caches.open('offline-cache').then((cache) => cache.add(OFFLINE_URL))
+    caches.open('offline-cache-v2025-10-29-1').then((cache) => cache.add(OFFLINE_URL))
   );
 });
 
