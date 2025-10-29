@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { QAChecklist } from "@/components/admin/QAChecklist";
 import { MonitoringDashboard } from "@/components/admin/MonitoringDashboard";
@@ -57,7 +57,7 @@ const PublishReadiness = () => {
                   <strong>Stripe Live Mode:</strong> Set <code>STRIPE_LIVE_MODE=true</code> and verify webhook endpoint
                 </li>
                 <li>
-                  <strong>Feature Flags:</strong> Enable all production flags via <a href="/admin/flags">/admin/flags</a>
+                  <strong>Feature Flags:</strong> Enable all production flags via <Link to="/admin/flags">/admin/flags</Link>
                 </li>
                 <li>
                   <strong>Smoke Tests:</strong> Test signup → check-in → journal flow in production

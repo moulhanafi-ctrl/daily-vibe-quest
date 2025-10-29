@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 export const StripeLiveSetupGuide = () => {
   const { toast } = useToast();
@@ -381,10 +382,10 @@ export const StripeLiveSetupGuide = () => {
 
               <div className="flex gap-2">
                 <Button variant="default" size="lg" className="flex-1" asChild>
-                  <a href="/admin/ops" className="inline-flex items-center gap-2">
+                  <Link to="/admin/ops" className="inline-flex items-center gap-2">
                     <Shield className="h-4 w-4" />
                     View Monitoring Dashboard
-                  </a>
+                  </Link>
                 </Button>
                 <Button variant="outline" size="lg" asChild>
                   <a href="/docs/STRIPE_LIVE_TEST_TEMPLATE.md" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2">
