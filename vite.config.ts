@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => ({
     target: 'es2020',
     cssCodeSplit: true,
     rollupOptions: {
+      external: [], // Force all dependencies to be bundled, prevent externalization
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
