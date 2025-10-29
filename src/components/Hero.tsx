@@ -75,7 +75,6 @@ export const Hero = () => {
               width="80"
               height="80"
               loading="eager"
-              fetchPriority="high"
             />
           </div>
           
