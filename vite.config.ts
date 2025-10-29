@@ -24,11 +24,6 @@ export default defineConfig(({ mode }) => ({
       telemetry: false,
     })
   ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
   build: {
     target: 'es2020',
     cssCodeSplit: true,
@@ -84,9 +79,22 @@ export default defineConfig(({ mode }) => ({
     },
     reportCompressedSize: false,
     chunkSizeWarningLimit: 1000,
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
+    },
   },
-  // Preconnect to external domains
+  // Ensure React is properly bundled and deduplicated
   optimizeDeps: {
-    include: ['@supabase/supabase-js', 'react', 'react-dom']
+    include: ['react', 'react-dom', '@supabase/supabase-js'],
+    esbuildOptions: {
+      target: 'es2020'
+    }
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+    dedupe: ['react', 'react-dom']
   }
 }));

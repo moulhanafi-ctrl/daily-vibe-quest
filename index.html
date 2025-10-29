@@ -115,13 +115,29 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <!-- Force service worker cleanup for stuck clients -->
+    <!-- Aggressive cache clearing before app loads -->
     <script>
-      if ('serviceWorker' in navigator && !sessionStorage.getItem('swKillSwitchDone')) {
-        sessionStorage.setItem('swKillSwitchDone','1');
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-      }
+      (async function clearAllCaches() {
+        // 1. Unregister all service workers
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+        // 2. Clear all caches
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        // 3. Force reload if we just cleared (one time only)
+        if (!sessionStorage.getItem('cache_cleared')) {
+          sessionStorage.setItem('cache_cleared', '1');
+          // Don't reload on /auth to avoid login loop
+          if (window.location.pathname !== '/auth') {
+            window.location.reload();
+          }
+        }
+      })();
     </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
