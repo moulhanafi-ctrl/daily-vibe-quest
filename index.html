@@ -118,13 +118,9 @@
     <script type="module" src="/src/main.tsx"></script>
     <!-- Force service worker cleanup for stuck clients -->
     <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(regs => {
-          if (regs.length > 0) {
-            console.log('[Cleanup] Found old SW, forcing kill-switch registration');
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
-          }
-        });
+      if ('serviceWorker' in navigator && !sessionStorage.getItem('swKillSwitchDone')) {
+        sessionStorage.setItem('swKillSwitchDone','1');
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
       }
     </script>
   </body>
