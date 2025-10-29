@@ -112,30 +112,6 @@
       }
     }
     </script>
-    
-    <!-- One-time cache reset to avoid stale service worker/vendor chunks -->
-    <script>
-      (function () {
-        try {
-          const BUILD_VERSION = '2025-10-29-1'; // bump to force a fresh load
-          const KEY = 'app_build_version';
-          const prev = localStorage.getItem(KEY);
-          if (prev !== BUILD_VERSION && 'serviceWorker' in navigator) {
-            localStorage.setItem(KEY, BUILD_VERSION);
-            Promise.all([
-              navigator.serviceWorker.getRegistrations().then(rs => Promise.all(rs.map(r => r.unregister()))),
-              caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-            ]).finally(() => {
-              // Reload once after clearing caches/SW so fresh assets are fetched
-              location.reload();
-            });
-          }
-        } catch (e) {
-          // Fail silently; app will still try to load
-          console.warn('Cache reset skipped', e);
-        }
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

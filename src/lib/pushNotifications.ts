@@ -68,17 +68,8 @@ export const checkPushNotificationSupport = (): PushNotificationSupport => {
 
 // Register service worker
 export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
-  try {
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/'
-    });
-    
-    console.log('Service Worker registered:', registration);
-    return registration;
-  } catch (error) {
-    console.error('Service Worker registration failed:', error);
-    return null;
-  }
+  console.log('Push notifications are currently disabled (no service worker)');
+  return null;
 };
 
 // Request notification permission
@@ -126,7 +117,7 @@ export const subscribeToPushNotifications = async (): Promise<{ success: boolean
     // Register service worker
     const registration = await registerServiceWorker();
     if (!registration) {
-      return { success: false, error: 'Service worker registration failed' };
+      return { success: false, error: 'Push notifications are currently disabled' };
     }
 
     // Wait for service worker to be ready

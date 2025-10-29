@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { VitePWA } from 'vite-plugin-pwa';
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 // https://vitejs.dev/config/
@@ -14,48 +13,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(), 
     mode === "development" && componentTagger(),
-    VitePWA({
-      strategies: 'injectManifest',
-      srcDir: 'src',
-      filename: 'sw.ts',
-      registerType: 'autoUpdate',
-      injectRegister: 'auto',
-      includeAssets: ['icon-512.png', 'icon-512-maskable.png', 'offline.html'],
-      manifest: {
-        name: 'Vibe Check - Teen Wellness & Support',
-        short_name: 'Vibe Check',
-        description: 'Mental wellness companion for teens with mood tracking, journaling, crisis support, and community features',
-        theme_color: '#8B5CF6',
-        background_color: '#0F172A',
-        display: 'standalone',
-        orientation: 'portrait-primary',
-        icons: [
-          {
-            src: '/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: '/icon-512-maskable.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ]
-      },
-      injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-      },
-      workbox: {
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-      },
-      devOptions: {
-        enabled: false,
-        type: 'module'
-      }
-    }),
     // Sentry source maps upload (only in production builds)
     mode === 'production' && sentryVitePlugin({
       org: process.env.SENTRY_ORG,
