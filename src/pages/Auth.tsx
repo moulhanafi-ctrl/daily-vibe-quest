@@ -48,6 +48,14 @@ const Auth = () => {
   const AUTH_TIMEOUT_MS = 8000; // 8 second timeout
   const PREVIEW_URL = "https://2c588c7a-e9e9-4d3f-b2dd-79a1b8546184.lovableproject.com/auth";
 
+  // Failsafe: if SPA navigation fails (rare), hard reload to target after 1.2s
+  const hardRedirectIfStuck = (path: string) => {
+    setTimeout(() => {
+      if (window.location.pathname === '/auth') {
+        window.location.assign(path);
+      }
+    }, 1200);
+  };
   // Handle SW bypass on mount
   useEffect(() => {
     const bypassSw = searchParams.get('bypass-sw');
@@ -93,20 +101,24 @@ const Auth = () => {
 
         if (!profile?.language) {
           navigate('/welcome/language');
+          hardRedirectIfStuck('/welcome/language');
         } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
           navigate('/onboarding');
+          hardRedirectIfStuck('/onboarding');
         } else {
           toast({ 
             title: `Welcome back, ${profile?.username || 'friend'}!`,
             description: 'Good to see you again.'
           });
           navigate('/dashboard');
+          hardRedirectIfStuck('/dashboard');
         }
       } catch (error) {
         console.error('Error checking profile:', error);
         toast({ title: 'Error', description: 'Failed to load profile. Please try again.', variant: 'destructive' });
         // Fallback: never get stuck on /auth due to profile issues
         navigate('/dashboard');
+        hardRedirectIfStuck('/dashboard');
       }
     };
 
@@ -196,14 +208,17 @@ const Auth = () => {
 
             if (!profile?.language) {
               navigate('/welcome/language');
+              hardRedirectIfStuck('/welcome/language');
             } else if (!profile?.selected_focus_areas || profile.selected_focus_areas.length === 0) {
               navigate('/onboarding');
+              hardRedirectIfStuck('/onboarding');
             } else {
               toast({ 
                 title: `Welcome back, ${profile.username || 'friend'}!`,
                 description: "Good to see you again."
               });
               navigate('/dashboard');
+              hardRedirectIfStuck('/dashboard');
             }
           } catch (err) {
             console.error('Post-login profile check failed:', err);
