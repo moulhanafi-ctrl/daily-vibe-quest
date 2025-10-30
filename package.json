@@ -20,6 +20,9 @@
   },
   "devDependencies": {
     "vite": "^5.0.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "@sentry/vite-plugin": "^2.17.0",
+    "lovable-tagger": "^0.1.5",
+    "@types/node": "^20.11.0"
   }
 }
