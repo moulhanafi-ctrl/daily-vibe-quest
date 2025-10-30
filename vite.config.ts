@@ -2,13 +2,17 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { fileURLToPath } from "node:url";
+import { componentTagger } from "lovable-tagger";
 
 // ESM-safe alias to ./src (no __dirname)
 const aliasSrc = fileURLToPath(new URL("./src", import.meta.url));
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: { host: "::", port: 8080 },
-  plugins: [react()],
+  plugins: [
+    react(),
+    mode === 'development' && componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: { "@": aliasSrc },
     dedupe: ["react", "react-dom"]
@@ -26,4 +30,4 @@ export default defineConfig({
     include: ["react", "react-dom", "@supabase/supabase-js"],
     esbuildOptions: { target: "es2020" }
   }
-});
+}));
