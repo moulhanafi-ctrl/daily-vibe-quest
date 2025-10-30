@@ -118,6 +118,30 @@
     <!-- Aggressive cache clearing before app loads -->
     <script>
       (async function clearAllCaches() {
+        // Storage availability check for Safari Private Mode, etc.
+        function storageAvailable() {
+          try {
+            const k = "__cc_test__" + Math.random();
+            sessionStorage.setItem(k, k);
+            sessionStorage.removeItem(k);
+            return true;
+          } catch { return false; }
+        }
+
+        // One-shot reload guard that doesn't depend on storage
+        if (!storageAvailable()) {
+          if (window.name === "cc_reloaded") {
+            // Already reloaded once; block further reload attempts
+            return;
+          } else {
+            window.name = "cc_reloaded";
+            // Give SW a moment to release control, then reload once
+            setTimeout(() => location.replace(location.href), 50);
+            return;
+          }
+        }
+
+        // Normal flow with sessionStorage available
         // 1. Unregister all service workers
         if ('serviceWorker' in navigator) {
           const regs = await navigator.serviceWorker.getRegistrations();
