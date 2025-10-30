@@ -117,49 +117,36 @@
     <div id="root"></div>
     <!-- Aggressive cache clearing before app loads -->
     <script>
-      if (!window.__CACHE_PURGE_DISABLED__) {
-        (async function clearAllCaches() {
-          // Storage availability check for Safari Private Mode, etc.
-          function storageAvailable() {
-          try {
-            const k = "__cc_test__" + Math.random();
-            sessionStorage.setItem(k, k);
-            sessionStorage.removeItem(k);
-            return true;
-          } catch { return false; }
-        }
+      (async () => {
+        // Skip if we've already done a hard refresh (uses history.state, not storage)
+        try { if (history.state && history.state._didHardReload) return; } catch {}
 
-        // One-shot reload guard that doesn't depend on storage
-        if (!storageAvailable()) {
-          if (window.name === "cc_reloaded") {
-            // Already reloaded once; block further reload attempts
-            return;
-          } else {
-            window.name = "cc_reloaded";
-            // Give SW a moment to release control, then reload once
-            setTimeout(() => location.replace(location.href), 50);
-            return;
+        // Try to mark completion in sessionStorage; fall back to window.name
+        const storageOK = (() => { try {
+          const k = "__cc__"+Math.random(); sessionStorage.setItem(k,k); sessionStorage.removeItem(k); return true;
+        } catch { return false; }})();
+        const getMark = () => storageOK ? sessionStorage.getItem("cache_cleared") : (window.name === "cc_done" ? "1" : null);
+        const setMark = () => storageOK ? sessionStorage.setItem("cache_cleared","1") : (window.name = "cc_done");
+
+        if (getMark()==="1") return;
+
+        try {
+          if ("serviceWorker" in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(r => r.unregister().catch(() => {})));
+            await new Promise(r => setTimeout(r,50));
           }
+          if ("caches" in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k).catch(() => {})));
+          }
+        } finally {
+          setMark();
+          try { history.replaceState({ ...(history.state||{}), _didHardReload: true }, document.title, location.href); } catch {}
+          const u = new URL(location.href); u.searchParams.set("_cc", Date.now().toString());
+          location.replace(u.toString()); // one reload max
         }
-
-        // Normal flow with sessionStorage available
-        // 1. Unregister all service workers
-        if ('serviceWorker' in navigator) {
-          const regs = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.map(r => r.unregister()));
-        }
-        // 2. Clear all caches
-        if ('caches' in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.map(k => caches.delete(k)));
-        }
-        // 3. Force reload if we just cleared (one time only)
-        if (!sessionStorage.getItem('cache_cleared')) {
-          sessionStorage.setItem('cache_cleared', '1');
-          window.location.reload();
-        }
-        })();
-      }
+      })();
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
