@@ -33,9 +33,14 @@ import { toast } from "@/hooks/use-toast";
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().email("Please enter a valid email address").max(255),
-  relationship: z.enum(["parent", "sibling", "child", "partner", "friend", "other"], {
-    required_error: "Please select a relationship",
-  }),
+  relationship: z.union([
+    z.literal("parent"),
+    z.literal("sibling"),
+    z.literal("child"),
+    z.literal("partner"),
+    z.literal("friend"),
+    z.literal("other"),
+  ]),
 });
 
 interface AddFamilyMemberModalProps {
